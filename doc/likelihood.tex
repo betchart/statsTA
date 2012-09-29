@@ -4,19 +4,20 @@
 \newcommand{\interest}{\vec{x}}
 \newcommand{\nuis}{\vec{y}}
 
+\usepackage[margin=1.0in]{geometry}
 \begin{document}
 
-Given a parameters of interest $\interest$ and nuisance parameters $\nuis$,
-the probability to observe counts $\{N_{ij}^{\mu};N_{ij}^e\}$ in the
-muon and electron channels is
+Given parameters of interest $\interest$ and nuisance parameters
+$\nuis$, the probability to observe counts $\{N_{ij}^{\mu};N_{ij}^e\}$
+in the muon and electron channels is
 \[P 
 = P\left(N_i^{\mu};N_i^e | y;\nuis\right) =
 P_{\mu}\left(N_i^{\mu}|\interest;\nuis\right)P_e\left(N_i^e|\interest;\nuis\right)\]
-If the values of the nuisance parameters are under prior constraint
-by the likelihood $\lik^{cst}$, then the likelihood of the parameters
-given the observations is
+If the values of the nuisance parameters are constrained by prior
+probability $P_{cst}$, then the likelihood of the parameters given the
+observations is
 \begin{equation}
-  \lik\left(\interest;\nuis|N_i^{\mu};N_i^e\right) = \lik^{cst}(\nuis)P_{\mu}(N_i^\mu|\interest;\nuis)P_e(N_i^e|\interest;\nuis)
+  \lik\left(\interest;\nuis|N_i^{\mu};N_i^e\right) = P_{cst}(\nuis)P_{\mu}(N_i^\mu|\interest;\nuis)P_e(N_i^e|\interest;\nuis)
 \end{equation}
 
 
@@ -42,17 +43,24 @@ six nuisance parameters $\{\delta_L;\delta_j\}$ by allowing
   \sigma_j &=& (1+\delta_j)\sigma_j^{mc},\qquad j\ne t\bar{t} \\
   \sigma_{k\to t\bar{t}} &=&(1+\delta_{t\bar{t}})(1+\delta_k)\sigma_{k\to t\bar{t}}^{mc},\qquad k\in\{gg,qg,q\bar{q},\bar{q}g\}
 \end{eqnarray}
-The parameters of interest are constrained by two equations
+The parameters of interest are constrained by the two equations
 \begin{equation}
   \sum_k \delta_k\sigma_{k\to t\bar{t}}^{mc} = 0
 \end{equation}
 \begin{equation}
-  (1+\delta_{gg})(1+\delta_{q\bar{q}}) = (1+\delta_{qg})(1+\delta_{\bar{q}g})
+  D_{gg}D_{q\bar{q}} = D_{qg}D_{\bar{q}g}, \qquad D_k = (1+\delta_k)
 \end{equation}
-so that they can be written as only two independent parameters,
-$(\delta_{gg},\delta_{qg})$, and the other two are
+so they can be written as only two independent parameters,
+$(\delta_{gg},\delta_{qg})$.  The other two are then
 \begin{eqnarray}
-  \delta_{q\bar{q}} &=& \\
-  \delta_{\bar{q}g} &=&
+  \delta_{\bar{q}g} &=& \frac{1}{\sigma_{\bar{q}g}^{mc}}\left(\delta_{gg}\sigma_{gg}^{mc}+\delta_{qg}\sigma_{qg}^{mc}+\delta_{q\bar{q}}\sigma_{q\bar{q}}^{mc}\right)\\
+  \delta_{q\bar{q}} &=& \left(\sigma_{\bar{q}g}(\delta_{qg}-\delta_{gg}) + D_{qg}(\delta_{qg}\sigma_{qg}+\delta_{gg}\sigma_{gg})\right) / \left(\sigma_{\bar{q}g}D_{gg} + \sigma_{q\bar{q}}D_{qg}\right)
 \end{eqnarray}
+The nuisance parameters are constrained by the prior probability
+\begin{equation}
+  P_{cst}(\delta_L;\delta_j) = \mathrm{Norm}(\delta_L/\omega_L)\prod_j\mathrm{Norm}(\delta_j/\omega_j)
+\end{equation}
+
+
+
 \end{document}
