@@ -39,13 +39,14 @@ Drell-Yann.
 We introduce the four parameters of interest $\{\delta_k\}$ and the
 six nuisance parameters $\{\delta_L;\delta_j\}$ by allowing
 \begin{eqnarray}
-  L &=& (1+\delta_L)\hat{L} \\
-  \sigma_j &=& (1+\delta_j)\sigma_j^{mc},\qquad j\ne t\bar{t} \\
-  \sigma_{k\to t\bar{t}} &=&(1+\delta_{t\bar{t}})(1+\delta_k)\sigma_{k\to t\bar{t}}^{mc},\qquad k\in\{gg,qg,q\bar{q},\bar{q}g\}
+  L &=& \hat{L}(1+\delta_L) \\
+  \sigma_j &=& \sigma_j^{mc}(1+\delta_j),\qquad j\notin \{k\to t\bar{t}\}, \quad k\in\{gg,qg,q\bar{q},\bar{q}g\}\\
+  \sigma_{k\to t\bar{t}} &=& \sigma_{t\bar{t}}^{mc}(1+\delta_{t\bar{t}}) f_k\\
+  f_k &=& f_k^{mc}(1+\delta_k)
 \end{eqnarray}
 The parameters of interest are constrained by the two equations
 \begin{equation}
-  \sum_k \delta_k\sigma_{k\to t\bar{t}}^{mc} = 0
+  \sum_k \delta_kf_k^{mc} = 0
 \end{equation}
 \begin{equation}
   D_{gg}D_{q\bar{q}} = D_{qg}D_{\bar{q}g}, \qquad D_k = (1+\delta_k)
@@ -53,14 +54,29 @@ The parameters of interest are constrained by the two equations
 so they can be written as only two independent parameters,
 $(\delta_{gg},\delta_{qg})$.  The other two are then
 \begin{eqnarray}
-  \delta_{\bar{q}g} &=& \frac{1}{\sigma_{\bar{q}g}^{mc}}\left(\delta_{gg}\sigma_{gg}^{mc}+\delta_{qg}\sigma_{qg}^{mc}+\delta_{q\bar{q}}\sigma_{q\bar{q}}^{mc}\right)\\
-  \delta_{q\bar{q}} &=& \left(\sigma_{\bar{q}g}(\delta_{qg}-\delta_{gg}) + D_{qg}(\delta_{qg}\sigma_{qg}+\delta_{gg}\sigma_{gg})\right) / \left(\sigma_{\bar{q}g}D_{gg} + \sigma_{q\bar{q}}D_{qg}\right)
+  \delta_{\bar{q}g} &=& \left(\delta_{gg}f_{gg}^{mc}+\delta_{qg}f_{qg}^{mc}+\delta_{q\bar{q}}f_{q\bar{q}}^{mc}\right)/f_{\bar{q}g}^{mc}\\
+  \delta_{q\bar{q}} &=& \left[f_{\bar{q}g}^{mc}(\delta_{qg}-\delta_{gg}) + D_{qg}(\delta_{qg}f_{qg}^{mc}+\delta_{gg}f_{gg}^{mc})\right] / \left(f_{\bar{q}g}^{mc}D_{gg} + f_{q\bar{q}}^{mc}D_{qg}\right)
 \end{eqnarray}
 The nuisance parameters are constrained by the prior probability
 \begin{equation}
   P_{cst}(\delta_L;\delta_j) = \mathrm{Norm}(\delta_L/\omega_L)\prod_j\mathrm{Norm}(\delta_j/\omega_j)
 \end{equation}
-
-
+In summary, the inputs to the model are
+\begin{center}
+  \begin{tabular}{lrl}
+    1&$\hat{L}$ & Luminosity prior best estimate \\
+    1&$\omega_L$ & Luminosity prior uncertainty\\
+    5&$\sigma_j^{mc}$ & Cross section prior best estimates\\
+    5&$\omega_j$ & Cross section prior uncertainties\\
+    4&$f^{mc}_k$ & $t\bar{t}$ Production fractions prior estimates\\
+    16&$\epsilon_j^\ell$ & Efficiency of selection for $j$ sample in $\ell$ channel\\
+    16$\sum_i1$&$\rho_{ji}^\ell$ & Probability density in $\sum_i1$ bins after selection for $j$ sample in $\ell$ channel\\
+    2$\sum_i1$&$N_i^\ell$ & Observations in $\sum_i1$ bins in $\ell$ channel.
+  \end{tabular}
+\end{center}
+The independent parameters of interest are $\vec{x} =
+\{\delta_{gg},\delta_{qg}\}$, and the nuisance parameters ar $\vec{y}
+= \{\delta_L;\delta_j\}$, with $j$ in $t\bar{t}$, $W+$jets, multijet,
+Drell-Yann, and single top production.
 
 \end{document}
