@@ -28,9 +28,31 @@ given the observations is
 \end{equation}
 where $L$ is the luminosity, $\sigma_j$ is the cross section of the
 $j^{th}$ process, $\epsilon^\ell_j$ is the $\ell$ (muon or electron)
-selection efficiency for the $j^{th}$ process, and $\rho^\ell_{ij}$ are
-the $i$ bins of the post-selection probability density distribution of
-the $j^{th}$ process.
+selection efficiency for the $j^{th}$ process, and $\rho^\ell_{ij}$
+are the $i$ bins of the post-selection probability density
+distribution of the $j^{th}$ process.  The distinct processes of
+interest consist of 4 sources of $t\bar{t}$ production
+($gg,qg,q\bar{q},\bar{q}g$), $W+$jets, multijet, single top, and
+Drell-Yann.
 
-
+We introduce the four parameters of interest $\{\delta_k\}$ and the
+six nuisance parameters $\{\delta_L;\delta_j\}$ by allowing
+\begin{eqnarray}
+  L &=& (1+\delta_L)\hat{L} \\
+  \sigma_j &=& (1+\delta_j)\sigma_j^{mc},\qquad j\ne t\bar{t} \\
+  \sigma_{k\to t\bar{t}} &=&(1+\delta_{t\bar{t}})(1+\delta_k)\sigma_{k\to t\bar{t}}^{mc},\qquad k\in\{gg,qg,q\bar{q},\bar{q}g\}
+\end{eqnarray}
+The parameters of interest are constrained by two equations
+\begin{equation}
+  \sum_k \delta_k\sigma_{k\to t\bar{t}}^{mc} = 0
+\end{equation}
+\begin{equation}
+  (1+\delta_{gg})(1+\delta_{q\bar{q}}) = (1+\delta_{qg})(1+\delta_{\bar{q}g})
+\end{equation}
+so that they can be written as only two independent parameters,
+$(\delta_{gg},\delta_{qg})$, and the other two are
+\begin{eqnarray}
+  \delta_{q\bar{q}} &=& \\
+  \delta_{\bar{q}g} &=&
+\end{eqnarray}
 \end{document}
