@@ -31,7 +31,9 @@ gaussian_delta( w, "xs_mj",   1.000, None,(-0.99,1e6), symbol = "#sigma_{mj}", u
 gaussian_delta( w, "xs_st",  71.968, 0.01, (-0.5,0.5), symbol = "#sigma_{st}", units = "(pb)")
 gaussian_delta( w, "xs_dy",2475.000, 0.01, (-0.5,0.5), symbol = "#sigma_{dy}", units = "(pb)")
 
-
+wimport(w, r.RooProdPdf('constraints',
+                        'l_{constraints}',
+                        r.RooArgList(*[w.pdf('%s_constraint'%item) for item in ['lumi']+['xs_%s'%s for s in ['tt','wj','st','dy']]]) ) )
 
 w.Print()
 #plot = w.var('delta_lumi').frame()
