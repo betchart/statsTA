@@ -1,3 +1,4 @@
+import inputs
 import ROOT as r
 
 def roo_quiet(function) :
@@ -10,7 +11,8 @@ def roo_quiet(function) :
 @roo_quiet
 def wimport(w, item) : getattr(w, "import")(item)
 
-def gaussian_delta( workspace, var,  mean, rel_unc = None, limits = (None,None) , symbol = "", units = "" ) :
+def gaussian_delta( workspace, var, (mean,rel_unc), 
+                    limits = (-0.5,0.5), symbol = "", units = "") :
     sym = symbol if symbol else var
 
     hat = r.RooConstVar('%s_hat'%var,'#hat{%s}%s'%(sym,units), mean)
@@ -20,21 +22,41 @@ def gaussian_delta( workspace, var,  mean, rel_unc = None, limits = (None,None) 
 
     if not rel_unc : return
     err = r.RooConstVar('%s_rel_unc'%var,'#omega_{%s}/#hat{%s}'%(sym,sym), rel_unc )
-    constraint = r.RooGaussian('%s_constraint'%var,'P(#delta_{%s})'%sym, delta, r.RooFit.RooConst(0), err)
-    wimport(workspace,constraint)
+    wimport(workspace, r.RooGaussian('%s_constraint'%var,'P(#delta_{%s})'%sym, 
+                                     delta, r.RooFit.RooConst(0), err) )
+
+def import_constraints(w) :
+    gaussian_delta( w, "lumi", inputs.luminosity, symbol = "L", units = "(1/pb)" )
+    [gaussian_delta( w, "xs_"+samp, xs, symbol = "#sigma_{%s}"%samp, units = "(pb)")
+     for samp,xs in inputs.xs.items() if samp!='mj']
+    gaussian_delta( w, 'xs_mj', inputs.xs['mj'], symbol = "#sigma_{%s}"%samp, units = "(pb)",
+                    limits = (-0.99,100) )
+    constr = r.RooProdPdf('constraints', 'l_{constraints}',
+                          r.RooArgList(*[w.pdf('%s_constraint'%item)
+                                         for item in (['lumi']+
+                                                      ['xs_%s'%s for s in inputs.samples if s!='mj'])]))
+    wimport(w, constr)
+
+def import_efficiencies(w) :
+    [wimport(w, r.RooConstVar(*(2*['_'.join(filter(None,['eff',chan,samp,comp]))]+[frac])))
+     for chan,samps in inputs.efficiency.items()
+     for samp,comps in samps.items()
+     for comp,frac in comps]
+
+def import_fractions(w) :
+    compfracs = inputs.components['tt']
+    print compfracs
+    assert zip(*compfracs)[0] == ('gg','qg','qq','ag')
+    fhats = [r.RooConstVar('f_%s_hat'%comp,'#hat{f}_{%s}'%comp, frac) for comp,frac in compfracs]
+    deltas = [r.RooRealVar('delta_%s'%comp,'#delta_{%s}'%comp, 0, -0.5, 0.5 ) for comp,frac in compfracs[:2] ]
+    #deltas.append( r.RooFormulaVar('delta_qq','#delta_{qq}', '()/()', r.RooArgList(*(fhats+deltas)) ) )
+    #deltas.append( r.RooFormulaVar('delta_ag','#delta_{ag}', '()/', r.RooArgList(*(fhats+deltas)) ) )
+
 
 w = r.RooWorkspace('Workspace')
-gaussian_delta( w, "lumi", 5008.000, 0.04, (-0.5,0.5), symbol = "L", units = "(1/pb)" )
-gaussian_delta( w, "xs_tt", 149.600, 0.30, (-0.5,0.5), symbol = "#sigma_{tt}", units = "(pb)")
-gaussian_delta( w, "xs_wj",1911.800, 0.30, (-0.5,0.5), symbol = "#sigma_{wj}", units = "(pb)")
-gaussian_delta( w, "xs_mj",   1.000, None,(-0.99,1e6), symbol = "#sigma_{mj}", units = "(pb)")
-gaussian_delta( w, "xs_st",  71.968, 0.01, (-0.5,0.5), symbol = "#sigma_{st}", units = "(pb)")
-gaussian_delta( w, "xs_dy",2475.000, 0.01, (-0.5,0.5), symbol = "#sigma_{dy}", units = "(pb)")
-
-wimport(w, r.RooProdPdf('constraints',
-                        'l_{constraints}',
-                        r.RooArgList(*[w.pdf('%s_constraint'%item) for item in ['lumi']+['xs_%s'%s for s in ['tt','wj','st','dy']]]) ) )
-
+import_constraints(w)
+import_efficiencies(w)
+import_fractions(w)
 w.Print()
 #plot = w.var('delta_lumi').frame()
 #w.pdf('lumi_constraint').plotOn(plot)
