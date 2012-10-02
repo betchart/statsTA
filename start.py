@@ -9,7 +9,7 @@ def roo_quiet(function) :
     return wrapped
     
 @roo_quiet
-def wimport(w, item) : getattr(w, "import")(item)
+def wimport(w, *args, **kwargs) : getattr(w, "import")(*args,**kwargs)
 
 def gaussian_delta( workspace, var, (mean,rel_unc), 
                     limits = (-0.5,0.5), symbol = "", units = "") :
@@ -45,12 +45,14 @@ def import_efficiencies(w) :
 
 def import_fractions(w) :
     compfracs = inputs.components['tt']
-    print compfracs
     assert zip(*compfracs)[0] == ('gg','qg','qq','ag')
     fhats = [r.RooConstVar('f_%s_hat'%comp,'#hat{f}_{%s}'%comp, frac) for comp,frac in compfracs]
     deltas = [r.RooRealVar('delta_%s'%comp,'#delta_{%s}'%comp, 0, -0.5, 0.5 ) for comp,frac in compfracs[:2] ]
-    #deltas.append( r.RooFormulaVar('delta_qq','#delta_{qq}', '()/()', r.RooArgList(*(fhats+deltas)) ) )
-    #deltas.append( r.RooFormulaVar('delta_ag','#delta_{ag}', '()/', r.RooArgList(*(fhats+deltas)) ) )
+    deltas.append( r.RooFormulaVar('delta_qq','#delta_{qq}', '(@3*(@5-@4) + (1+@5)*(@0*@4 + @1*@5))/(@3*(1+@4) + @2*(1+@5))', r.RooArgList(*(fhats+deltas)) ) )
+    deltas.append( r.RooFormulaVar('delta_ag','#delta_{ag}', '(@0*@4 + @1*@5 + @2*@6)/@3', r.RooArgList(*(fhats+deltas)) ) )
+    fs = [r.RooFormulaVar('f_%s'%comp, 'f_{%s}'%comp, '(1+@0)*@1', r.RooArgList(delta,fhat)) for (comp,frac),fhat,delta in zip(compfracs,fhats,deltas)]
+    [wimport(w,item) for item in fs[:3]]
+    wimport(w,fs[3], r.RooFit.RecycleConflictNodes())
 
 
 w = r.RooWorkspace('Workspace')
