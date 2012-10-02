@@ -34,3 +34,11 @@ efficiency = {'mu' : { 'wj' : [('',1.0)],
                                ('ag',1.0)] 
                        }
               }
+
+def histogram(dist, chan, samp, comp = '') : 
+    import random, ROOT as r
+    dummy_hist = r.TH1D('dummy'+((4*'%s')%tuple([random.randrange(0,10) for i in range(4)])),'',100,0,1)
+    sigma = random.random()
+    for i in range(10000) : dummy_hist.Fill(random.gauss(0.5,sigma))
+    return dummy_hist
+
