@@ -97,17 +97,12 @@ class topAsymmFit(object) :
 
     @roo_quiet
     def import_data(self,w) :
-        arglist = r.RooArgList(w.var('d3'), w.var('ptpt'))
-        elH = inputs.histogram(None,None,None,None,2)
-        muH = inputs.histogram(None,None,None,None,2)
-        el = r.RooFit.Import('el',elH)
-        mu = r.RooFit.Import('mu',muH)
-        ch = r.RooFit.Index(w.arg('channel'))
+        datas = [(chan,inputs.histogram(None,None,None,None,2)) for chan in inputs.efficiency]
+        args = [r.RooFit.Import(*dat) for dat in datas]
         wimport(w, r.RooDataHist('data', 'N_{obs}', 
-                                 arglist,
-                                 ch,
-                                 mu,
-                                 el
+                                 r.RooArgList(w.var('d3'), w.var('ptpt')),
+                                 r.RooFit.Index(w.arg('channel')),
+                                 *args
                                  ),
                 )
 
