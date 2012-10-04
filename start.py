@@ -36,7 +36,7 @@ def import_constraints(w) :
     wimport(w, constr)
 
 def import_efficiencies(w) :
-    [wimport(w, r.RooConstVar(*(2*['_'.join(filter(None,['eff',chan,samp,comp]))]+[frac])))
+    [wimport(w, r.RooConstVar(*(2*['_'.join(filter(None,['eff',chan,samp+comp]))]+[frac])))
      for chan,samps in inputs.efficiency.items()
      for samp,comps in samps.items()
      for comp,frac in comps]
@@ -59,22 +59,44 @@ def import_shape(w,chan,samp,comp) :
     hist = [inputs.histogram(i,chan,samp,comp) for i in lab]
     rdh = [r.RooDataHist('%s_%s_%s_sim'%(i,chan,samp+comp), '', r.RooArgList(a), h) for i,a,h in zip(lab,var,hist)]
     pdf = [r.RooHistPdf('%s_%s_%s'%(i,chan,samp+comp),'P(%s)_%s'%(lab,samp+comp),r.RooArgSet(a), dh) for i,a,dh in zip(lab,var,rdh)]
-    wimport(w,r.RooProdPdf('%s_%s_%s'%('-'.join(lab),chan,samp+comp),'P(%s,%s)_%s'%tuple(lab+[samp+comp]),*pdf))
+    wimport(w, r.RooProdPdf('%s_%s_%s'%('-'.join(lab),chan,samp+comp),'P(%s,%s)_%s^{%s}'%tuple(lab+[samp+comp,chan]),*pdf))
+    wimport(w, r.RooFormulaVar( 'expect_%s_%s'%(chan,samp+comp), '#lambda_{%s}^{%s}'%(samp+comp,chan), '*'.join(['@%d'%i for i in range(4 if comp else 3)]), 
+                                r.RooArgList(*[w.arg(i) for i in ['lumi','xs_%s'%samp,'_'.join(['eff',chan,samp+comp])] + ([] if not comp else ['f_%s'%comp])]) ) )
 
 def import_shapes(w) :
-    [wimport(w,item) for item in [r.RooRealVar('d3','D_{3}',-1,1),
+    ch = r.RooCategory('channel','chan')
+    for chan in inputs.efficiency : ch.defineType(chan)
+    [wimport(w,item) for item in [ch,
+                                  r.RooRealVar('d3','D_{3}',-1,1),
                                   r.RooRealVar('ptpt','t#bar{t}.pt/(t.pt+#bar{t}.pt)',0,1) ]]
     [import_shape(w,chan,samp,comp)
      for chan,samps in inputs.efficiency.items()
      for samp,comps in samps.items()
      for comp,frac in comps]
 
+def build_model(w) :
+    chmodels = [ r.RooAddPdf('model_%s'%chan,'model_{%s}'%chan, 
+                             r.RooArgList(*[w.pdf('d3-ptpt_%s_%s'%(chan,samp+comp)) for samp,comps in samps.items() for comp,_ in comps]), 
+                             r.RooArgList(*[w.arg('expect_%s_%s'%(chan,samp+comp)) for samp,comps in samps.items() for comp,_ in comps]) )
+                 for chan,samps in inputs.efficiency.items() ]
+    wimport(w, r.RooSimultaneous('model','d3-ptp-ch', r.RooArgList(*chmodels), w.arg('channel')) )
+
+@roo_quiet
+def import_data(w) :
+    ch = r.RooCategory('channel','chan')
+    for chan in inputs.efficiency :
+        hist = inputs.histogram(None,None,None,None,2)
+        data = r.RooDataHist('data_%s'%chan, 'N_%s'%chan, r.RooArgList(w.arg('d3_'+chan),w.arg('ptpt_'+chan)), hist)
+        wimport(w,data)
+
 w = r.RooWorkspace('Workspace')
 import_constraints(w)
 import_efficiencies(w)
 import_fractions(w)
 import_shapes(w)
-w.var('d_qg').setVal(-0.03)
+build_model(w)
+#import_data(w)
+
 wimport(w, r.RooFormulaVar('sum','','@0*@1+@2*@3+@4*@5+@6*@7',r.RooArgList(*sum([[w.arg('d_'+i),w.arg('f_'+i+'_hat')] for i in ['gg','qg','qq','ag']],[]))))
 wimport(w, r.RooFormulaVar('prod','','(1+@0)*(1+@2)-(1+@1)*(1+@3)',r.RooArgList(*[w.arg('d_'+i) for i in ['gg','qg','qq','ag']])))
 w.Print()

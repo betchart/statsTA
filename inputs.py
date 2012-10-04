@@ -35,10 +35,13 @@ efficiency = {'mu' : { 'wj' : [('',1.0)],
                        }
               }
 
-def histogram(dist, chan, samp, comp = '') : 
+def histogram(dist, chan, samp, comp = '', d=1) : 
     import random, ROOT as r
-    dummy_hist = r.TH1D('dummy'+((4*'%s')%tuple([random.randrange(0,10) for i in range(4)])),'',100,0,1)
+    name = 'dummy'+((4*'%s')%tuple([random.randrange(0,10) for i in range(4)]))
+    dummy_hist = ( r.TH1D(name,'',100,0,1) if d==1 else
+                   r.TH2D(name,'',100,0,1,100,0,1) )
     sigma = random.random()
-    for i in range(10000) : dummy_hist.Fill(random.gauss(0.5,sigma))
+    for i in range(10000) : dummy_hist.Fill(*( (random.gauss(0.5,sigma),) if d==1 else
+                                               (random.gauss(0.5,sigma),random.gauss(0.5,sigma))) )
     return dummy_hist
 
