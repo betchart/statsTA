@@ -1,4 +1,4 @@
-import inputs
+import inputs,sys
 import ROOT as r
 
 def roo_quiet(function) :
@@ -17,26 +17,61 @@ class topAsymmFit(object) :
     def __init__(self) :
         w = r.RooWorkspace('Workspace')
         init_sequence = ['constraints','fractions','efficiencies','shapes','model','data']
-        for item in init_sequence : getattr(self, 'import_'+item)(w)
+        for item in init_sequence : 
+            print item,
+            sys.stdout.flush()
+            getattr(self, 'import_'+item)(w)
+            print '.'
 
-        wimport(w, r.RooFormulaVar('sum','','@0*@1+@2*@3+@4*@5+@6*@7',r.RooArgList(*sum([[w.arg('d_'+i),w.arg('f_'+i+'_hat')] for i in ['gg','qg','qq','ag']],[]))))
-        wimport(w, r.RooFormulaVar('prod','','(1+@0)*(1+@2)-(1+@1)*(1+@3)',r.RooArgList(*[w.arg('d_'+i) for i in ['gg','qg','qq','ag']])))
-        w.Print()
+        mc = r.RooStats.ModelConfig(w)
+        mc.SetObservables(r.RooArgSet(w.var('d3'),w.var('ptpt'),w.arg('channel')))
+        poi = r.RooArgSet(w.arg('d_gg'),w.arg('d_qg'))
+        mc.SetParametersOfInterest(poi)
+        nuis = r.RooArgSet(*[w.arg(i) for i in ['d_lumi']+['d_xs_'+j for j in inputs.xs]])
+        mc.SetNuisanceParameters(nuis)
+        #mc.SetConstraintParameters(r.RooArgSet(*[w.arg(i) for i in 'd_lumi,d_xs_st,d_xs_dy'.split(',')]))
+        mc.SetPdf(w.pdf('constrained_model'))
+
+        #wimport(w, r.RooFormulaVar('sum','','@0*@1+@2*@3+@4*@5+@6*@7',r.RooArgList(*sum([[w.arg('d_'+i),w.arg('f_'+i+'_hat')] for i in ['gg','qg','qq','ag']],[]))))
+        #wimport(w, r.RooFormulaVar('prod','','(1+@0)*(1+@2)-(1+@1)*(1+@3)',r.RooArgList(*[w.arg('d_'+i) for i in ['gg','qg','qq','ag']])))
+
+        result = w.pdf('constrained_model').fitTo(w.data('data'),r.RooFit.Constrain(nuis),r.RooFit.PrintLevel(-1), r.RooFit.Save(True))
+        w.var('d_gg').Print()
+        w.var('d_qg').Print()
+        result.Print()
+        #mc.Print()
+        #w.Print()
+        return
+
+        plc = r.RooStats.ProfileLikelihoodCalculator(w.data('data'), mc)
+        plc.SetTestSize(.05);
+        interval = plc.GetInterval()
+        dgg_LL = interval.LowerLimit(w.arg('d_gg'))
+        dgg_UL = interval.UpperLimit(w.arg('d_gg'))
+        dqg_LL = interval.LowerLimit(w.arg('d_qg'))
+        dqg_UL = interval.UpperLimit(w.arg('d_qg'))
+    
+        print 'cl',interval.ConfidenceLevel()
+        print 'll-dgg',dgg_LL
+        print 'ul-dgg',dgg_UL
+        print 'll-dqg',dqg_LL
+        print 'ul-dqg',dqg_UL
+        #w.Print()
 
     def import_constraints(self,w) :
         self.gaussian_delta( w, "lumi", inputs.luminosity, symbol = "L", units = "(1/pb)" )
         [self.gaussian_delta( w, "xs_"+samp, xs, symbol = "#sigma_{%s}"%samp, units = "(pb)")
          for samp,xs in inputs.xs.items() if samp!='mj']
         self.gaussian_delta( w, 'xs_mj', inputs.xs['mj'], symbol = "#sigma_{%s}"%samp, units = "(pb)",
-                             limits = (-0.99,100) )
+                             limits = (-0.1,0.1) )
         constr = r.RooProdPdf('constraints', 'l_{constraints}',
                               r.RooArgList(*[w.pdf('%s_constraint'%item)
                                              for item in (['lumi']+
-                                                          ['xs_%s'%s for s in inputs.samples if s!='mj'])]))
+                                                          ['xs_%s'%s for s in inputs.components if s!='mj'])]))
         wimport(w, constr)
 
     @staticmethod
-    def gaussian_delta( workspace, var, (mean,rel_unc), limits = (-0.5,0.5), symbol = "", units = "") :
+    def gaussian_delta( workspace, var, (mean,rel_unc), limits = (-0.1,0.1), symbol = "", units = "") :
         sym = symbol if symbol else var
         hat = r.RooConstVar('%s_hat'%var,'#hat{%s}%s'%(sym,units), mean)
         delta = r.RooRealVar('d_%s'%var,'#delta_{%s}'%sym, 0, *limits )
@@ -51,7 +86,7 @@ class topAsymmFit(object) :
         compfracs = inputs.components['tt']
         assert zip(*compfracs)[0] == ('gg','qg','qq','ag')
         fhats = [r.RooConstVar('f_%s_hat'%comp,'#hat{f}_{%s}'%comp, frac) for comp,frac in compfracs]
-        deltas = [r.RooRealVar('d_%s'%comp,'#delta_{%s}'%comp, 0, -0.5, 0.5 ) for comp,frac in compfracs[:2] ]
+        deltas = [r.RooRealVar('d_%s'%comp,'#delta_{%s}'%comp, 0, -0.9, 10 ) for comp,frac in compfracs[:2] ]
         deltas.append( r.RooFormulaVar('d_qq','#delta_{qq}', '((1+@5)*(@3-@4*@0-@5*@1) - (1+@4)*@3) / ((1+@4)*@3 + (1+@5)*@2)', r.RooArgList(*(fhats+deltas)) ) )
         deltas.append( r.RooFormulaVar('d_ag','#delta_{ag}', '-(@0*@4 + @1*@5 + @2*@6)/@3', r.RooArgList(*(fhats+deltas)) ) )
         fs = [r.RooFormulaVar('f_%s'%comp, 'f_{%s}'%comp, '(1+@0)*@1', r.RooArgList(delta,fhat)) for (comp,frac),fhat,delta in zip(compfracs,fhats,deltas)]
@@ -93,14 +128,20 @@ class topAsymmFit(object) :
                                  r.RooArgList(*[w.pdf('d3-ptpt_%s_%s'%(chan,samp+comp)) for samp,comps in samps.items() for comp,_ in comps]), 
                                  r.RooArgList(*[w.arg('expect_%s_%s'%(chan,samp+comp)) for samp,comps in samps.items() for comp,_ in comps]) )
                      for chan,samps in inputs.efficiency.items() ]
-        wimport(w, r.RooSimultaneous('model','d3-ptp-ch', r.RooArgList(*chmodels), w.arg('channel')) )
+        model = r.RooSimultaneous('model','d3-ptpt-ch', r.RooArgList(*chmodels), w.arg('channel')) 
+        wimport(w, r.RooProdPdf('constrained_model','d3-ptpt-ch constrained', r.RooArgList(model,w.pdf('constraints')) ))
 
     @roo_quiet
     def import_data(self,w) :
-        datas = [(chan,inputs.histogram(None,None,None,None,2)) for chan in inputs.efficiency]
+        obs_ = r.RooArgSet(w.var('d3'), w.var('ptpt'), w.arg('channel'))
+        obs = r.RooArgList(w.var('d3'), w.var('ptpt'), w.arg('channel'))
+
+        datas = [(chan,w.pdf('model_'+chan).generateBinned(obs_, w.pdf('model_'+chan).expectedEvents(r.RooArgSet()))) for chan in inputs.efficiency]
+        #datas = [(chan, inputs.histogram(None,chan,chan if chan=='mu' else 'EleHad.2011',d=2)) for chan in inputs.efficiency]
+
         args = [r.RooFit.Import(*dat) for dat in datas]
         wimport(w, r.RooDataHist('data', 'N_{obs}', 
-                                 r.RooArgList(w.var('d3'), w.var('ptpt')),
+                                 obs,
                                  r.RooFit.Index(w.arg('channel')),
                                  *args
                                  ),
