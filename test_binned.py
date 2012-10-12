@@ -39,4 +39,4 @@ def compare() :
     return len(differences) == 1
 
 if __name__=='__main__' :
-    print ('Pass' if compare() else 'Fail') + ' Test'
+    print 'Pass' if compare() else 'Fail', 'Test'
