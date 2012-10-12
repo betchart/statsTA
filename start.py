@@ -60,6 +60,7 @@ class topAsymmFit(object) :
         result.Print()
         #wimport(w, r.RooFormulaVar('sum','','@0*@1+@2*@3+@4*@5+@6*@7',r.RooArgList(*sum([[w.arg('d_'+i),w.arg('f_'+i+'_hat')] for i in ['gg','qg','qq','ag']],[]))))
         #wimport(w, r.RooFormulaVar('prod','','(1+@0)*(1+@2)-(1+@1)*(1+@3)',r.RooArgList(*[w.arg('d_'+i) for i in ['gg','qg','qq','ag']])))
+        return
 
         mc = r.RooStats.ModelConfig(w)
         mc.SetObservables(r.RooArgSet(w.var('d3'),w.var('ptpt'),w.arg('channel')))
@@ -86,15 +87,14 @@ class topAsymmFit(object) :
         #w.Print()
 
     def import_fractions(self,w) :
-        compfracs = inputs.components['tt']
-        assert zip(*compfracs)[0] == ('qq','ag','gg','qg')
-        fhats = [r.RooConstVar('f_%s_hat'%comp,'#hat{f}_{%s}'%comp, frac) for comp,frac in compfracs]
-        deltas = [r.RooRealVar('d_%s'%comp,'#delta_{%s}'%comp, 0, -1, 3 ) for comp,frac in compfracs[:2] ]
-        deltas.append( r.RooFormulaVar('d_gg','#delta_{gg}', '((1+@5)*(@3-@4*@0-@5*@1) - (1+@4)*@3) / ((1+@4)*@3 + (1+@5)*@2)', r.RooArgList(*(fhats+deltas)) ) )
-        deltas.append( r.RooFormulaVar('d_qg','#delta_{qg}', '-(@0*@4 + @1*@5 + @2*@6)/@3', r.RooArgList(*(fhats+deltas)) ) )
-        fs = [r.RooFormulaVar('f_%s'%comp, 'f_{%s}'%comp, '(1+@0)*@1', r.RooArgList(delta,fhat)) for (comp,frac),fhat,delta in zip(compfracs,fhats,deltas)]
-        [wimport(w,item) for item in fs[:3]]
-        wimport(w,fs[3], r.RooFit.RecycleConflictNodes())
+        comps,fracs = zip(*inputs.components['tt'])
+        assert comps == ('qq','ag','gg','qg')
+        [wimport(w, r.RooConstVar("f_%s_hat"%comp,"#hat{f}_{%s}"%comp, frac)) for comp,frac in zip(comps,fracs)]
+        [w.factory("d_%s[0,-1,3]"%comp) for comp in comps[:2]]
+        args = sum(zip(*[['f_%s_hat'%comp,'d_'+comp] for comp in comps]),())
+        w.factory("expr::d_gg('((1+@5)*(@3-@4*@0-@5*@1) - (1+@4)*@3) / ((1+@4)*@3 + (1+@5)*@2)',{%s})"%(', '.join(args[:-2])))
+        w.factory("expr::d_qg('-(@0*@4 + @1*@5 + @2*@6)/@3', {%s})"%(', '.join(args[:-1])))
+        [w.factory("expr::f_%s('(1+@0)*@1',{d_%s,f_%s_hat})"%tuple([comp]*3)) for comp in comps]
 
     def import_constraints(self,w) :
         self.gaussian_delta( w, "lumi_mu", inputs.luminosity['mu'], symbol = "Lmu", units = "(1/pb)" , limits = (-0.2,0.2))
