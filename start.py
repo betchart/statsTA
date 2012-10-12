@@ -97,63 +97,41 @@ class topAsymmFit(object) :
         [w.factory("expr::f_%s('(1+@0)*@1',{d_%s,f_%s_hat})"%tuple([comp]*3)) for comp in comps]
 
     def import_constraints(self,w) :
-        self.gaussian_delta( w, "lumi_mu", inputs.luminosity['mu'], symbol = "Lmu", units = "(1/pb)" , limits = (-0.2,0.2))
-        self.gaussian_delta( w, "lumi_el", inputs.luminosity['el'], symbol = "Lel", units = "(1/pb)" , limits = (-0.2,0.2), delta=w.var('d_lumi_mu'))
-        [self.gaussian_delta( w, "xs_"+samp, xs, symbol = "#sigma_{%s}"%samp, units = "(pb)") for samp,xs in inputs.xs.items() if samp!='mj']
-        self.gaussian_delta( w, 'xs_mj', inputs.xs['mj'], symbol = "#sigma_{%s}"%samp, units = "(pb)", limits = (-1,1) )
+        def gdelta( w, var, (mean,rel_unc), limits = (-1.5,1.5), delta = None) :
+            if not delta : delta = 'd_%s[0%s]'%(var, (",%f,%f"%limits) if rel_unc else '')
+            w.factory("expr::%s('(1+@0)*@1',{ %s, %s_hat[%f]})"%(var,delta,var,mean))
+            if rel_unc : w.factory("Gaussian::%s_constraint( d_%s, 0, %f)"%(var,var,rel_unc))
+            return
+        gdelta( w, "lumi_mu", inputs.luminosity['mu'], limits = (-0.2,0.2))
+        gdelta( w, "lumi_el", inputs.luminosity['el'], limits = (-0.2,0.2), delta='d_lumi_mu')
+        [gdelta( w, "xs_"+samp, xs) for samp,xs in inputs.xs.items() if samp!='mj']
+        gdelta( w, 'xs_mj', inputs.xs['mj'], limits = (-1,1) )
+        w.factory("PROD::constraints(%s)"%', '.join([s+'_constraint' for s in ['lumi_mu']+['xs_'+t for t in inputs.components if t!='mj']]))
         
-        #F = r.RooConstVar('F','F',10000)
-        #wimport(w, r.RooGenericPdf("ordering_constraint","P(f_{gg}-f_{qg})", "(exp(@2*(@0-@1))/(1+exp(@2*(@0-@1))))*(exp(@2*(1-@1-@0))/(1+exp(@2*(1-@1-@0))))", r.RooArgList(w.arg('f_gg'),w.arg('f_qg'),F)))
-        #F = r.RooFormulaVar('F','F',"@0/@1",r.RooArgList(w.arg('f_gg'),w.arg('f_qg')))
-        #Fmc = r.RooConstVar('Fmc','F_{mc}',2.75)
-        #sFmc = r.RooConstVar('sFmc','#sigma_{Fmc}',0.2)
-        #wimport(w, r.RooGaussian("ordering_constraint","P(f_{gg}-f_{qg})", F,Fmc,sFmc))
-        constr = r.RooProdPdf('constraints', 'l_{constraints}',
-                              r.RooArgList(*[w.pdf('%s_constraint'%item)
-                                             for item in (['lumi_mu','ordering'][:1]+
-                                                          ['xs_%s'%s for s in inputs.components if s!='mj'])]))
-        wimport(w, constr)
-
-    @staticmethod
-    def gaussian_delta( workspace, var, (mean,rel_unc), limits = (-1.5,1.5), symbol = "", units = "", delta = None) :
-        sym = symbol if symbol else var
-        hat = r.RooConstVar('%s_hat'%var,'#hat{%s}%s'%(sym,units), mean)
-        if not delta :
-            delta = ( r.RooRealVar('d_%s'%var,'#delta_{%s}'%sym, 0, *limits ) if rel_unc else
-                      r.RooConstVar('d_%s'%var,'#delta_{%s}'%sym, 0))
-        func = r.RooFormulaVar(var, sym+units, '(1+@0)*@1', r.RooArgList(delta, hat) )
-        wimport(workspace,func)
-        if not rel_unc : return
-        err = r.RooConstVar('%s_rel_unc'%var,'#omega_{%s}/#hat{%s}'%(sym,sym), rel_unc )
-        wimport(workspace, r.RooGaussian('%s_constraint'%var,'P(#delta_{%s})'%sym, delta, r.RooFit.RooConst(0), err) )
-
-
     def import_shapes(self,w) :
-        ch = r.RooCategory('channel','chan')
-        for chan in inputs.efficiency : ch.defineType(chan)
-        [wimport(w,item) for item in [ch,
-                                      r.RooRealVar('d3','D_{3}',-1,1),
-                                      r.RooRealVar('ptpt','t#bar{t}.pt/(t.pt+#bar{t}.pt)',0,1) ]]
+        w.factory("channel[%s]"%','.join("%s=%d"%(s,i) for i,s in enumerate(inputs.efficiency)))
+        w.factory("d3[-1,1]")
+        w.factory("ptpt[0,1]")
         [self.import_shape(w,chan,samp,comp)
          for chan,samps in inputs.efficiency.items()
          for samp,comps in samps.items()
          for comp,frac in comps]
-        for chan in inputs.efficiency : wimport(w, r.RooFormulaVar('expect_%s_tt'%chan, '#lambda_{tt}^{%s}'%chan,
-                                                                   '+'.join('@%d'%i for i in range(len(inputs.components['tt']))),
-                                                                   r.RooArgList(*[w.arg('expect_%s_tt%s'%(chan,c)) for c,_ in inputs.components['tt']])) )
+        [w.factory("expr::expect_%s_tt('%s',{%s})"%(chan,
+                                                    '+'.join('@%d'%i for i in range(len(inputs.components['tt']))),
+                                                    ','.join('expect_%s_tt%s'%(chan,c) for c,_ in inputs.components['tt'])))
+         for chan in inputs.efficiency]
 
     @staticmethod
     @roo_quiet
     def import_shape(w,chan,samp,comp) :
         lab = ['d3','ptpt']
-        var  = [w.var(i) for i in lab]
-        hist = [inputs.histogram(i,chan,samp,comp) for i in lab]
-        rdh = [r.RooDataHist('%s_%s_%s_sim'%(i,chan,samp+comp), '', r.RooArgList(a), h) for i,a,h in zip(lab,var,hist)]
-        pdf = [r.RooHistPdf('%s_%s_%s'%(i,chan,samp+comp),'P(%s)_%s'%(lab,samp+comp),r.RooArgSet(a), dh) for i,a,dh in zip(lab,var,rdh)]
-        wimport(w, r.RooProdPdf('%s_%s_%s'%('-'.join(lab),chan,samp+comp),'P(%s,%s)_%s^{%s}'%tuple(lab+[samp+comp,chan]),*pdf))
-        wimport(w, r.RooFormulaVar( 'expect_%s_%s'%(chan,samp+comp), '#lambda_{%s}^{%s}'%(samp+comp,chan), '*'.join(['@%d'%i for i in range(5 if comp else 4)]), 
-                                    r.RooArgList(*[w.arg(i) for i in ['lumi_'+chan,'global_R_'+chan,'xs_%s'%samp,'_'.join(['eff',chan,samp+comp])] + ([] if not comp else ['f_%s'%comp])]) ) )
-        return hist
+        name = '_'.join([chan,samp+comp])
+        [wimport(w, r.RooDataHist('%s_%s_sim'%(i,name), '', r.RooArgList(w.var(i)), inputs.histogram(i,chan,samp,comp))) for i in lab]
+        [w.factory("HistPdf::%s(%s,%s)"%('%s_%s'%(i,name),i, '%s_%s_sim'%(i,name))) for i in lab]
+        w.factory("PROD::%s(%s)"%( '%s_%s'%('-'.join(lab),name), ','.join('%s_%s'%(i,name) for i in lab)))
+        w.factory("expr::%s('%s',{%s})"%('expect_'+name,
+                                         '*'.join('@%d'%i for i in range(5 if comp else 4)),
+                                         ','.join(['lumi_'+chan,'global_R_'+chan,'xs_'+samp,'eff_'+name,'f_'+comp][:None if comp else -1])))
 
     def import_efficiencies(self,w) :
         [wimport(w,
@@ -165,12 +143,11 @@ class topAsymmFit(object) :
         [wimport(w,r.RooRealVar('global_R_%s'%chan, 'R_{%s}'%chan, 1, 0.5,2)) for chan in inputs.efficiency]
 
     def import_model(self,w) :
-        chmodels = [ r.RooAddPdf('model_%s'%chan,'model_{%s}'%chan, 
-                                 r.RooArgList(*[w.pdf('d3-ptpt_%s_%s'%(chan,samp+comp)) for samp,comps in samps.items() for comp,_ in comps]), 
-                                 r.RooArgList(*[w.arg('expect_%s_%s'%(chan,samp+comp)) for samp,comps in samps.items() for comp,_ in comps]) )
-                     for chan,samps in inputs.efficiency.items() ]
-        model = r.RooSimultaneous('model','d3-ptpt-ch', r.RooArgList(*chmodels), w.arg('channel')) 
-        wimport(w, r.RooProdPdf('constrained_model','d3-ptpt-ch constrained', r.RooArgList(model,w.pdf('constraints')) ))
+        [w.factory("SUM::model_%s( %s )"%(chan,','.join('expect_%s_%s * d3-ptpt_%s_%s'%(2*(chan,samp+comp)) 
+                                                        for samp,comps in samp.items() 
+                                                        for comp,_ in comps))) for chan,samp in inputs.efficiency.items()]
+        w.factory("SIMUL::model(channel, %s)"%', '.join("%s=%s"%(chan,'model_'+chan) for chan in inputs.efficiency))
+        w.factory("PROD::constrained_model( model, constraints )")
 
     @roo_quiet
     def import_data(self,w) :
