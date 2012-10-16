@@ -13,18 +13,12 @@ def roo_quiet(function) :
 @roo_quiet
 def wimport(w, *args, **kwargs) : getattr(w, "import")(*args,**kwargs)
 
+def factory(w, command) : w.factory(command)
+
 class topAsymmFit(object) :
     def __init__(self) :
-        self.useData = True
-        self.keep = []
         w = r.RooWorkspace('Workspace')
-        init_sequence = ['fractions','constraints','efficiencies','shapes','model','data']
-        for item in init_sequence : 
-            print item,
-            sys.stdout.flush()
-            getattr(self, 'import_'+item)(w)
-            print '.'
-
+        self.setUp(w, useData = True)
 
         def print_fracs() :
             for item in ['lumi_mu','lumi_el','f_gg','f_qg','f_qq','f_ag']+['xs_'+i for i in inputs.xs] : print "%s: %.04f"%(item, w.arg(item).getVal())
@@ -50,7 +44,8 @@ class topAsymmFit(object) :
                                       r.RooFit.ExternalConstraints(r.RooArgSet(w.pdf('constraints'))),
                                       r.RooFit.PrintLevel(-1),
                                       r.RooFit.Save(True),
-                                      r.RooFit.PrintEvalErrors(-1))
+                                      r.RooFit.PrintEvalErrors(-1),
+                                      r.RooFit.NumCPU(4))
         print
         print_fracs();print
         print_n();print
@@ -86,37 +81,45 @@ class topAsymmFit(object) :
         print 'ul-dag',dag_UL
         #w.Print()
 
+    def setUp(self,w, useData) :
+        init_sequence = ['fractions','constraints','efficiencies','shapes','model','data']
+        for item in init_sequence : 
+            print item,
+            sys.stdout.flush()
+            getattr(self, 'import_'+item)(*([w]+([useData] if item=='data' else [])))
+            print '.'
+
     def import_fractions(self,w) :
         comps,fracs = zip(*inputs.components['tt'])
         assert comps == ('qq','ag','gg','qg')
         [wimport(w, r.RooConstVar("f_%s_hat"%comp,"#hat{f}_{%s}"%comp, frac)) for comp,frac in zip(comps,fracs)]
-        [w.factory("d_%s[0,-1,3]"%comp) for comp in comps[:2]]
+        [factory(w, "d_%s[0,-1,3]"%comp) for comp in comps[:2]]
         args = sum(zip(*[['f_%s_hat'%comp,'d_'+comp] for comp in comps]),())
-        w.factory("expr::d_gg('((1+@5)*(@3-@4*@0-@5*@1) - (1+@4)*@3) / ((1+@4)*@3 + (1+@5)*@2)',{%s})"%(', '.join(args[:-2])))
-        w.factory("expr::d_qg('-(@0*@4 + @1*@5 + @2*@6)/@3', {%s})"%(', '.join(args[:-1])))
-        [w.factory("expr::f_%s('(1+@0)*@1',{d_%s,f_%s_hat})"%tuple([comp]*3)) for comp in comps]
+        factory(w, "expr::d_gg('((1+@5)*(@3-@4*@0-@5*@1) - (1+@4)*@3) / ((1+@4)*@3 + (1+@5)*@2)',{%s})"%(', '.join(args[:-2])))
+        factory(w, "expr::d_qg('-(@0*@4 + @1*@5 + @2*@6)/@3', {%s})"%(', '.join(args[:-1])))
+        [factory(w, "expr::f_%s('(1+@0)*@1',{d_%s,f_%s_hat})"%tuple([comp]*3)) for comp in comps]
 
     def import_constraints(self,w) :
         def gdelta( w, var, (mean,rel_unc), limits = (-1.5,1.5), delta = None) :
             if not delta : delta = 'd_%s[0%s]'%(var, (",%f,%f"%limits) if rel_unc else '')
-            w.factory("expr::%s('(1+@0)*@1',{ %s, %s_hat[%f]})"%(var,delta,var,mean))
-            if rel_unc : w.factory("Gaussian::%s_constraint( d_%s, 0, %f)"%(var,var,rel_unc))
+            factory(w, "expr::%s('(1+@0)*@1',{ %s, %s_hat[%f]})"%(var,delta,var,mean))
+            if rel_unc : factory(w, "Gaussian::%s_constraint( d_%s, 0, %f)"%(var,var,rel_unc))
             return
         gdelta( w, "lumi_mu", inputs.luminosity['mu'], limits = (-0.2,0.2))
         gdelta( w, "lumi_el", inputs.luminosity['el'], limits = (-0.2,0.2), delta='d_lumi_mu')
         [gdelta( w, "xs_"+samp, xs) for samp,xs in inputs.xs.items() if samp!='mj']
         gdelta( w, 'xs_mj', inputs.xs['mj'], limits = (-1,1) )
-        w.factory("PROD::constraints(%s)"%', '.join([s+'_constraint' for s in ['lumi_mu']+['xs_'+t for t in inputs.components if t!='mj']]))
+        factory(w, "PROD::constraints(%s)"%', '.join([s+'_constraint' for s in ['lumi_mu']+['xs_'+t for t in inputs.components if t!='mj']]))
         
     def import_shapes(self,w) :
-        w.factory("channel[%s]"%','.join("%s=%d"%(s,i) for i,s in enumerate(inputs.efficiency)))
-        w.factory("d3[-1,1]")
-        w.factory("ptpt[0,1]")
+        factory(w, "channel[%s]"%','.join("%s=%d"%(s,i) for i,s in enumerate(inputs.efficiency)))
+        factory(w, "d3[-1,1]")
+        factory(w, "ptpt[0,1]")
         [self.import_shape(w,chan,samp,comp)
          for chan,samps in inputs.efficiency.items()
          for samp,comps in samps.items()
          for comp,frac in comps]
-        [w.factory("expr::expect_%s_tt('%s',{%s})"%(chan,
+        [factory(w, "expr::expect_%s_tt('%s',{%s})"%(chan,
                                                     '+'.join('@%d'%i for i in range(len(inputs.components['tt']))),
                                                     ','.join('expect_%s_tt%s'%(chan,c) for c,_ in inputs.components['tt'])))
          for chan in inputs.efficiency]
@@ -127,9 +130,9 @@ class topAsymmFit(object) :
         lab = ['d3','ptpt']
         name = '_'.join([chan,samp+comp])
         [wimport(w, r.RooDataHist('%s_%s_sim'%(i,name), '', r.RooArgList(w.var(i)), inputs.histogram(i,chan,samp,comp))) for i in lab]
-        [w.factory("HistPdf::%s(%s,%s)"%('%s_%s'%(i,name),i, '%s_%s_sim'%(i,name))) for i in lab]
-        w.factory("PROD::%s(%s)"%( '%s_%s'%('-'.join(lab),name), ','.join('%s_%s'%(i,name) for i in lab)))
-        w.factory("expr::%s('%s',{%s})"%('expect_'+name,
+        [factory(w, "HistPdf::%s(%s,%s)"%('%s_%s'%(i,name),i, '%s_%s_sim'%(i,name))) for i in lab]
+        factory(w, "PROD::%s(%s)"%( '%s_%s'%('-'.join(lab),name), ','.join('%s_%s'%(i,name) for i in lab)))
+        factory(w, "expr::%s('%s',{%s})"%('expect_'+name,
                                          '*'.join('@%d'%i for i in range(5 if comp else 4)),
                                          ','.join(['lumi_'+chan,'global_R_'+chan,'xs_'+samp,'eff_'+name,'f_'+comp][:None if comp else -1])))
 
@@ -143,24 +146,23 @@ class topAsymmFit(object) :
         [wimport(w,r.RooRealVar('global_R_%s'%chan, 'R_{%s}'%chan, 1, 0.5,2)) for chan in inputs.efficiency]
 
     def import_model(self,w) :
-        [w.factory("SUM::model_%s( %s )"%(chan,','.join('expect_%s_%s * d3-ptpt_%s_%s'%(2*(chan,samp+comp)) 
+        [factory(w, "SUM::model_%s( %s )"%(chan,','.join('expect_%s_%s * d3-ptpt_%s_%s'%(2*(chan,samp+comp)) 
                                                         for samp,comps in samp.items() 
                                                         for comp,_ in comps))) for chan,samp in inputs.efficiency.items()]
-        w.factory("SIMUL::model(channel, %s)"%', '.join("%s=%s"%(chan,'model_'+chan) for chan in inputs.efficiency))
-        w.factory("PROD::constrained_model( model, constraints )")
+        factory(w, "SIMUL::model(channel, %s)"%', '.join("%s=%s"%(chan,'model_'+chan) for chan in inputs.efficiency))
+        factory(w, "PROD::constrained_model( model, constraints )")
 
     @roo_quiet
-    def import_data(self,w) :
-        obs_ = r.RooArgSet(w.var('d3'), w.var('ptpt'))
-        obs = r.RooArgList(w.var('d3'), w.var('ptpt'))
-
-        gens = [(chan,w.pdf('model_'+chan).generateBinned(obs_, 39055 if chan=='mu' else 19528,#r.RooFit.Extended(),
-                                                            r.RooFit.Name('genBinned_'+chan))) for chan in inputs.efficiency]
+    def import_data(self,w, useData) :
+        obs_ = w.argSet('d3,ptpt')
+        obs = r.RooArgList(obs_)
         hists = [(chan, inputs.histogram(None,chan,chan if chan=='mu' else 'EleHad.2011',d=2)) for chan in inputs.efficiency]
         datas = [(chan, r.RooDataHist('data_'+chan,'N_{obs}^{%s}'%chan,obs,hist)) for chan,hist in hists]
-        self.keep.append(hists)
-        [wimport(w, dat[1]) for dat in (datas if self.useData else gens)]
-        args = [r.RooFit.Import(*dat) for dat in (datas if self.useData else gens)]
+        gens = [(chan,w.pdf('model_'+chan).generateBinned(obs_,
+                                                          39055 if chan=='mu' else 19528, #r.RooFit.Extended(),
+                                                          r.RooFit.Name('data_'+chan))) for chan in inputs.efficiency]
+        [wimport(w, dat[1]) for dat in (datas if useData else gens)]
+        args = [r.RooFit.Import(*dat) for dat in (datas if useData else gens)]
         wimport(w, r.RooDataHist('data', 'N_{obs}', 
                                  obs,
                                  r.RooFit.Index(w.arg('channel')),
