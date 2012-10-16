@@ -38,25 +38,16 @@ class topAsymmFit(object) :
         result.Print() 
         self.draw(w,'fit')
         #self.test()
-        #return
+        return
 
         mc = self.setUpModel(w)
-        #plc = r.RooStats.ProfileLikelihoodCalculator(w.data('data'), mc)
-        #plc.SetConfidenceLevel(.90)
-        bc = r.RooStats.BayesianCalculator(w.data('data'), mc)
-        bc.SetConfidenceLevel(.90)
-        bc.SetLeftSideTailFraction(0)
-        nuisPdf = r.RooStats.MakeNuisancePdf(mc, "nuisance_pdf")
-        assert nuisPdf
-        bc.ForceNuisancePdf(nuisPdf)
-        bc.SetIntegrationType("TOYMC")
-        bc.SetScanOfPosterior(100)
+        plc = r.RooStats.ProfileLikelihoodCalculator(w.data('data'), mc)
+        plc.SetConfidenceLevel(.90)
         
-        interval = bc.GetInterval()
+        interval = plc.GetInterval()
         limits = dict([(a,(interval.LowerLimit(w.arg(a)),interval.UpperLimit(w.arg(a)))) for a in ['d_qq','d_ag']])
         print 'cl',interval.ConfidenceLevel()
         print limits
-        #w.Print()
 
     def print_fracs(self,w) :
         for item in ['lumi_mu','lumi_el','f_gg','f_qg','f_qq','f_ag']+['xs_'+i for i in inputs.xs] : print "%s: %.04f"%(item, w.arg(item).getVal())
