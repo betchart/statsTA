@@ -1,5 +1,6 @@
-import inputs,sys
-import ROOT as r
+import sys
+sys.argv.append('-b')
+import inputs, ROOT as r
 
 def roo_quiet(function) :
     def wrapped(*args,**kwargs) :
@@ -17,46 +18,69 @@ def factory(w, command) : w.factory(command)
 
 class topAsymmFit(object) :
     def __init__(self) :
-        w = r.RooWorkspace('Workspace')
-        self.setUp(w, useData = True)
-
-        def print_fracs() :
-            for item in ['lumi_mu','lumi_el','f_gg','f_qg','f_qq','f_ag']+['xs_'+i for i in inputs.xs] : print "%s: %.04f"%(item, w.arg(item).getVal())
-        def print_n() :
-            length = 24
-            tots = {'el':0,'mu':0}
-            print (' ').join(i.rjust(8) for i in ['']+tots.keys())
-            for xs in inputs.xs :
-                print xs.rjust(length/3),
-                for chan in tots :
-                    val = w.arg('expect_%s_%s'%(chan,xs)).getVal()
-                    tots[chan]+=val
-                    print ("%d"%val).rjust(length/3),
-                print
-            print '-'*(3+length)
-            print ' '.join(["tot".ljust(length/3)] +
-                           [("%d"%t).rjust(length/3) for chan,t in tots.items()])
-
-        print_fracs() ; print
-        print_n() ; print
+        w = self.setUp(useData = True)
+        w.data('data').Print()
+        w.data('data_el').Print()
+        w.data('data_mu').Print()
+        self.print_fracs(w)
+        self.print_n(w)
+        self.draw(w,'before')
         result = w.pdf('model').fitTo(w.data('data'),
                                       r.RooFit.Extended(True),
                                       r.RooFit.ExternalConstraints(r.RooArgSet(w.pdf('constraints'))),
                                       r.RooFit.PrintLevel(-1),
                                       r.RooFit.Save(True),
                                       r.RooFit.PrintEvalErrors(-1),
-                                      r.RooFit.NumCPU(4))
-        print
-        print_fracs();print
-        print_n();print
-        w.data('data').Print()
-        w.data('data_el').Print()
-        w.data('data_mu').Print()
-        result.Print()
-        #wimport(w, r.RooFormulaVar('sum','','@0*@1+@2*@3+@4*@5+@6*@7',r.RooArgList(*sum([[w.arg('d_'+i),w.arg('f_'+i+'_hat')] for i in ['gg','qg','qq','ag']],[]))))
-        #wimport(w, r.RooFormulaVar('prod','','(1+@0)*(1+@2)-(1+@1)*(1+@3)',r.RooArgList(*[w.arg('d_'+i) for i in ['gg','qg','qq','ag']])))
+                                      r.RooFit.NumCPU(4)
+                                      )
+        self.print_fracs(w)
+        self.print_n(w)
+        result.Print() 
+        self.draw(w,'fit')
+        #self.test()
         return
 
+        mc = self.setUpModel(w)
+        plc = r.RooStats.ProfileLikelihoodCalculator(w.data('data'), mc)
+        plc.SetTestSize(.05);
+        interval = plc.GetInterval()
+        limits = dict([(a,(interval.LowerLimit(w.arg(a)),interval.UpperLimit(w.arg(a)))) for a in ['d_qq','d_ag']])
+        print 'cl',interval.ConfidenceLevel()
+        print limits
+        #w.Print()
+
+    def print_fracs(self,w) :
+        for item in ['lumi_mu','lumi_el','f_gg','f_qg','f_qq','f_ag']+['xs_'+i for i in inputs.xs] : print "%s: %.04f"%(item, w.arg(item).getVal())
+        print
+
+    def print_n(self,w) :
+        length = 24
+        tots = {'el':0,'mu':0}
+        print (' ').join(i.rjust(8) for i in ['']+tots.keys())
+        for xs in inputs.xs :
+            print xs.rjust(length/3),
+            for chan in tots :
+                val = w.arg('expect_%s_%s'%(chan,xs)).getVal()
+                tots[chan]+=val
+                print ("%d"%val).rjust(length/3),
+            print
+        print '-'*(3+length)
+        print ' '.join(["tot".ljust(length/3)] +
+                       [("%d"%t).rjust(length/3) for chan,t in tots.items()])
+        print
+
+
+    def setUp(self,useData) :
+        w = r.RooWorkspace('Workspace')
+        init_sequence = ['fractions','constraints','efficiencies','shapes','model','data']
+        for item in init_sequence : 
+            print item,
+            sys.stdout.flush()
+            getattr(self, 'import_'+item)(*([w]+([useData] if item=='data' else [])))
+            print '.'
+        return w
+
+    def setUpModel(self, w) :
         mc = r.RooStats.ModelConfig(w)
         mc.SetObservables(r.RooArgSet(w.var('d3'),w.var('ptpt'),w.arg('channel')))
         poi = r.RooArgSet(w.arg('d_qq'),w.arg('d_ag'))
@@ -65,29 +89,7 @@ class topAsymmFit(object) :
         mc.SetNuisanceParameters(nuis)
         ##mc.SetConstraintParameters(r.RooArgSet(*[w.arg(i) for i in 'd_lumi,d_xs_st,d_xs_dy'.split(',')]))
         mc.SetPdf(w.pdf('constrained_model'))
-
-        plc = r.RooStats.ProfileLikelihoodCalculator(w.data('data'), mc)
-        plc.SetTestSize(.05);
-        interval = plc.GetInterval()
-        dqq_LL = interval.LowerLimit(w.arg('d_qq'))
-        dqq_UL = interval.UpperLimit(w.arg('d_qq'))
-        dag_LL = interval.LowerLimit(w.arg('d_ag'))
-        dag_UL = interval.UpperLimit(w.arg('d_ag'))
-        
-        print 'cl',interval.ConfidenceLevel()
-        print 'll-dqq',dqq_LL
-        print 'ul-dqq',dqq_UL
-        print 'll-dag',dag_LL
-        print 'ul-dag',dag_UL
-        #w.Print()
-
-    def setUp(self,w, useData) :
-        init_sequence = ['fractions','constraints','efficiencies','shapes','model','data']
-        for item in init_sequence : 
-            print item,
-            sys.stdout.flush()
-            getattr(self, 'import_'+item)(*([w]+([useData] if item=='data' else [])))
-            print '.'
+        return mc
 
     def import_fractions(self,w) :
         comps,fracs = zip(*inputs.components['tt'])
@@ -157,6 +159,7 @@ class topAsymmFit(object) :
         obs_ = w.argSet('d3,ptpt')
         obs = r.RooArgList(obs_)
         hists = [(chan, inputs.histogram(None,chan,chan if chan=='mu' else 'EleHad.2011',d=2)) for chan in inputs.efficiency]
+        [w.var(v).setBins(hists[0][1].GetNbinsX() if v=='d3' else hists[0][1].GetNbinsY()) for v in ['d3','ptpt']]
         datas = [(chan, r.RooDataHist('data_'+chan,'N_{obs}^{%s}'%chan,obs,hist)) for chan,hist in hists]
         gens = [(chan,w.pdf('model_'+chan).generateBinned(obs_,
                                                           39055 if chan=='mu' else 19528, #r.RooFit.Extended(),
@@ -169,5 +172,56 @@ class topAsymmFit(object) :
                                  *args
                                  ),
                 )
+
+    def test(self, w) :
+        wimport(w, r.RooFormulaVar('sum','','@0*@1+@2*@3+@4*@5+@6*@7',r.RooArgList(*sum([[w.arg('d_'+i),w.arg('f_'+i+'_hat')] for i in ['gg','qg','qq','ag']],[]))))
+        wimport(w, r.RooFormulaVar('prod','','(1+@0)*(1+@2)-(1+@1)*(1+@3)',r.RooArgList(*[w.arg('d_'+i) for i in ['gg','qg','qq','ag']])))
+
+
+    @roo_quiet
+    def draw(self, w, fileName) :
+        if not hasattr(self,'maxi') : self.maxi = {}
+        c = r.TCanvas()
+        cats = inputs.efficiency.keys()
+        data = w.data('data')
+        c.Divide(2,len(cats))
+        for i,cat in enumerate(cats) :
+            for j,var in enumerate(['d3','ptpt']) :
+                c.cd(i+1+2*j)
+                plt = w.var(var).frame()
+                cut = r.RooFit.Cut("channel==channel::%s"%cat)
+                data.plotOn(plt, cut, r.RooFit.MarkerSize(0.5))
+                if (cat,var) not in self.maxi : self.maxi[(cat,var)] = plt.GetMaximum()
+                if j : data.statOn(plt, r.RooFit.What("N"), cut)
+                comps = ['st','dy','mj','wj','ttgg','ttqg','ttag','ttqq']
+                colrs = [r.kGray, r.kGray, r.kGreen, r.kRed, r.kBlue+3, r.kBlue+2, r.kBlue+1, r.kViolet]
+                w.pdf('model').plotOn( plt,
+                                       r.RooFit.ProjWData(w.argSet(''),data),
+                                       r.RooFit.Slice(w.cat('channel'),cat),
+                                       r.RooFit.LineWidth(1),
+                                       r.RooFit.LineColor(r.kOrange)
+                                       )
+                for iComps in range(len(comps)) :
+                    col = colrs[iComps]
+                    compstr = ','.join(['d3-ptpt_%s_%s'%(cat,sub) for sub in comps[:iComps+1]])
+                    w.pdf('model').plotOn( plt,
+                                           r.RooFit.ProjWData(w.argSet(''),data),
+                                           r.RooFit.Slice(w.cat('channel'),cat),
+                                           r.RooFit.Components(compstr),
+                                           r.RooFit.LineWidth(0),
+                                           r.RooFit.LineColor(col),
+                                           r.RooFit.FillColor(col),
+                                           r.RooFit.DrawOption('F'),
+                                           r.RooFit.MoveToBack()
+                                           )
+                args = w.argSet(','.join(['d_'+t for t in ['gg','qg','qq','ag']] + ['global_R_mu','global_R_el']))
+                if i+1==len(cats) and not j : w.pdf('model').paramOn(plt,
+                                                                     r.RooFit.Layout(0.6,0.99,0.99),
+                                                                     r.RooFit.Parameters(args),
+                                                                     )
+                plt.SetTitle("" if not j else ("Channel: "+cat))
+                plt.SetMaximum(self.maxi[(cat,var)] * (1.1 if var=='d3' else 1.3))
+                plt.Draw()
+        c.Print('%s.pdf'%fileName)
 
 if __name__=='__main__' : topAsymmFit()
