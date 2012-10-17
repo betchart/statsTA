@@ -24,23 +24,7 @@ class topAsymmFit(object) :
         w.data('data_el').Print()
         w.data('data_mu').Print()
 
-        c = r.TCanvas()
-        c.Print('fractions.pdf[')
-        c.SetLogy()
-        plt = w.var('d_ag').frame()
-        plt.SetMaximum(1.1)
-        for v in [0,-0.1,-0.2,-0.3,-0.4,-0.5,-0.6,-0.7,-0.8,-0.9,-0.99,-0.999] :
-            plt.SetTitle("d_qq = %.5f"%v)
-            w.var('d_qq').setVal(v)
-            w.arg('f_gg').plotOn(plt,r.RooFit.LineWidth(1),r.RooFit.LineColor(r.kBlue))
-            w.arg('f_qg').plotOn(plt,r.RooFit.LineWidth(1),r.RooFit.LineColor(r.kRed))
-            w.arg('f_qq').plotOn(plt,r.RooFit.LineWidth(1),r.RooFit.LineColor(r.kGreen))
-            w.arg('f_ag').plotOn(plt,r.RooFit.LineWidth(1),r.RooFit.LineColor(r.kViolet))
-            plt.Draw()
-            c.Print('fractions.pdf')
-        c.Print('fractions.pdf]')
-
-        return
+        #self.plot_fracs(w)
         self.print_fracs(w)
         self.print_n(w)
         self.draw(w,'before')
@@ -59,7 +43,7 @@ class topAsymmFit(object) :
         result.Print() 
         self.draw(w,'fit')
 
-        return
+        #return
 
 #        nll = w.pdf('model').createNLL(*fitArgs[:4])
 #        for i in range(100) :
@@ -74,17 +58,17 @@ class topAsymmFit(object) :
         #return
         mc = self.setUpModel(w)
         mc.GetPdf().Print()
-        #plc = r.RooStats.ProfileLikelihoodCalculator(w.data('data'), mc)
-        plc = r.RooStats.ProfileLikelihoodCalculator()
-        plc.SetWorkspace(w)
-        plc.SetData('data')
-        plc.SetNuisancePdf('constraints')
+        plc = r.RooStats.ProfileLikelihoodCalculator(w.data('data'), mc)
+        #plc = r.RooStats.ProfileLikelihoodCalculator()
+        #plc.SetWorkspace(w)
+        #plc.SetData('data')
+        #plc.SetNuisancePdf('constraints')
         #plc.SetParameters('')
-        plc.SetNuisanceParameters(w.argSet('d_lumi_mu,eff_el_mj,eff_mu_mj,global_R_el,global_R_mu,'+','.join('d_xs_'+j for j in inputs.xs if j!='mj')))
+        #plc.SetNuisanceParameters(w.argSet('d_lumi_mu,eff_el_mj,eff_mu_mj,global_R_el,global_R_mu,'+','.join('d_xs_'+j for j in inputs.xs if j!='mj')))
         plc.SetConfidenceLevel(.68)
-        
+
         interval = plc.GetInterval()
-        limits = dict([(a,(interval.LowerLimit(w.arg(a)),interval.UpperLimit(w.arg(a)))) for a in ['d_qq','d_ag']])
+        limits = dict([(a,(interval.LowerLimit(w.arg(a)),interval.UpperLimit(w.arg(a)))) for a in ['d_qq','R_ag']])
         print 'cl',interval.ConfidenceLevel()
         print limits
 
@@ -122,7 +106,7 @@ class topAsymmFit(object) :
     def setUpModel(self, w) :
         mc = r.RooStats.ModelConfig(w)
         mc.SetObservables(r.RooArgSet(w.var('d3'),w.var('ptpt'),w.arg('channel')))
-        poi = r.RooArgSet(w.arg('d_qq'),w.arg('d_ag'))
+        poi = r.RooArgSet(w.arg('d_qq'),w.arg('R_ag'))
         mc.SetParametersOfInterest(poi)
         nuis = r.RooArgSet(*[w.arg(i) for i in ['d_lumi_mu','eff_el_mj','eff_mu_mj','global_R_el','global_R_mu']+['d_xs_'+j for j in inputs.xs if j!='mj']])
         mc.SetNuisanceParameters(nuis)
@@ -134,11 +118,14 @@ class topAsymmFit(object) :
         comps,fracs = zip(*inputs.components['tt'])
         assert comps == ('qq','ag','gg','qg')
         [wimport(w, r.RooConstVar("f_%s_hat"%comp,"#hat{f}_{%s}"%comp, frac)) for comp,frac in zip(comps,fracs)]
-        [factory(w, "d_%s[0,-0.999999,0.5]"%comp) for comp in comps[:2]]
-        args = sum(zip(*[['f_%s_hat'%comp,'d_'+comp] for comp in comps]),())
-        factory(w, "expr::d_gg('((1+@5)*(@3-@4*@0-@5*@1) - (1+@4)*@3) / ((1+@4)*@3 + (1+@5)*@2)',{%s})"%(', '.join(args[:-2])))
-        factory(w, "expr::d_qg('-(@0*@4 + @1*@5 + @2*@6)/@3', {%s})"%(', '.join(args[:-1])))
-        [factory(w, "expr::f_%s('(1+@0)*@1',{d_%s,f_%s_hat})"%tuple([comp]*3)) for comp in comps]
+        factory(w, "R_ag[0.11,1]" )
+        factory(w, "d_qq[-0.9999999,1]")
+        factory(w, "expr::f_qq('(1+@0)*@1',{d_qq,f_qq_hat})")
+        factory(w, "prod::f_ag(R_ag,f_qq)")
+        factory(w, "expr::f_qg('(1-@0-@1)/(1+@2*@3*@4/(@5*@6))',{f_qq,f_ag,R_ag,f_gg_hat,f_qq_hat,f_ag_hat,f_qg_hat})")
+        factory(w, "expr::f_gg('1-@0-@1-@2',{f_qq,f_ag,f_qg})")
+        w.var('d_qq').setVal(0)
+        w.var('R_ag').setVal(w.arg('f_ag_hat').getVal()/w.arg('f_qq_hat').getVal())
 
     def import_constraints(self,w) :
         def gdelta( w, var, (mean,rel_unc), limits = (-1.0,1.5), delta = None) :
@@ -213,8 +200,10 @@ class topAsymmFit(object) :
                 )
 
     def test(self, w) :
-        wimport(w, r.RooFormulaVar('sum','','@0*@1+@2*@3+@4*@5+@6*@7',r.RooArgList(*sum([[w.arg('d_'+i),w.arg('f_'+i+'_hat')] for i in ['gg','qg','qq','ag']],[]))))
-        wimport(w, r.RooFormulaVar('prod','','(1+@0)*(1+@2)-(1+@1)*(1+@3)',r.RooArgList(*[w.arg('d_'+i) for i in ['gg','qg','qq','ag']])))
+        if not w.arg('fsum') :
+            factory(w, "sum::fsum(f_qq,f_ag,f_qg,f_gg)")
+            factory(w, "expr::fprod('@0/@1 * @2/@3 - @4/@5 * @6/@7',{f_gg,f_gg_hat,f_qq,f_qq_hat,f_ag,f_ag_hat,f_qg,f_qg_hat})")
+        print w.arg('fsum').getVal(), w.arg('fprod').getVal()
 
 
     @roo_quiet
@@ -250,7 +239,7 @@ class topAsymmFit(object) :
                                            r.RooFit.Name(comps[iComps]+cat+var),
                                            r.RooFit.MoveToBack()
                                            )
-                args = w.argSet(','.join(['d_'+t for t in ['gg','qg','qq','ag']] + ['global_R_mu','global_R_el']))
+                args = w.argSet(','.join(['d_qq','R_ag','global_R_mu','global_R_el']))
                 w.pdf('model').plotOn( plt,
                                        r.RooFit.ProjWData(w.argSet(''),fakedata),
                                        r.RooFit.Slice(w.cat('channel'),cat),
@@ -273,5 +262,23 @@ class topAsymmFit(object) :
         c.cd(1)
         leg.Draw()
         c.Print('%s.pdf'%fileName)
+
+    def plot_fracs(self,w) :
+        c = r.TCanvas()
+        c.Print('fractions.pdf[')
+        c.SetLogy()
+        plt = w.var('d_qq').frame()
+        plt.SetMaximum(1.1)
+        for v in range(0,90) :
+            val = v/100.+0.11
+            plt.SetTitle("R_ag = %.3f"%(val))
+            w.var('R_ag').setVal(val)
+            w.arg('f_gg').plotOn(plt,r.RooFit.LineWidth(1),r.RooFit.LineColor(r.kBlue))
+            w.arg('f_qg').plotOn(plt,r.RooFit.LineWidth(1),r.RooFit.LineColor(r.kRed))
+            w.arg('f_qq').plotOn(plt,r.RooFit.LineWidth(1),r.RooFit.LineColor(r.kGreen))
+            w.arg('f_ag').plotOn(plt,r.RooFit.LineWidth(1),r.RooFit.LineColor(r.kViolet))
+            plt.Draw()
+            c.Print('fractions.pdf')
+        c.Print('fractions.pdf]')
 
 if __name__=='__main__' : topAsymmFit()
