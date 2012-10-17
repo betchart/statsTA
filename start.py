@@ -17,6 +17,7 @@ def wimport(w, *args, **kwargs) : getattr(w, "import")(*args,**kwargs)
 def factory(w, command) : w.factory(command)
 
 class topAsymmFit(object) :
+    @roo_quiet
     def __init__(self) :
         w = self.setUp(useData = True)
         w.data('data').Print()
@@ -25,24 +26,36 @@ class topAsymmFit(object) :
         self.print_fracs(w)
         self.print_n(w)
         self.draw(w,'before')
-        result = w.pdf('model').fitTo(w.data('data'),
-                                      r.RooFit.Extended(True),
-                                      r.RooFit.ExternalConstraints(r.RooArgSet(w.pdf('constraints'))),
-                                      r.RooFit.PrintLevel(-1),
-                                      r.RooFit.Save(True),
-                                      r.RooFit.PrintEvalErrors(-1),
-                                      r.RooFit.NumCPU(4)
-                                      )
+        fitArgs = [w.data('data'),
+                   r.RooFit.Extended(True),
+                   r.RooFit.ExternalConstraints(r.RooArgSet(w.pdf('constraints'))),
+                   r.RooFit.Optimize(False),
+                   r.RooFit.NumCPU(4),
+                   r.RooFit.PrintLevel(-1),
+                   r.RooFit.Save(True),
+                   r.RooFit.PrintEvalErrors(-1),
+                   ]
+        result = w.pdf('model').fitTo(*fitArgs)
         self.print_fracs(w)
         self.print_n(w)
         result.Print() 
         self.draw(w,'fit')
-        #self.test()
-        return
+        #return
 
+#        nll = w.pdf('model').createNLL(*fitArgs[:4])
+#        for i in range(100) :
+#            for j in range(100) :
+#                w.
+        #nll.Print()
+        #nll.Print()
+        #nll.Print()
+        #nll.Print()
+        #nnll.Print()
+
+        #return
         mc = self.setUpModel(w)
         plc = r.RooStats.ProfileLikelihoodCalculator(w.data('data'), mc)
-        plc.SetConfidenceLevel(.90)
+        plc.SetConfidenceLevel(.68)
         
         interval = plc.GetInterval()
         limits = dict([(a,(interval.LowerLimit(w.arg(a)),interval.UpperLimit(w.arg(a)))) for a in ['d_qq','d_ag']])
@@ -95,14 +108,14 @@ class topAsymmFit(object) :
         comps,fracs = zip(*inputs.components['tt'])
         assert comps == ('qq','ag','gg','qg')
         [wimport(w, r.RooConstVar("f_%s_hat"%comp,"#hat{f}_{%s}"%comp, frac)) for comp,frac in zip(comps,fracs)]
-        [factory(w, "d_%s[0,-1,3]"%comp) for comp in comps[:2]]
+        [factory(w, "d_%s[0,-0.999999,3]"%comp) for comp in comps[:2]]
         args = sum(zip(*[['f_%s_hat'%comp,'d_'+comp] for comp in comps]),())
         factory(w, "expr::d_gg('((1+@5)*(@3-@4*@0-@5*@1) - (1+@4)*@3) / ((1+@4)*@3 + (1+@5)*@2)',{%s})"%(', '.join(args[:-2])))
         factory(w, "expr::d_qg('-(@0*@4 + @1*@5 + @2*@6)/@3', {%s})"%(', '.join(args[:-1])))
         [factory(w, "expr::f_%s('(1+@0)*@1',{d_%s,f_%s_hat})"%tuple([comp]*3)) for comp in comps]
 
     def import_constraints(self,w) :
-        def gdelta( w, var, (mean,rel_unc), limits = (-1.5,1.5), delta = None) :
+        def gdelta( w, var, (mean,rel_unc), limits = (-1.0,1.5), delta = None) :
             if not delta : delta = 'd_%s[0%s]'%(var, (",%f,%f"%limits) if rel_unc else '')
             factory(w, "expr::%s('(1+@0)*@1',{ %s, %s_hat[%f]})"%(var,delta,var,mean))
             if rel_unc : factory(w, "Gaussian::%s_constraint( d_%s, 0, %f)"%(var,var,rel_unc))
