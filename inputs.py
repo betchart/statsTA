@@ -41,9 +41,11 @@ def histogram(dist, chan, samp, comp = '', d=1) :
                                            {'mu':'muon','el':'electron'}[chan])
     f = r.TFile.Open(fileName)
     h = f.Get(signals).Get((samp+comp) if samp!='mj' else 'QCD.multijet' )
-    gram = h.Clone() if d==2 else h.ProjectionX('_px_'+chan) if dist=='d3' else h.ProjectionY('_py_'+chan)
+    gram = h.Clone() if d==2 else h.ProjectionX('_px_'+chan+samp) if dist=='d3' else h.ProjectionY('_py_'+chan+samp)
     gram.SetDirectory(0)
     f.Close()
-    if d==2 : gram.Rebin2D(1,4)
+    rebin = {'d3':1,'ptpt':4}
+    #if d==1 : gram.Rebin(rebin[dist]) 
+    if d==2:   gram.Rebin2D(rebin['d3'],rebin['ptpt'])
     return gram
 

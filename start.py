@@ -23,6 +23,24 @@ class topAsymmFit(object) :
         w.data('data').Print()
         w.data('data_el').Print()
         w.data('data_mu').Print()
+
+        c = r.TCanvas()
+        c.Print('fractions.pdf[')
+        c.SetLogy()
+        plt = w.var('d_ag').frame()
+        plt.SetMaximum(1.1)
+        for v in [0,-0.1,-0.2,-0.3,-0.4,-0.5,-0.6,-0.7,-0.8,-0.9,-0.99,-0.999] :
+            plt.SetTitle("d_qq = %.5f"%v)
+            w.var('d_qq').setVal(v)
+            w.arg('f_gg').plotOn(plt,r.RooFit.LineWidth(1),r.RooFit.LineColor(r.kBlue))
+            w.arg('f_qg').plotOn(plt,r.RooFit.LineWidth(1),r.RooFit.LineColor(r.kRed))
+            w.arg('f_qq').plotOn(plt,r.RooFit.LineWidth(1),r.RooFit.LineColor(r.kGreen))
+            w.arg('f_ag').plotOn(plt,r.RooFit.LineWidth(1),r.RooFit.LineColor(r.kViolet))
+            plt.Draw()
+            c.Print('fractions.pdf')
+        c.Print('fractions.pdf]')
+
+        return
         self.print_fracs(w)
         self.print_n(w)
         self.draw(w,'before')
@@ -40,7 +58,8 @@ class topAsymmFit(object) :
         self.print_n(w)
         result.Print() 
         self.draw(w,'fit')
-        #return
+
+        return
 
 #        nll = w.pdf('model').createNLL(*fitArgs[:4])
 #        for i in range(100) :
@@ -54,7 +73,14 @@ class topAsymmFit(object) :
 
         #return
         mc = self.setUpModel(w)
-        plc = r.RooStats.ProfileLikelihoodCalculator(w.data('data'), mc)
+        mc.GetPdf().Print()
+        #plc = r.RooStats.ProfileLikelihoodCalculator(w.data('data'), mc)
+        plc = r.RooStats.ProfileLikelihoodCalculator()
+        plc.SetWorkspace(w)
+        plc.SetData('data')
+        plc.SetNuisancePdf('constraints')
+        #plc.SetParameters('')
+        plc.SetNuisanceParameters(w.argSet('d_lumi_mu,eff_el_mj,eff_mu_mj,global_R_el,global_R_mu,'+','.join('d_xs_'+j for j in inputs.xs if j!='mj')))
         plc.SetConfidenceLevel(.68)
         
         interval = plc.GetInterval()
@@ -108,7 +134,7 @@ class topAsymmFit(object) :
         comps,fracs = zip(*inputs.components['tt'])
         assert comps == ('qq','ag','gg','qg')
         [wimport(w, r.RooConstVar("f_%s_hat"%comp,"#hat{f}_{%s}"%comp, frac)) for comp,frac in zip(comps,fracs)]
-        [factory(w, "d_%s[0,-0.999999,3]"%comp) for comp in comps[:2]]
+        [factory(w, "d_%s[0,-0.999999,0.5]"%comp) for comp in comps[:2]]
         args = sum(zip(*[['f_%s_hat'%comp,'d_'+comp] for comp in comps]),())
         factory(w, "expr::d_gg('((1+@5)*(@3-@4*@0-@5*@1) - (1+@4)*@3) / ((1+@4)*@3 + (1+@5)*@2)',{%s})"%(', '.join(args[:-2])))
         factory(w, "expr::d_qg('-(@0*@4 + @1*@5 + @2*@6)/@3', {%s})"%(', '.join(args[:-1])))
@@ -194,47 +220,58 @@ class topAsymmFit(object) :
     @roo_quiet
     def draw(self, w, fileName) :
         if not hasattr(self,'maxi') : self.maxi = {}
+        leg = r.TLegend(0.7,0.5,0.99,0.99)
         c = r.TCanvas()
         cats = inputs.efficiency.keys()
         data = w.data('data')
+        fakedata = w.pdf('model').generate(r.RooArgSet(w.argSet('d3,ptpt,channel')),
+                                           r.RooFit.AllBinned() )
         c.Divide(2,len(cats))
         for i,cat in enumerate(cats) :
             for j,var in enumerate(['d3','ptpt']) :
-                c.cd(i+1+2*j)
+                pad = c.cd(i+1+2*j)
                 plt = w.var(var).frame()
                 cut = r.RooFit.Cut("channel==channel::%s"%cat)
-                data.plotOn(plt, cut, r.RooFit.MarkerSize(0.5))
-                if (cat,var) not in self.maxi : self.maxi[(cat,var)] = plt.GetMaximum()
-                if j : data.statOn(plt, r.RooFit.What("N"), cut)
-                comps = ['st','dy','mj','wj','ttgg','ttqg','ttag','ttqq']
-                colrs = [r.kGray, r.kGray, r.kGreen, r.kRed, r.kBlue+3, r.kBlue+2, r.kBlue+1, r.kViolet]
-                w.pdf('model').plotOn( plt,
-                                       r.RooFit.ProjWData(w.argSet(''),data),
-                                       r.RooFit.Slice(w.cat('channel'),cat),
-                                       r.RooFit.LineWidth(1),
-                                       r.RooFit.LineColor(r.kOrange)
-                                       )
+                comps = ['dy','st','mj','wj','ttgg','ttqg','ttag','ttqq']
+                colrs = [r.kGray, r.kGray, r.kGreen, r.kRed, r.kBlue-6, r.kBlue+2, r.kBlue+1, r.kViolet]
+
+                data.plotOn(plt, cut, r.RooFit.MarkerSize(0.5), r.RooFit.Name('data'+cat+var))
                 for iComps in range(len(comps)) :
                     col = colrs[iComps]
                     compstr = ','.join(['d3-ptpt_%s_%s'%(cat,sub) for sub in comps[:iComps+1]])
                     w.pdf('model').plotOn( plt,
-                                           r.RooFit.ProjWData(w.argSet(''),data),
+                                           r.RooFit.ProjWData(w.argSet(''),fakedata),
                                            r.RooFit.Slice(w.cat('channel'),cat),
                                            r.RooFit.Components(compstr),
                                            r.RooFit.LineWidth(0),
                                            r.RooFit.LineColor(col),
                                            r.RooFit.FillColor(col),
                                            r.RooFit.DrawOption('F'),
+                                           r.RooFit.Name(comps[iComps]+cat+var),
                                            r.RooFit.MoveToBack()
                                            )
                 args = w.argSet(','.join(['d_'+t for t in ['gg','qg','qq','ag']] + ['global_R_mu','global_R_el']))
+                w.pdf('model').plotOn( plt,
+                                       r.RooFit.ProjWData(w.argSet(''),fakedata),
+                                       r.RooFit.Slice(w.cat('channel'),cat),
+                                       r.RooFit.LineWidth(1),
+                                       r.RooFit.LineColor(r.kOrange),
+                                       r.RooFit.Name('model'+cat+var)
+                                       )
+                if j : data.statOn(plt, r.RooFit.What("N"), cut)
                 if i+1==len(cats) and not j : w.pdf('model').paramOn(plt,
                                                                      r.RooFit.Layout(0.6,0.99,0.99),
                                                                      r.RooFit.Parameters(args),
                                                                      )
+                if (cat,var) not in self.maxi : self.maxi[(cat,var)] = plt.GetMaximum()
                 plt.SetTitle("" if not j else ("Channel: "+cat))
-                plt.SetMaximum(self.maxi[(cat,var)] * (1.1 if var=='d3' else 1.3))
+                plt.SetMaximum(self.maxi[(cat,var)]*1.1)
                 plt.Draw()
+                if not (i or j) : leg.AddEntry('data'+cat+var,'Data', "LP")
+                for iComps in reversed(range(len(comps))) :
+                    if not (i or j) : leg.AddEntry(comps[iComps]+cat+var,comps[iComps],"f")
+        c.cd(1)
+        leg.Draw()
         c.Print('%s.pdf'%fileName)
 
 if __name__=='__main__' : topAsymmFit()
