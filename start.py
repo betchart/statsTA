@@ -46,18 +46,7 @@ class topAsymmFit(object) :
         #self.scanProfileLL(w)
 
         mc = self.setUpModel(w)
-        fc = r.RooStats.FeldmanCousins(w.data('data'), mc)
-        fc.SetConfidenceLevel(.95)
-        fc.AdditionalNToysFactor(0.1) # quick and rough
-        fc.UseAdaptiveSampling(True)
-        fc.SetNBins(10)
-        fc.CreateConfBelt(True)
-
-        interval = fc.GetInterval()
-        belt = fc.GetConfidenceBelt()
-        limits = dict([(a,(interval.LowerLimit(w.arg(a)),interval.UpperLimit(w.arg(a)))) for a in ['d_qq','R_ag']])
-        print 'cl',interval.ConfidenceLevel()
-        print limits
+        self.feldmanCousins(w,mc)
 
     def print_fracs(self,w) :
         for item in ['lumi_mu','lumi_el','f_gg','f_qg','f_qq','f_ag']+['xs_'+i for i in inputs.xs] : print "%s: %.04f"%(item, w.arg(item).getVal())
@@ -294,6 +283,25 @@ class topAsymmFit(object) :
                     p = prof.getVal()
                     print >>nllFile, w.var('d_qq').getVal(), w.var('R_ag').getVal(), max(0,p)
                     if p > 3.5 : break
+        return
+
+    def feldmanCousins(self, w, mc, proof = False ) :
+        fc = r.RooStats.FeldmanCousins(w.data('data'), mc)
+        fc.SetConfidenceLevel(.95)
+        #fc.AdditionalNToysFactor(0.1) # quick and rough
+        fc.UseAdaptiveSampling(True)
+        fc.SetNBins(10)
+        if proof :
+            pc = r.RooStats.ProofConfig(w, 1, "workers=4", r.kFALSE)
+            toymcsampler = fc.GetTestStatSampler()
+            toymcsampler.SetProofConfig(pc)
+        fc.CreateConfBelt(True)
+
+        interval = fc.GetInterval()
+        belt = fc.GetConfidenceBelt()
+        limits = dict([(a,(interval.LowerLimit(w.arg(a)),interval.UpperLimit(w.arg(a)))) for a in ['d_qq','R_ag']])
+        print 'cl',interval.ConfidenceLevel()
+        print limits
         return
 
 if __name__=='__main__' : topAsymmFit()
