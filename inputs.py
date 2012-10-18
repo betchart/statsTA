@@ -12,12 +12,16 @@ xs = {'tt' : ( 149.600, 1.0), # (pb, %)
       'st' : (  71.968, 0.04),
       'dy' : (2475.000, 0.04)}
 
+def ttcomps() :
+    tfile = r.TFile.Open('data/stats_top_electron_ph.root')
+    num = tfile.Get(counts)
+    comps = ['qq','ag','gg','qg']
+    cnts = [num.Get('tt'+c).Integral() for c in comps]
+    tfile.Close()
+    return zip(comps, [c/sum(cnts) for c in cnts])
+
 components = dict( [(item,[('',1.0)]) for item in ['wj','mj','st','dy']] +
-                   [('tt',[('qq',1.2359e-01),
-                           ('ag',3.7104e-02),
-                           ('gg',6.1509e-01),
-                           ('qg',2.2421e-01)]
-                     )] )
+                   [('tt', ttcomps())] )
 
 def getEfficiencies(chan) :
     tfile = r.TFile.Open('data/stats_top_%s_ph.root'%chan)
