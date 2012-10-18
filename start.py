@@ -1,4 +1,4 @@
-import sys
+import sys,math
 sys.argv.append('-b')
 import inputs, ROOT as r
 
@@ -24,7 +24,8 @@ class topAsymmFit(object) :
         w.data('data_el').Print()
         w.data('data_mu').Print()
 
-        #self.plot_fracs(w)
+        self.plot_fracs(w)
+        self.defaults(w)
         self.print_fracs(w)
         self.print_n(w)
         self.draw(w,'before')
@@ -43,19 +44,30 @@ class topAsymmFit(object) :
         result.Print() 
         self.draw(w,'fit')
 
-        #return
+        nll = w.pdf('model').createNLL(*fitArgs[:4])
+        prof = r.RooProfileLL('prof','',nll,w.argSet('d_qq,R_ag'))
 
-#        nll = w.pdf('model').createNLL(*fitArgs[:4])
-#        for i in range(100) :
-#            for j in range(100) :
-#                w.
-        #nll.Print()
-        #nll.Print()
-        #nll.Print()
-        #nll.Print()
-        #nnll.Print()
+        def final() :
+            fit = result.floatParsFinal()
+            return fit.at(fit.index('d_qq')).getVal(), fit.at(fit.index('R_ag')).getVal()
+        d_qq,R_ag = final()
+        print "Best fit d_qq:", d_qq
+        print "Best fit R_ag:", R_ag
 
-        #return
+        w.arg('d_qq').Print()
+        w.arg('R_ag').Print()
+        prof.Print()
+        nSpokes = 10
+        for iPhi in range(nSpokes+1)[-1:] :
+            phi = iPhi*math.pi/nSpokes
+            for iRad in range(100) :
+                w.var('R_ag').setVal(R_ag+0.01*iRad*math.cos(phi))
+                w.var('d_qq').setVal(d_qq+0.005*iRad*math.sin(phi))
+                p = prof.getVal()
+                print w.var('d_qq').getVal(), w.var('R_ag').getVal(), p
+                if p > 2 : break
+
+        return
         mc = self.setUpModel(w)
         mc.GetPdf().Print()
         plc = r.RooStats.ProfileLikelihoodCalculator(w.data('data'), mc)
@@ -93,6 +105,10 @@ class topAsymmFit(object) :
         print
 
 
+    def defaults(self,w ) :
+        w.var('d_qq').setVal(0)
+        w.var('R_ag').setVal(w.arg('f_ag_hat').getVal()/w.arg('f_qq_hat').getVal())
+
     def setUp(self,useData) :
         w = r.RooWorkspace('Workspace')
         init_sequence = ['fractions','constraints','efficiencies','shapes','model','data']
@@ -124,8 +140,6 @@ class topAsymmFit(object) :
         factory(w, "prod::f_ag(R_ag,f_qq)")
         factory(w, "expr::f_qg('(1-@0-@1)/(1+@2*@3*@4/(@5*@6))',{f_qq,f_ag,R_ag,f_gg_hat,f_qq_hat,f_ag_hat,f_qg_hat})")
         factory(w, "expr::f_gg('1-@0-@1-@2',{f_qq,f_ag,f_qg})")
-        w.var('d_qq').setVal(0)
-        w.var('R_ag').setVal(w.arg('f_ag_hat').getVal()/w.arg('f_qq_hat').getVal())
 
     def import_constraints(self,w) :
         def gdelta( w, var, (mean,rel_unc), limits = (-1.0,1.5), delta = None) :
@@ -263,10 +277,11 @@ class topAsymmFit(object) :
         leg.Draw()
         c.Print('%s.pdf'%fileName)
 
-    def plot_fracs(self,w) :
+    def plot_fracs(self,w, logy = False) :
+        r.gErrorIgnoreLevel = r.kWarning
         c = r.TCanvas()
         c.Print('fractions.pdf[')
-        c.SetLogy()
+        c.SetLogy(logy)
         plt = w.var('d_qq').frame()
         plt.SetMaximum(1.1)
         for v in range(0,90) :
@@ -278,7 +293,8 @@ class topAsymmFit(object) :
             w.arg('f_qq').plotOn(plt,r.RooFit.LineWidth(1),r.RooFit.LineColor(r.kGreen))
             w.arg('f_ag').plotOn(plt,r.RooFit.LineWidth(1),r.RooFit.LineColor(r.kViolet))
             plt.Draw()
-            c.Print('fractions.pdf')
+            c.Print('fractions%s.pdf'%('_logy' if logy else ''), 'pdf')
+        r.gErrorIgnoreLevel = r.kInfo
         c.Print('fractions.pdf]')
 
 if __name__=='__main__' : topAsymmFit()
