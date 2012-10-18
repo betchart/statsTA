@@ -43,43 +43,18 @@ class topAsymmFit(object) :
         self.print_n(w)
         result.Print() 
         self.draw(w,'fit')
+        #self.scanProfileLL(w)
 
-        nll = w.pdf('model').createNLL(*fitArgs[:4])
-        prof = r.RooProfileLL('prof','',nll,w.argSet('d_qq,R_ag'))
-
-        def final() :
-            fit = result.floatParsFinal()
-            return fit.at(fit.index('d_qq')).getVal(), fit.at(fit.index('R_ag')).getVal()
-        d_qq,R_ag = final()
-        print "Best fit d_qq:", d_qq
-        print "Best fit R_ag:", R_ag
-
-        w.arg('d_qq').Print()
-        w.arg('R_ag').Print()
-        prof.Print()
-        nSpokes = 10
-        for iPhi in range(nSpokes+1)[-1:] :
-            phi = iPhi*math.pi/nSpokes
-            for iRad in range(100) :
-                w.var('R_ag').setVal(R_ag+0.01*iRad*math.cos(phi))
-                w.var('d_qq').setVal(d_qq+0.005*iRad*math.sin(phi))
-                p = prof.getVal()
-                print w.var('d_qq').getVal(), w.var('R_ag').getVal(), p
-                if p > 2 : break
-
-        return
         mc = self.setUpModel(w)
-        mc.GetPdf().Print()
-        plc = r.RooStats.ProfileLikelihoodCalculator(w.data('data'), mc)
-        #plc = r.RooStats.ProfileLikelihoodCalculator()
-        #plc.SetWorkspace(w)
-        #plc.SetData('data')
-        #plc.SetNuisancePdf('constraints')
-        #plc.SetParameters('')
-        #plc.SetNuisanceParameters(w.argSet('d_lumi_mu,eff_el_mj,eff_mu_mj,global_R_el,global_R_mu,'+','.join('d_xs_'+j for j in inputs.xs if j!='mj')))
-        plc.SetConfidenceLevel(.68)
+        fc = r.RooStats.FeldmanCousins(w.data('data'), mc)
+        fc.SetConfidenceLevel(.95)
+        fc.AdditionalNToysFactor(0.1) # quick and rough
+        fc.UseAdaptiveSampling(True)
+        fc.SetNBins(10)
+        fc.CreateConfBelt(True)
 
-        interval = plc.GetInterval()
+        interval = fc.GetInterval()
+        belt = fc.GetConfidenceBelt()
         limits = dict([(a,(interval.LowerLimit(w.arg(a)),interval.UpperLimit(w.arg(a)))) for a in ['d_qq','R_ag']])
         print 'cl',interval.ConfidenceLevel()
         print limits
@@ -121,12 +96,10 @@ class topAsymmFit(object) :
 
     def setUpModel(self, w) :
         mc = r.RooStats.ModelConfig(w)
-        mc.SetObservables(r.RooArgSet(w.var('d3'),w.var('ptpt'),w.arg('channel')))
-        poi = r.RooArgSet(w.arg('d_qq'),w.arg('R_ag'))
-        mc.SetParametersOfInterest(poi)
+        mc.SetObservables(w.argSet('d3,ptpt,channel'))
+        mc.SetParametersOfInterest(w.argSet('d_qq,R_ag'))
         nuis = r.RooArgSet(*[w.arg(i) for i in ['d_lumi_mu','eff_el_mj','eff_mu_mj','global_R_el','global_R_mu']+['d_xs_'+j for j in inputs.xs if j!='mj']])
         mc.SetNuisanceParameters(nuis)
-        ##mc.SetConstraintParameters(r.RooArgSet(*[w.arg(i) for i in 'd_lumi,d_xs_st,d_xs_dy'.split(',')]))
         mc.SetPdf(w.pdf('constrained_model'))
         return mc
 
@@ -296,5 +269,31 @@ class topAsymmFit(object) :
             c.Print('fractions%s.pdf'%('_logy' if logy else ''), 'pdf')
         r.gErrorIgnoreLevel = r.kInfo
         c.Print('fractions.pdf]')
+
+    def scanProfileNLL(self, w, nSpokes = 20, step_dqq = 0.008, step_Rag = 0.012) :
+        nll = w.pdf('model').createNLL(*fitArgs[:5])
+        prof = r.RooProfileLL('prof','',nll,w.argSet('d_qq,R_ag'))
+
+        def final() :
+            fit = result.floatParsFinal()
+            return fit.at(fit.index('d_qq')).getVal(), fit.at(fit.index('R_ag')).getVal()
+        d_qq,R_ag = final()
+        w.arg('d_qq').Print()
+        w.arg('R_ag').Print()
+        prof.Print()
+        with open("nll.txt",'w') as nllFile :
+            for iPhi in range(nSpokes) :
+                print iPhi
+                phi = iPhi*2*math.pi/nSpokes
+                print >>nllFile
+                for iRad in range(100) :
+                    d_qq_local = d_qq + step_dqq*iRad*math.sin(phi)
+                    if d_qq_local < -1 : break
+                    w.var('R_ag').setVal(R_ag + step_Rag*iRad*math.cos(phi))
+                    w.var('d_qq').setVal(d_qq_local)
+                    p = prof.getVal()
+                    print >>nllFile, w.var('d_qq').getVal(), w.var('R_ag').getVal(), max(0,p)
+                    if p > 3.5 : break
+        return
 
 if __name__=='__main__' : topAsymmFit()
