@@ -7,8 +7,9 @@ def roo_quiet(function) :
         msg = r.RooMsgService.instance() 
         cache = msg.globalKillBelow()            # get current message level
         msg.setGlobalKillBelow(r.RooFit.WARNING) # suppress messages
-        function(*args,**kwargs)                 # call function
+        val = function(*args,**kwargs)                 # call function
         msg.setGlobalKillBelow(cache)            # resume prior message level
+        return val
     return wrapped
     
 @roo_quiet
@@ -17,7 +18,7 @@ def wimport(w, *args, **kwargs) : getattr(w, "import")(*args,**kwargs)
 def factory(w, command) : w.factory(command)
 
 class topAsymmFit(object) :
-    @roo_quiet
+    #@roo_quiet
     def __init__(self) :
         w = self.setUp(useData = True)
         w.data('data').Print()
@@ -29,24 +30,23 @@ class topAsymmFit(object) :
         self.print_fracs(w)
         self.print_n(w)
         self.draw(w,'before')
-        fitArgs = [w.data('data'),
-                   r.RooFit.Extended(True),
-                   r.RooFit.ExternalConstraints(r.RooArgSet(w.pdf('constraints'))),
-                   r.RooFit.Optimize(False),
-                   r.RooFit.NumCPU(4),
-                   r.RooFit.PrintLevel(-1),
-                   r.RooFit.Save(True),
-                   r.RooFit.PrintEvalErrors(-1),
-                   ]
-        result = w.pdf('model').fitTo(*fitArgs)
+        self.fitArgs = [w.data('data'),
+                        r.RooFit.Extended(True),
+                        r.RooFit.ExternalConstraints(r.RooArgSet(w.pdf('constraints'))),
+                        r.RooFit.Optimize(False),
+                        r.RooFit.NumCPU(4)]
+        result = w.pdf('model').fitTo(*(self.fitArgs+
+                                        [r.RooFit.PrintLevel(-1),
+                                         r.RooFit.Save(True),
+                                         r.RooFit.PrintEvalErrors(-1),
+                                         ]))
         self.print_fracs(w)
         self.print_n(w)
         result.Print() 
         self.draw(w,'fit')
-        #self.scanProfileLL(w)
-
-        mc = self.setUpModel(w)
-        self.feldmanCousins(w,mc)
+        profiled = self.scanOfProfileNLL(w, result)
+        #mc = self.setUpModel(w)
+        #self.feldmanCousins(w,mc,profiled) # too many calculations required
 
     def print_fracs(self,w) :
         for item in ['lumi_mu','lumi_el','f_gg','f_qg','f_qq','f_ag']+['xs_'+i for i in inputs.xs] : print "%s: %.04f"%(item, w.arg(item).getVal())
@@ -147,7 +147,7 @@ class topAsymmFit(object) :
          for chan,samps in inputs.efficiency.items()
          for samp,comps in samps.items() 
          for comp,eff in comps]
-        [wimport(w,r.RooRealVar('global_R_%s'%chan, 'R_{%s}'%chan, 1, 0.5,2)) for chan in inputs.efficiency]
+        [wimport(w,r.RooRealVar('global_R_%s'%chan, 'R_{%s}'%chan, 1, 0.9,1.2)) for chan in inputs.efficiency]
 
     def import_model(self,w) :
         [factory(w, "SUM::model_%s( %s )"%(chan,','.join('expect_%s_%s * d3-ptpt_%s_%s'%(2*(chan,samp+comp)) 
@@ -259,8 +259,9 @@ class topAsymmFit(object) :
         r.gErrorIgnoreLevel = r.kInfo
         c.Print('fractions.pdf]')
 
-    def scanProfileNLL(self, w, nSpokes = 20, step_dqq = 0.008, step_Rag = 0.012) :
-        nll = w.pdf('model').createNLL(*fitArgs[:5])
+    @roo_quiet
+    def scanOfProfileNLL(self, w, result, nSpokes = 20, scale_dqq = 0.01, scale_Rag = 0.02) :
+        nll = w.pdf('model').createNLL(*self.fitArgs)
         prof = r.RooProfileLL('prof','',nll,w.argSet('d_qq,R_ag'))
 
         def final() :
@@ -270,38 +271,59 @@ class topAsymmFit(object) :
         w.arg('d_qq').Print()
         w.arg('R_ag').Print()
         prof.Print()
+        pScan = r.RooDataSet("pScan", "", w.allVars())
+        pScan.add(w.allVars())
+        print type(pScan)
+        print pScan
+        pScan.Print()
         with open("nll.txt",'w') as nllFile :
             for iPhi in range(nSpokes) :
                 print iPhi
                 phi = iPhi*2*math.pi/nSpokes
                 print >>nllFile
-                for iRad in range(100) :
-                    d_qq_local = d_qq + step_dqq*iRad*math.sin(phi)
+                print >>nllFile, d_qq, R_ag, 0
+                for iRad in range(1,100) :
+                    d_qq_local = d_qq + scale_dqq*iRad*math.sin(phi)
                     if d_qq_local < -1 : break
-                    w.var('R_ag').setVal(R_ag + step_Rag*iRad*math.cos(phi))
+                    w.var('R_ag').setVal(R_ag + scale_Rag*iRad*math.cos(phi))
                     w.var('d_qq').setVal(d_qq_local)
                     p = prof.getVal()
                     print >>nllFile, w.var('d_qq').getVal(), w.var('R_ag').getVal(), max(0,p)
-                    if p > 3.5 : break
-        return
+                    nllFile.flush()
+                    pScan.add(w.allVars())
+                    if p > 4 : break
+        return pScan
 
-    def feldmanCousins(self, w, mc, proof = False ) :
+    def feldmanCousins(self, w, mc, pointsToTest, proof = False ) :
+        print "FC"
+        print
+        cl = 0.95
         fc = r.RooStats.FeldmanCousins(w.data('data'), mc)
-        fc.SetConfidenceLevel(.95)
         #fc.AdditionalNToysFactor(0.1) # quick and rough
         fc.UseAdaptiveSampling(True)
-        fc.SetNBins(10)
+        fc.SetConfidenceLevel(cl)
+
+        toymcsampler = fc.GetTestStatSampler()
         if proof :
             pc = r.RooStats.ProofConfig(w, 1, "workers=4", r.kFALSE)
-            toymcsampler = fc.GetTestStatSampler()
             toymcsampler.SetProofConfig(pc)
-        fc.CreateConfBelt(True)
+        
+        nc = r.RooStats.NeymanConstruction(w.data('data'), mc)
+        nc.SetLeftSideTailFraction(0.0) # 0.0 for Feldman Cousins
+        nc.SetTestStatSampler(toymcsampler) # Use fc configured teststatsampler
+        nc.SetConfidenceLevel(cl)
+        nc.SetParameterPointsToTest(pointsToTest) # the profiled nuisance parameters on the selected grid of POI
+        nc.CreateConfBelt(True)
 
-        interval = fc.GetInterval()
-        belt = fc.GetConfidenceBelt()
+        interval = nc.GetInterval()
+        belt = nc.GetConfidenceBelt()
         limits = dict([(a,(interval.LowerLimit(w.arg(a)),interval.UpperLimit(w.arg(a)))) for a in ['d_qq','R_ag']])
         print 'cl',interval.ConfidenceLevel()
         print limits
+
+        for iScan in range(pointsToTest.numEntries()) :
+            args = pointsToTest.get(iScan)
+            print args.getRealValue('d_qq'), args.getRealValue('R_ag'), inte(interval.IsInInterval(args))
         return
 
 if __name__=='__main__' : topAsymmFit()
