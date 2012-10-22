@@ -25,9 +25,10 @@ observations is
   P_\ell\left(N_i^\ell|\interest;\nuis\right) = \prod_i \mathrm{Pois}\left(N_i^\ell|\lambda_i^\ell\right)
 \end{equation}
 \begin{equation}
-  \lambda_i^\ell = L\sum_j\sigma_j\epsilon_j^\ell\rho_{ji}^\ell
+  \lambda_i^\ell = LR^\ell\sum_j\sigma_j\epsilon_j^\ell\rho_{ji}^\ell
 \end{equation}
-where $L$ is the luminosity, $\sigma_j$ is the cross section of the
+where $L$ is the luminosity, $R^\ell$ is the channel ratio of data to
+selection efficiencies, $\sigma_j$ is the cross section of the
 $j^{th}$ process, $\epsilon^\ell_j$ is the $\ell$ (muon or electron)
 selection efficiency for the $j^{th}$ process, and $\rho^\ell_{ij}$
 are the $i$ bins of the post-selection probability density
@@ -37,7 +38,8 @@ interest consist of 4 sources of $t\bar{t}$ production
 Drell-Yann.
 
 We introduce the four parameters of interest $\{\delta_k\}$ and the
-six nuisance parameters $\{\delta_L;\delta_j\}$ by allowing
+eight nuisance parameters $\{\delta_L;R^e;R^\mu;\delta_j\}$ by
+allowing
 \begin{eqnarray}
   L &=& \hat{L}(1+\delta_L) \\
   \sigma_j &=& \sigma_j^{mc}(1+\delta_j),\qquad j\notin \{k\to t\bar{t}\}, \quad k\in\{gg,qg,q\bar{q},\bar{q}g\}\\
@@ -52,10 +54,15 @@ The parameters of interest are constrained by the two equations
   D_{gg}D_{q\bar{q}} = D_{qg}D_{\bar{q}g}, \qquad D_k = (1+\delta_k)
 \end{equation}
 so they can be written as only two independent parameters,
-$(\delta_{gg},\delta_{qg})$.  The other two are then
+$(\delta_{qq},\delta_{ag})$, which we reparameterize as
+$(\delta_{qq},R_{ag})$, with
 \begin{eqnarray}
-  \delta_{\bar{q}g} &=& -\left(\delta_{gg}f_{gg}^{mc}+\delta_{qg}f_{qg}^{mc}+\delta_{q\bar{q}}f_{q\bar{q}}^{mc}\right)/f_{\bar{q}g}^{mc}\\
-  \delta_{q\bar{q}} &=& \left[D_{qg}(f_{\bar{q}g} - \delta_{gg}f_{gg} - \delta_{qg}f_{qg}) - D_{gg}f_{\bar{q}g}\right] / (D_{qg}f_{q\bar{q}} - D_{gg}f_{\bar{q}g})
+  f_{qq} &=& (1+\delta_{qq})f_{qq}^{mc}\\
+  f_{ag} &=& R_{ag}f_{qq}\\
+  f_{qg} &=& (1-f_{qq}-f_{ag})/(1+R_{ag}f_{gg}^{mc}f_{qq}^{mc}/f_{ag}^{mc}f_{qg}^{mc})\\
+  f_{gg} &=& 1 - f_{qq} - f_{ag} - f_{qg}
+  %\delta_{\bar{q}g} &=& -\left(\delta_{gg}f_{gg}^{mc}+\delta_{qg}f_{qg}^{mc}+\delta_{q\bar{q}}f_{q\bar{q}}^{mc}\right)/f_{\bar{q}g}^{mc}\\
+  %\delta_{q\bar{q}} &=& \left[D_{qg}(f_{\bar{q}g} - \delta_{gg}f_{gg} - \delta_{qg}f_{qg}) - D_{gg}f_{\bar{q}g}\right] / (D_{qg}f_{q\bar{q}} - D_{gg}f_{\bar{q}g})
 \end{eqnarray}
 The nuisance parameters are constrained by the prior probability
 \begin{equation}
@@ -75,8 +82,8 @@ In summary, the inputs to the model are
   \end{tabular}
 \end{center}
 The independent parameters of interest are $\vec{x} =
-\{\delta_{gg},\delta_{qg}\}$, and the nuisance parameters ar $\vec{y}
-= \{\delta_L;\delta_j\}$, with $j$ in $t\bar{t}$, $W+$jets, multijet,
+\{\delta_{qq},R_{ag}\}$, and the nuisance parameters ar $\vec{y}
+= \{\delta_L;R^e;R^\mu;\delta_j\}$, with $j$ in $t\bar{t}$, $W+$jets, multijet,
 Drell-Yann, and single top production.
 
 \end{document}
