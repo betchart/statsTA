@@ -44,9 +44,7 @@ class topAsymmFit(object) :
         self.print_n(w)
         result.Print() 
         self.draw(w,'fit')
-        profiled = self.scanOfProfileNLL(w, result)
-        #mc = self.setUpModel(w)
-        #self.feldmanCousins(w,mc,profiled) # too many calculations required
+        self.contourProfileNLL(w, result)
 
     def print_fracs(self,w) :
         for item in ['lumi_mu','lumi_el','f_gg','f_qg','f_qq','f_ag']+['xs_'+i for i in inputs.xs] : print "%s: %.04f"%(item, w.arg(item).getVal())
@@ -82,15 +80,6 @@ class topAsymmFit(object) :
             getattr(self, 'import_'+item)(*([w]+([useData] if item=='data' else [])))
             print '.'
         return w
-
-    def setUpModel(self, w) :
-        mc = r.RooStats.ModelConfig(w)
-        mc.SetObservables(w.argSet('d3,ptpt,channel'))
-        mc.SetParametersOfInterest(w.argSet('d_qq,R_ag'))
-        nuis = r.RooArgSet(*[w.arg(i) for i in ['d_lumi_mu','eff_el_mj','eff_mu_mj','global_R_el','global_R_mu']+['d_xs_'+j for j in inputs.xs if j!='mj']])
-        mc.SetNuisanceParameters(nuis)
-        mc.SetPdf(w.pdf('constrained_model'))
-        return mc
 
     def import_fractions(self,w) :
         comps,fracs = zip(*inputs.components['tt'])
@@ -260,7 +249,7 @@ class topAsymmFit(object) :
         c.Print('fractions.pdf]')
 
     @roo_quiet
-    def scanOfProfileNLL(self, w, result, nSpokes = 20, scale_dqq = 0.01, scale_Rag = 0.02) :
+    def contourProfileNLL(self, w, result, levels = [1.15, 3.0], nSpokes = 40, scale_dqq = 0.05, scale_Rag = 0.1, tolerance = 0.015) :
         nll = w.pdf('model').createNLL(*self.fitArgs)
         prof = r.RooProfileLL('prof','',nll,w.argSet('d_qq,R_ag'))
 
@@ -271,59 +260,40 @@ class topAsymmFit(object) :
         w.arg('d_qq').Print()
         w.arg('R_ag').Print()
         prof.Print()
-        pScan = r.RooDataSet("pScan", "", w.allVars())
-        pScan.add(w.allVars())
-        print type(pScan)
-        print pScan
-        pScan.Print()
-        with open("nll.txt",'w') as nllFile :
-            for iPhi in range(nSpokes) :
-                print iPhi
-                phi = iPhi*2*math.pi/nSpokes
-                print >>nllFile
-                print >>nllFile, d_qq, R_ag, 0
-                for iRad in range(1,100) :
-                    d_qq_local = d_qq + scale_dqq*iRad*math.sin(phi)
-                    if d_qq_local < -1 : break
-                    w.var('R_ag').setVal(R_ag + scale_Rag*iRad*math.cos(phi))
-                    w.var('d_qq').setVal(d_qq_local)
-                    p = prof.getVal()
-                    print >>nllFile, w.var('d_qq').getVal(), w.var('R_ag').getVal(), max(0,p)
-                    nllFile.flush()
-                    pScan.add(w.allVars())
-                    if p > 4 : break
-        return pScan
-
-    def feldmanCousins(self, w, mc, pointsToTest, proof = False ) :
-        print "FC"
-        print
-        cl = 0.95
-        fc = r.RooStats.FeldmanCousins(w.data('data'), mc)
-        #fc.AdditionalNToysFactor(0.1) # quick and rough
-        fc.UseAdaptiveSampling(True)
-        fc.SetConfidenceLevel(cl)
-
-        toymcsampler = fc.GetTestStatSampler()
-        if proof :
-            pc = r.RooStats.ProofConfig(w, 1, "workers=4", r.kFALSE)
-            toymcsampler.SetProofConfig(pc)
         
-        nc = r.RooStats.NeymanConstruction(w.data('data'), mc)
-        nc.SetLeftSideTailFraction(0.0) # 0.0 for Feldman Cousins
-        nc.SetTestStatSampler(toymcsampler) # Use fc configured teststatsampler
-        nc.SetConfidenceLevel(cl)
-        nc.SetParameterPointsToTest(pointsToTest) # the profiled nuisance parameters on the selected grid of POI
-        nc.CreateConfBelt(True)
+        cache = {(None,None):None}
+        previous = dict([(lev,1) for lev in levels])
+        def getPoint( phi, level, last = (0,0), guess = 1) :
+            if phi > math.pi : return (None,None)
+            coord = ( R_ag + scale_Rag*guess*math.cos(phi),
+                      d_qq + scale_dqq*guess*math.sin(phi) )
+            [w.var(item).setVal(coord[i]) for i,item in enumerate(['R_ag','d_qq'])]
+            if coord not in cache : cache[coord] = prof.getVal()
+            line_guess = guess + (level - cache[coord]) * (guess - last[0]) / (cache[coord] - last[1])
+            simple_parab_guess = guess*math.sqrt(level/cache[coord])
 
-        interval = nc.GetInterval()
-        belt = nc.GetConfidenceBelt()
-        limits = dict([(a,(interval.LowerLimit(w.arg(a)),interval.UpperLimit(w.arg(a)))) for a in ['d_qq','R_ag']])
-        print 'cl',interval.ConfidenceLevel()
-        print limits
+            if last[0] :
+                b = (last[1]/last[0]**2 - cache[coord]/guess**2) / (last[0] - guess)
+                a = last[1]/last[0]**2 - b * last[0]
+                def pg(x) : 
+                    cub = a*x**2 + b*x**3
+                    return x if 2*abs(cub-level)<tolerance else pg(x*math.sqrt(level/cub))
+                parab_guess = pg(guess)
+            else :
+                parab_guess = 0
 
-        for iScan in range(pointsToTest.numEntries()) :
-            args = pointsToTest.get(iScan)
-            print args.getRealValue('d_qq'), args.getRealValue('R_ag'), inte(interval.IsInInterval(args))
-        return
+            print "%.5f  %.2f"%(guess, cache[coord])
+            previous[level] = guess
+            return ( coord if abs(cache[coord]-level) < tolerance else
+                     getPoint(phi, level, last = (guess,cache[coord]), guess = parab_guess if parab_guess else simple_parab_guess   ) )
+
+        files = [open('nll_%.3f.txt'%lev,'w') for lev in levels]
+        for iPhi in range(nSpokes) :
+            print iPhi
+            points = [getPoint( iPhi*2*math.pi/nSpokes, lev, guess = previous[lev]) for lev in levels]
+            for p,f in zip(points,files) :
+                print >>f, p[0],p[1],cache[p]
+                f.flush()
+        for f in files : f.close()
 
 if __name__=='__main__' : topAsymmFit()
