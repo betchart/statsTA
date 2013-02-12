@@ -4,6 +4,8 @@ r.gROOT.SetBatch(1)
 
 c = r.TCanvas()
 c.Divide(2,1)
+c.GetPad(1).SetRightMargin(0.2)
+c.GetPad(2).SetRightMargin(0.2)
 leptons = ['el','mu']
 
 for el in leptons :
@@ -19,6 +21,7 @@ for el in leptons :
         h_dep = dependence(h_)
         h_dep.SetTitle(s)
         h_.SetTitle(s)
+        h_.SetMinimum(0)
         c.cd(1)
         h_.Draw("colz")
         c.cd(2)
