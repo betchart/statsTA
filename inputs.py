@@ -1,7 +1,53 @@
-import random, ROOT as r
+import random, ROOT as r, sys
 
-counts = "beamHaloCSCLooseHaloId"
-signals = "triD_v_sqtsumptopt"
+samples = ['wj','dy','st','ttgg','ttqg','ttqq','ttag','qcd','data']
+
+class sample_data(object) :
+    def __init__(self, signalDistribution, xs = None, lumi = None, selectionEfficiency = 1.0, preselectionFraction = 1.0 ) :
+        self.data = signalDistribution
+        self.data.Scale(1./self.data.Integral())
+
+        self.eff = selectionEfficiency
+        self.lumi = lumi
+        self.xs = xs
+        self.frac = preselectionFraction
+
+        assert (xs==None)^(lumi==None)
+        
+    def __str__(self) : return ';  '.join([('  xs: %8.2f'%self.xs if self.xs else 'lumi: %8.2f'%self.lumi),
+                                           ('eff: %.4f'%self.eff).rjust(7), 
+                                           ('f: %.4f'%self.frac).rjust(8)])
+    @property
+    def key(self) : return (self.lumi, self.xs, self.frac)
+
+class channel_data(object) :
+    def __init__(self,lepton, filePattern="data/stats_melded_%s_ph_c_20.root",
+                 signal="fitTopQueuedBin7TridiscriminantWTopQCD/", 
+                 preselection="allweighted/" ) :
+
+        tfile = r.TFile.Open(filePattern%lepton)
+
+        self.samples = {}
+        for s in samples:
+            pre = tfile.Get(preselection+s)
+            data = tfile.Get(signal+s)
+            xs = tfile.Get('xsHisto/'+s).GetBinContent(1) if s!='data' else None
+            lumi = tfile.Get('lumiHisto/'+s).GetBinContent(1) if s=='data' else None
+
+            self.samples[s] = sample_data( data, xs, lumi, 
+                                           selectionEfficiency = (data.Integral()/pre.Integral() if pre else 0), 
+                                           preselectionFraction = 1.0 if s[:2]!='tt' else pre.Integral()/tfile.Get(preselection+'tt').Integral()
+                                           )
+    def __str__(self) :
+        return '\n'.join( '%s:: %s'%(s.rjust(5),str(data)) for s,data in sorted(self.samples.items(), key = lambda (s,d):d.key, reverse=True))
+        
+        
+for lepton in ['el','mu'] : 
+    print
+    print lepton
+    print channel_data(lepton)
+
+sys.exit(0)
 
 luminosity = {'el': (5100,None),
               'mu': (5096,0.04)} # 1/pb
