@@ -43,19 +43,26 @@ class topAsymmFit(object) :
         self.print_n(w)
         #self.draw(w,'before')
 
-        self.fitArgs = [w.data('data'),
-                        r.RooFit.Extended(True),
-                        r.RooFit.ExternalConstraints(r.RooArgSet(w.pdf('constraints'))),
-                        r.RooFit.Optimize(False),
-                        r.RooFit.NumCPU(4)]
-        result = w.pdf('model').fitTo(*(self.fitArgs+
-                                        [r.RooFit.PrintLevel(-1),
-                                         r.RooFit.Save(True),
-                                         r.RooFit.PrintEvalErrors(-1),
-                                         ]))
-        self.print_fracs(w)
-        self.print_n(w)
-        result.Print() 
+        dqq = w.arg('d_qq')
+        dqq.setConstant()
+        output = open('dqq_scan.txt','w')
+        for i in range(120) :
+            dqq.setVal(0.2 - i*0.01)
+            self.fitArgs = [w.data('data'),
+                            r.RooFit.Extended(True),
+                            r.RooFit.ExternalConstraints(r.RooArgSet(w.pdf('constraints'))),
+                            #r.RooFit.Optimize(False),
+                            r.RooFit.NumCPU(4)]
+            result = w.pdf('model').fitTo(*(self.fitArgs+
+                                            [r.RooFit.PrintLevel(-1),
+                                             r.RooFit.Save(True),
+                                             r.RooFit.PrintEvalErrors(-1),
+                                             ]))
+            print>>output, dqq.getVal(), w.arg('alphaL').getVal(), w.arg('alphaL').getError(), w.arg('f_gg').getVal(), w.arg('f_qg').getVal(), w.arg('f_qq').getVal(), w.arg('f_qg').getVal()
+            #self.print_fracs(w)
+            #self.print_n(w)
+            #result.Print()
+        output.close()
         #self.draw(w,'fit')
         #self.contourProfileNLL(w, result)
 
@@ -97,11 +104,9 @@ class topAsymmFit(object) :
 
     def import_fractions(self,w) :
         [wimport(w, r.RooConstVar("f_%s_hat"%comp,"#hat{f}_{%s}"%comp, self.channels['el'].samples['tt'+comp].frac)) for comp in self.ttcomps]
-        factory(w, "R_ag[%f,0.01,1]"%(self.channels['el'].samples['ttag'].frac/self.channels['el'].samples['ttqq'].frac) )
+        factory(w, "R_ag[%f,0.07,1]"%(self.channels['el'].samples['ttag'].frac/self.channels['el'].samples['ttqq'].frac) )
         #factory(w, "R_ag[%f,%f,%f]"%(3*(self.channels['el'].samples['ttag'].frac/self.channels['el'].samples['ttqq'].frac,) ))
         factory(w, "d_qq[-0.9999999,1]")
-        #factory(w, "d_qq[-1e-12,1e-12]")
-        #factory(w, "d_qq[-0.5,-0.4]")
         factory(w, "expr::f_qq('(1+@0)*@1',{d_qq,f_qq_hat})")
         factory(w, "prod::f_ag(R_ag,f_qq)")
         factory(w, "expr::f_qg('(1-@0-@1)/(1+@2*@3*@4/(@5*@6))',{f_qq,f_ag,R_ag,f_gg_hat,f_qq_hat,f_ag_hat,f_qg_hat})")
@@ -158,9 +163,8 @@ class topAsymmFit(object) :
                                                           'eff_'+name])))
 
     def import_model(self,w) :
-        #factory(w, "alphaT[1, -7, 7]")
         wimport_const(w, 'alphaT', 1.0)
-        factory(w, "alphaL[1, -7, 7]")
+        factory(w, "alphaL[1, -15, 20]")
 
         [factory(w, "SUM::%(n)s( alphaT * %(n)s_both, %(n)s_symm )"%{'n':lepton+'_ttag'}) for lepton in self.channels]
         [factory(w, "SUM::%(n)s( alphaT * %(n)s_both, %(n)s_symm )"%{'n':lepton+'_ttqg'}) for lepton in self.channels]
@@ -230,6 +234,7 @@ class topAsymmFit(object) :
 
                 data.plotOn(plt, cut, r.RooFit.MarkerSize(0.5), r.RooFit.Name('data'+cat+var))
                 for iComps in range(len(comps)) :
+                    print '.',
                     col = colors[iComps]
                     compstr = ','.join(['%s_%s%s'%((cat,)+sub) for sub in comps[:iComps+1]])
                     w.pdf('model').plotOn( plt,
@@ -243,8 +248,7 @@ class topAsymmFit(object) :
                                            r.RooFit.Name(comps[iComps][0]+cat+var),
                                            r.RooFit.MoveToBack()
                                            )
-                args = w.argSet(','.join(['d_qq','R_ag',
-                                         #,'global_R_mu','global_R_el'
+                args = w.argSet(','.join(['d_qq','R_ag','alphaL'
                                           ]))
                 w.pdf('model').plotOn( plt,
                                        r.RooFit.ProjWData(w.argSet(''),fakedata),
@@ -262,11 +266,12 @@ class topAsymmFit(object) :
                 plt.SetTitle("" if not j else ("Channel: "+cat))
                 plt.SetMaximum(self.maxi[(cat,var)]*1.1)
                 plt.Draw()
-                if not (i or j) : leg.AddEntry('data'+cat+var,'Data', "LP")
-                for iComps in reversed(range(len(comps))) :
-                    if not (i or j) : leg.AddEntry(comps[iComps]+cat+var,comps[iComps],"f")
+                #if not (i or j) : leg.AddEntry('data'+cat+var,'Data', "LP")
+                #for iComps in reversed(range(len(comps))) :
+                #    if not (i or j) : leg.AddEntry(comps[iComps]+cat+var,comps[iComps],"f")
+        print '!'
         c.cd(1)
-        leg.Draw()
+        #leg.Draw()
         c.Print('%s.pdf'%fileName)
 
     def plot_fracs(self,w, logy = False) :
@@ -275,9 +280,9 @@ class topAsymmFit(object) :
         c.Print('fractions.pdf[')
         c.SetLogy(logy)
         plt = w.var('d_qq').frame()
-        plt.SetMaximum(1.1)
-        for v in range(0,90) :
-            val = v/100.+0.11
+        plt.SetMaximum(1.0)
+        for v in range(0,94) :
+            val = v/100.+0.07
             plt.SetTitle("R_ag = %.3f"%(val))
             w.var('R_ag').setVal(val)
             w.arg('f_gg').plotOn(plt,r.RooFit.LineWidth(1),r.RooFit.LineColor(r.kBlue))
