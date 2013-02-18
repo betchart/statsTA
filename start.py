@@ -1,12 +1,12 @@
-import sys,math
-sys.argv.append('-b')
-import inputs, ROOT as r
+import sys,math,inputs, ROOT as r
+r.gROOT.SetBatch(1)
 
 def roo_quiet(function) :
     def wrapped(*args,**kwargs) :
         msg = r.RooMsgService.instance() 
         cache = msg.globalKillBelow()            # get current message level
-        msg.setGlobalKillBelow(r.RooFit.WARNING) # suppress messages
+        #msg.setGlobalKillBelow(r.RooFit.WARNING) # suppress messages
+        msg.setGlobalKillBelow(r.RooFit.ERROR) # suppress messages
         val = function(*args,**kwargs)                 # call function
         msg.setGlobalKillBelow(cache)            # resume prior message level
         return val
@@ -15,11 +15,23 @@ def roo_quiet(function) :
 @roo_quiet
 def wimport(w, *args, **kwargs) : getattr(w, "import")(*args,**kwargs)
 
-def factory(w, command) : w.factory(command)
+@roo_quiet
+def wimport_const(w, name, value) : getattr(w, "import")(r.RooConstVar(*(2*[name]+[value])))
+
+def factory(w, command) :  w.factory(command)
 
 class topAsymmFit(object) :
-    #@roo_quiet
+    @roo_quiet
     def __init__(self) :
+        self.observables = ['queuedbins','tridiscr']
+        self.channels = dict((lepton,inputs.channel_data(lepton)) for lepton in ['el','mu'])
+        print
+        print self.channels['el']
+        print
+        print self.channels['mu']
+        print
+        self.ttcomps = ('qq','ag','gg','qg')
+
         w = self.setUp(useData = True)
         w.data('data').Print()
         w.data('data_el').Print()
@@ -29,7 +41,8 @@ class topAsymmFit(object) :
         self.defaults(w)
         self.print_fracs(w)
         self.print_n(w)
-        self.draw(w,'before')
+        #self.draw(w,'before')
+
         self.fitArgs = [w.data('data'),
                         r.RooFit.Extended(True),
                         r.RooFit.ExternalConstraints(r.RooArgSet(w.pdf('constraints'))),
@@ -43,18 +56,19 @@ class topAsymmFit(object) :
         self.print_fracs(w)
         self.print_n(w)
         result.Print() 
-        self.draw(w,'fit')
-        self.contourProfileNLL(w, result)
+        #self.draw(w,'fit')
+        #self.contourProfileNLL(w, result)
 
     def print_fracs(self,w) :
-        for item in ['lumi_mu','lumi_el','f_gg','f_qg','f_qq','f_ag']+['xs_'+i for i in inputs.xs] : print "%s: %.04f"%(item, w.arg(item).getVal())
+        for item in ['lumi_mu','lumi_el','f_gg','f_qg','f_qq','f_ag']+['xs_'+i for i in self.channels['el'].samples if i!='data'] : print "%s: %.04f"%(item, w.arg(item).getVal())
         print
 
     def print_n(self,w) :
         length = 24
         tots = {'el':0,'mu':0}
         print (' ').join(i.rjust(8) for i in ['']+tots.keys())
-        for xs in inputs.xs :
+        for xs in self.channels['el'].samples :
+            if xs=='data' : continue
             print xs.rjust(length/3),
             for chan in tots :
                 val = w.arg('expect_%s_%s'%(chan,xs)).getVal()
@@ -74,7 +88,7 @@ class topAsymmFit(object) :
     def setUp(self,useData) :
         w = r.RooWorkspace('Workspace')
         init_sequence = ['fractions','constraints','efficiencies','shapes','model','data']
-        for item in init_sequence : 
+        for item in init_sequence :
             print item,
             sys.stdout.flush()
             getattr(self, 'import_'+item)(*([w]+([useData] if item=='data' else [])))
@@ -82,79 +96,105 @@ class topAsymmFit(object) :
         return w
 
     def import_fractions(self,w) :
-        comps,fracs = zip(*inputs.components['tt'])
-        assert comps == ('qq','ag','gg','qg')
-        [wimport(w, r.RooConstVar("f_%s_hat"%comp,"#hat{f}_{%s}"%comp, frac)) for comp,frac in zip(comps,fracs)]
-        factory(w, "R_ag[0.11,1]" )
-        factory(w, "d_qq[-0.9999999,1]")
+        [wimport(w, r.RooConstVar("f_%s_hat"%comp,"#hat{f}_{%s}"%comp, self.channels['el'].samples['tt'+comp].frac)) for comp in self.ttcomps]
+        #factory(w, "R_ag[%f,0.01,1]"%(self.channels['el'].samples['ttag'].frac/self.channels['el'].samples['ttqq'].frac) )
+        factory(w, "R_ag[%f,%f,%f]"%(3*(self.channels['el'].samples['ttag'].frac/self.channels['el'].samples['ttqq'].frac,) ))
+        #factory(w, "d_qq[-0.9999999,1]")
+        factory(w, "d_qq[-1e-12,1e-12]")
         factory(w, "expr::f_qq('(1+@0)*@1',{d_qq,f_qq_hat})")
         factory(w, "prod::f_ag(R_ag,f_qq)")
         factory(w, "expr::f_qg('(1-@0-@1)/(1+@2*@3*@4/(@5*@6))',{f_qq,f_ag,R_ag,f_gg_hat,f_qq_hat,f_ag_hat,f_qg_hat})")
         factory(w, "expr::f_gg('1-@0-@1-@2',{f_qq,f_ag,f_qg})")
 
     def import_constraints(self,w) :
-        def gdelta( w, var, (mean,rel_unc), limits = (-1.0,1.5), delta = None) :
-            if not delta : delta = 'd_%s[0%s]'%(var, (",%f,%f"%limits) if rel_unc else '')
-            factory(w, "expr::%s('(1+@0)*@1',{ %s, %s_hat[%f]})"%(var,delta,var,mean))
-            if rel_unc : factory(w, "Gaussian::%s_constraint( d_%s, 0, %f)"%(var,var,rel_unc))
-            return
-        gdelta( w, "lumi_mu", inputs.luminosity['mu'], limits = (-0.2,0.2))
-        gdelta( w, "lumi_el", inputs.luminosity['el'], limits = (-0.2,0.2), delta='d_lumi_mu')
-        [gdelta( w, "xs_"+samp, xs) for samp,xs in inputs.xs.items() if samp!='mj']
-        gdelta( w, 'xs_mj', inputs.xs['mj'], limits = (-1,1) )
-        factory(w, "PROD::constraints(%s)"%', '.join([s+'_constraint' for s in ['lumi_mu']+['xs_'+t for t in inputs.components if t!='mj']]))
+        factory(w, "Gaussian::lumi_constraint( d_lumi[0,-0.2,0.2], 0, %f)"%self.channels['el'].lumi_sigma)
+        for channel in self.channels.values() :
+            wimport_const( w, 'lumi_%s_hat'%channel.lepton, channel.lumi )
+            factory(w, "expr::lumi_%s('(1+@0)*@1', {d_lumi, lumi_%s_hat})"%(channel.lepton,channel.lepton))
+
+        xs_constraints = dict([(samp[:2],(data.xs,data.xs_sigma)) for samp,data in self.channels['el'].samples.items() if data.xs>0])
+
+        for sample,(xs,delta) in xs_constraints.items() :
+            wimport_const(w, 'xs_%s_hat'%sample, xs)
+            factory(w, "Gaussian::xs_%s_constraint( d_xs_%s[0,-1,1.5], 0, %f)"%(sample,sample,delta))
+            factory(w, "expr::xs_%s('(1+@0)*@1',{d_xs_%s, xs_%s_hat})"%(sample,sample,sample))
         
-    def import_shapes(self,w) :
-        factory(w, "channel[%s]"%','.join("%s=%d"%(s,i) for i,s in enumerate(inputs.efficiency)))
-        factory(w, "d3[-1,1]")
-        factory(w, "ptpt[0,1]")
-        [self.import_shape(w,chan,samp,comp)
-         for chan,samps in inputs.efficiency.items()
-         for samp,comps in samps.items()
-         for comp,frac in comps]
-        [factory(w, "expr::expect_%s_tt('%s',{%s})"%(chan,
-                                                    '+'.join('@%d'%i for i in range(len(inputs.components['tt']))),
-                                                    ','.join('expect_%s_tt%s'%(chan,c) for c,_ in inputs.components['tt'])))
-         for chan in inputs.efficiency]
+        factory(w, "PROD::constraints(%s)"%', '.join([s+'_constraint' for s in ['lumi']+['xs_'+t for t in xs_constraints]]))
 
-    @staticmethod
-    @roo_quiet
-    def import_shape(w,chan,samp,comp) :
-        lab = ['d3','ptpt']
-        name = '_'.join([chan,samp+comp])
-        [wimport(w, r.RooDataHist('%s_%s_sim'%(i,name), '', r.RooArgList(w.var(i)), inputs.histogram(i,chan,samp,comp))) for i in lab]
-        [factory(w, "HistPdf::%s(%s,%s)"%('%s_%s'%(i,name),i, '%s_%s_sim'%(i,name))) for i in lab]
-        factory(w, "PROD::%s(%s)"%( '%s_%s'%('-'.join(lab),name), ','.join('%s_%s'%(i,name) for i in lab)))
-        factory(w, "expr::%s('%s',{%s})"%('expect_'+name,
-                                         '*'.join('@%d'%i for i in range(5 if comp else 4)),
-                                         ','.join(['lumi_'+chan,'global_R_'+chan,'xs_'+samp,'eff_'+name,'f_'+comp][:None if comp else -1])))
-
+        [factory(w, "prod::xs_tt%s(f_%s,xs_tt)"%(comp,comp)) for comp in self.ttcomps]
+        wimport_const(w, 'xs_qcd', 100)
+        #factory(w, "expr::xs_qcd('(1+@0)*@1',{d_xs_qcd[0,-1,10],xs_qcd_hat})")
+        
+        
     def import_efficiencies(self,w) :
-        [wimport(w,
-                 r.RooConstVar(*(2*['_'.join(filter(None,['eff',chan,samp+comp]))]+[eff])) if eff else
-                 r.RooRealVar(*(2*['_'.join(filter(None,['eff',chan,samp+comp]))] + [0.01,0,1])))
-         for chan,samps in inputs.efficiency.items()
-         for samp,comps in samps.items() 
-         for comp,eff in comps]
-        [wimport(w,r.RooRealVar('global_R_%s'%chan, 'R_{%s}'%chan, 1, 0.9,1.2)) for chan in inputs.efficiency]
+        [wimport(w, 
+                 r.RooConstVar(*( 2*['eff_%s_%s'%(channel.lepton,sample)] + [data.eff] ) ) if data.eff>0 else
+                 r.RooRealVar (*( 2*['eff_%s_%s'%(channel.lepton,sample)] + [0.01,0,1]) ))
+         for channel in self.channels.values()
+         for sample,data in channel.samples.items()
+         if sample!='data']
+        #[wimport(w,r.RooRealVar('global_R_%s'%chan, 'R_{%s}'%chan, 1, 0.9,1.2)) for chan in self.channels]
+
+    def import_shapes(self,w) :
+        factory(w, "channel[%s]"%','.join("%s=%d"%(s,i) for i,s in enumerate(self.channels)))
+        [factory(w, "%s[-1,1]"%obs) for obs in self.observables]
+
+        [self.import_shape(w,channel.lepton,sample,data)
+         for channel in self.channels.values()
+         for sample,data in channel.samples.items()
+         if sample!='data' ]
+        
+    @roo_quiet
+    def import_shape(self,w,lepton,sample,data) :
+        name = '_'.join([lepton,sample])
+        arglist = r.RooArgList(*[w.var(o) for o in self.observables])
+        argset = r.RooArgSet(arglist)
+
+        for i,label in enumerate(['both','symm']) :
+            wimport(w, r.RooDataHist('%s_sim_%s'%(name,label), '', arglist, data.datas[i]))
+            wimport(w, r.RooHistPdf('%s_%s'%(name,label),'', argset, w.data('%s_sim_%s'%(name,label))))
+
+        factory(w, "prod::expect_%s(%s)"%(name, ','.join(['lumi_'+lepton,
+                                                          #'global_R_'+lepton,
+                                                          'xs_'+sample,
+                                                          'eff_'+name])))
 
     def import_model(self,w) :
-        [factory(w, "SUM::model_%s( %s )"%(chan,','.join('expect_%s_%s * d3-ptpt_%s_%s'%(2*(chan,samp+comp)) 
-                                                        for samp,comps in samp.items() 
-                                                        for comp,_ in comps))) for chan,samp in inputs.efficiency.items()]
-        factory(w, "SIMUL::model(channel, %s)"%', '.join("%s=%s"%(chan,'model_'+chan) for chan in inputs.efficiency))
+        factory(w, "alphaT[1, -7, 7]")
+        factory(w, "alphaL[1, -7, 7]")
+
+        [factory(w, "SUM::%(n)s( alphaT * %(n)s_both, %(n)s_symm )"%{'n':lepton+'_ttag'}) for lepton in self.channels]
+        [factory(w, "SUM::%(n)s( alphaT * %(n)s_both, %(n)s_symm )"%{'n':lepton+'_ttqg'}) for lepton in self.channels]
+        [factory(w, "SUM::%(n)s( alphaL * %(n)s_both, %(n)s_symm )"%{'n':lepton+'_ttqq'}) for lepton in self.channels]
+
+        [factory(w, "SUM::model_%s( %s )"%(lepton, ','.join([ 'expect_%s_%s * %s_%s%s'%(lepton, key, lepton, key, value)
+                                                              for key,value in {'qcd' :'_symm',
+                                                                                'dy'  :'_symm',
+                                                                                'wj'  :'_both',
+                                                                                'st'  :'_both',
+                                                                                'ttgg':'_both',
+                                                                                'ttag':'',
+                                                                                'ttqg':'',
+                                                                                'ttqq':''}.items()
+                                                              ]) ) ) for lepton in self.channels]
+
+        factory(w, "SIMUL::model(channel, %s)"%', '.join("%(chan)s=model_%(chan)s"%{'chan':lepton} for lepton in self.channels))
         factory(w, "PROD::constrained_model( model, constraints )")
+
 
     @roo_quiet
     def import_data(self,w, useData) :
-        obs_ = w.argSet('d3,ptpt')
+        obs_ = w.argSet(','.join(self.observables))
         obs = r.RooArgList(obs_)
-        hists = [(chan, inputs.histogram(None,chan,chan if chan=='mu' else 'EleHad.2011',d=2)) for chan in inputs.efficiency]
-        [w.var(v).setBins(hists[0][1].GetNbinsX() if v=='d3' else hists[0][1].GetNbinsY()) for v in ['d3','ptpt']]
-        datas = [(chan, r.RooDataHist('data_'+chan,'N_{obs}^{%s}'%chan,obs,hist)) for chan,hist in hists]
-        gens = [(chan,w.pdf('model_'+chan).generateBinned(obs_,
-                                                          39055 if chan=='mu' else 19528, #r.RooFit.Extended(),
-                                                          r.RooFit.Name('data_'+chan))) for chan in inputs.efficiency]
+
+        [w.var(v).setBins( getattr( self.channels['el'].samples['data'].datas[0], 'GetNbins'+X)() ) for v,X in zip(self.observables,'XY')]
+
+        datas = [(lepton, r.RooDataHist('data_'+lepton,'N_{obs}^{%s}'%lepton,obs,chan.samples['data'].datas[0])) for lepton,chan in self.channels.items()]
+
+        gens = [(lepton,w.pdf('model_'+lepton).generateBinned( obs_,
+                                                               349030 if chan=='mu' else 338286, #r.RooFit.Extended(),
+                                                               r.RooFit.Name('data_'+lepton))) for lepton in self.channels]
+
         [wimport(w, dat[1]) for dat in (datas if useData else gens)]
         args = [r.RooFit.Import(*dat) for dat in (datas if useData else gens)]
         wimport(w, r.RooDataHist('data', 'N_{obs}', 
@@ -176,23 +216,23 @@ class topAsymmFit(object) :
         if not hasattr(self,'maxi') : self.maxi = {}
         leg = r.TLegend(0.7,0.5,0.99,0.99)
         c = r.TCanvas()
-        cats = inputs.efficiency.keys()
+        cats = self.channels.keys()
         data = w.data('data')
-        fakedata = w.pdf('model').generate(r.RooArgSet(w.argSet('d3,ptpt,channel')),
+        fakedata = w.pdf('model').generate(r.RooArgSet(w.argSet(','.join(self.observables+['channel']))),
                                            r.RooFit.AllBinned() )
         c.Divide(2,len(cats))
         for i,cat in enumerate(cats) :
-            for j,var in enumerate(['d3','ptpt']) :
+            for j,var in enumerate(self.observables) :
                 pad = c.cd(i+1+2*j)
                 plt = w.var(var).frame()
                 cut = r.RooFit.Cut("channel==channel::%s"%cat)
-                comps = ['dy','st','mj','wj','ttgg','ttqg','ttag','ttqq']
-                colrs = [r.kGray, r.kGray, r.kGreen, r.kRed, r.kBlue-6, r.kBlue+2, r.kBlue+1, r.kViolet]
+                comps = [('dy','_symm'),('st','_both'),('qcd','_symm'),('wj','_both'),('ttgg','_both'),('ttag',''),('ttqg',''),('ttqq','')]
+                colors = [r.kGray, r.kGray, r.kGreen, r.kRed, r.kBlue-6, r.kBlue+2, r.kBlue+1, r.kViolet]
 
                 data.plotOn(plt, cut, r.RooFit.MarkerSize(0.5), r.RooFit.Name('data'+cat+var))
                 for iComps in range(len(comps)) :
-                    col = colrs[iComps]
-                    compstr = ','.join(['d3-ptpt_%s_%s'%(cat,sub) for sub in comps[:iComps+1]])
+                    col = colors[iComps]
+                    compstr = ','.join(['%s_%s%s'%((cat,)+sub) for sub in comps[:iComps+1]])
                     w.pdf('model').plotOn( plt,
                                            r.RooFit.ProjWData(w.argSet(''),fakedata),
                                            r.RooFit.Slice(w.cat('channel'),cat),
@@ -201,10 +241,12 @@ class topAsymmFit(object) :
                                            r.RooFit.LineColor(col),
                                            r.RooFit.FillColor(col),
                                            r.RooFit.DrawOption('F'),
-                                           r.RooFit.Name(comps[iComps]+cat+var),
+                                           r.RooFit.Name(comps[iComps][0]+cat+var),
                                            r.RooFit.MoveToBack()
                                            )
-                args = w.argSet(','.join(['d_qq','R_ag','global_R_mu','global_R_el']))
+                args = w.argSet(','.join(['d_qq','R_ag',
+                                         #,'global_R_mu','global_R_el'
+                                          ]))
                 w.pdf('model').plotOn( plt,
                                        r.RooFit.ProjWData(w.argSet(''),fakedata),
                                        r.RooFit.Slice(w.cat('channel'),cat),
