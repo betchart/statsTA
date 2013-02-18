@@ -97,10 +97,11 @@ class topAsymmFit(object) :
 
     def import_fractions(self,w) :
         [wimport(w, r.RooConstVar("f_%s_hat"%comp,"#hat{f}_{%s}"%comp, self.channels['el'].samples['tt'+comp].frac)) for comp in self.ttcomps]
-        #factory(w, "R_ag[%f,0.01,1]"%(self.channels['el'].samples['ttag'].frac/self.channels['el'].samples['ttqq'].frac) )
-        factory(w, "R_ag[%f,%f,%f]"%(3*(self.channels['el'].samples['ttag'].frac/self.channels['el'].samples['ttqq'].frac,) ))
-        #factory(w, "d_qq[-0.9999999,1]")
-        factory(w, "d_qq[-1e-12,1e-12]")
+        factory(w, "R_ag[%f,0.01,1]"%(self.channels['el'].samples['ttag'].frac/self.channels['el'].samples['ttqq'].frac) )
+        #factory(w, "R_ag[%f,%f,%f]"%(3*(self.channels['el'].samples['ttag'].frac/self.channels['el'].samples['ttqq'].frac,) ))
+        factory(w, "d_qq[-0.9999999,1]")
+        #factory(w, "d_qq[-1e-12,1e-12]")
+        #factory(w, "d_qq[-0.5,-0.4]")
         factory(w, "expr::f_qq('(1+@0)*@1',{d_qq,f_qq_hat})")
         factory(w, "prod::f_ag(R_ag,f_qq)")
         factory(w, "expr::f_qg('(1-@0-@1)/(1+@2*@3*@4/(@5*@6))',{f_qq,f_ag,R_ag,f_gg_hat,f_qq_hat,f_ag_hat,f_qg_hat})")
@@ -123,7 +124,6 @@ class topAsymmFit(object) :
 
         [factory(w, "prod::xs_tt%s(f_%s,xs_tt)"%(comp,comp)) for comp in self.ttcomps]
         wimport_const(w, 'xs_qcd', 100)
-        #factory(w, "expr::xs_qcd('(1+@0)*@1',{d_xs_qcd[0,-1,10],xs_qcd_hat})")
         
         
     def import_efficiencies(self,w) :
@@ -133,7 +133,6 @@ class topAsymmFit(object) :
          for channel in self.channels.values()
          for sample,data in channel.samples.items()
          if sample!='data']
-        #[wimport(w,r.RooRealVar('global_R_%s'%chan, 'R_{%s}'%chan, 1, 0.9,1.2)) for chan in self.channels]
 
     def import_shapes(self,w) :
         factory(w, "channel[%s]"%','.join("%s=%d"%(s,i) for i,s in enumerate(self.channels)))
@@ -155,12 +154,12 @@ class topAsymmFit(object) :
             wimport(w, r.RooHistPdf('%s_%s'%(name,label),'', argset, w.data('%s_sim_%s'%(name,label))))
 
         factory(w, "prod::expect_%s(%s)"%(name, ','.join(['lumi_'+lepton,
-                                                          #'global_R_'+lepton,
                                                           'xs_'+sample,
                                                           'eff_'+name])))
 
     def import_model(self,w) :
-        factory(w, "alphaT[1, -7, 7]")
+        #factory(w, "alphaT[1, -7, 7]")
+        wimport_const(w, 'alphaT', 1.0)
         factory(w, "alphaL[1, -7, 7]")
 
         [factory(w, "SUM::%(n)s( alphaT * %(n)s_both, %(n)s_symm )"%{'n':lepton+'_ttag'}) for lepton in self.channels]
