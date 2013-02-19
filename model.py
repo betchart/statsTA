@@ -37,10 +37,11 @@ class topAsymmModel(object) :
 
         for sample,(xs,delta) in xs_constraints.items() :
             roo.wimport_const(w, 'xs_%s_hat'%sample, xs)
-            roo.factory(w, "Gaussian::xs_%s_constraint( d_xs_%s[0,-1,1.5], 0, %f)"%(sample,sample,delta))
+            roo.factory(w, "Gaussian::xs_%s_constraint( d_xs_%s[0,-1,2], 0, %f)"%(sample,sample,delta))
             roo.factory(w, "expr::xs_%s('(1+@0)*@1',{d_xs_%s, xs_%s_hat})"%(sample,sample,sample))
 
-        roo.factory(w, "PROD::constraints(%s)"%', '.join([s+'_constraint' for s in ['lumi']+['xs_'+t for t in xs_constraints]]))
+        roo.factory(w, "Gaussian::alphaT_constraint( alphaT[1,0.5,1.5], 1, 0.1)")
+        roo.factory(w, "PROD::constraints(%s)"%', '.join([s+'_constraint' for s in ['lumi','alphaT']+['xs_'+t for t in xs_constraints]]))
 
         [roo.factory(w, "prod::xs_tt%s(f_%s,xs_tt)"%(comp,comp)) for comp in self.ttcomps]
         roo.wimport_const(w, 'xs_qcd', 100)
@@ -77,7 +78,6 @@ class topAsymmModel(object) :
                                                               'eff_'+name])))
 
     def import_model(self,w) :
-        roo.wimport_const(w, 'alphaT', 1.0)
         roo.factory(w, "alphaL[1, -15, 20]")
 
         [roo.factory(w, "SUM::%(n)s( alphaT * %(n)s_both, %(n)s_symm )"%{'n':lepton+'_ttag'}) for lepton in self.channels]
