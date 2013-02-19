@@ -1,64 +1,43 @@
-import sys,math,inputs, ROOT as r
+import sys,math,model,roo,ROOT as r
 r.gROOT.SetBatch(1)
 
-def roo_quiet(function) :
-    def wrapped(*args,**kwargs) :
-        msg = r.RooMsgService.instance() 
-        cache = msg.globalKillBelow()            # get current message level
-        #msg.setGlobalKillBelow(r.RooFit.WARNING) # suppress messages
-        msg.setGlobalKillBelow(r.RooFit.ERROR) # suppress messages
-        val = function(*args,**kwargs)                 # call function
-        msg.setGlobalKillBelow(cache)            # resume prior message level
-        return val
-    return wrapped
-    
-@roo_quiet
-def wimport(w, *args, **kwargs) : getattr(w, "import")(*args,**kwargs)
-
-@roo_quiet
-def wimport_const(w, name, value) : getattr(w, "import")(r.RooConstVar(*(2*[name]+[value])))
-
-def factory(w, command) :  w.factory(command)
-
 class topAsymmFit(object) :
-    @roo_quiet
+    @roo.quiet
     def __init__(self) :
-        self.observables = ['queuedbins','tridiscr']
-        self.channels = dict((lepton,inputs.channel_data(lepton)) for lepton in ['el','mu'])
+        self.model = model.topAsymmModel()
         print
-        print self.channels['el']
+        print self.model.channels['el']
         print
-        print self.channels['mu']
+        print self.model.channels['mu']
         print
-        self.ttcomps = ('qq','ag','gg','qg')
 
-        w = self.setUp(useData = True)
-        w.data('data').Print()
-        w.data('data_el').Print()
-        w.data('data_mu').Print()
+        self.import_data(self.model.w)
+        self.model.w.data('data').Print()
+        self.model.w.data('data_el').Print()
+        self.model.w.data('data_mu').Print()
 
-        self.plot_fracs(w)
-        self.defaults(w)
-        self.print_fracs(w)
-        self.print_n(w)
+        self.plot_fracs(self.model.w)
+        self.defaults(self.model.w)
+        self.print_fracs(self.model.w)
+        self.print_n(self.model.w)
         #self.draw(w,'before')
 
-        dqq = w.arg('d_qq')
+        dqq = self.model.w.arg('d_qq')
         dqq.setConstant()
         output = open('dqq_scan.txt','w')
         for i in range(120) :
             dqq.setVal(0.2 - i*0.01)
-            self.fitArgs = [w.data('data'),
+            self.fitArgs = [self.model.w.data('data'),
                             r.RooFit.Extended(True),
-                            r.RooFit.ExternalConstraints(r.RooArgSet(w.pdf('constraints'))),
+                            r.RooFit.ExternalConstraints(r.RooArgSet(self.model.w.pdf('constraints'))),
                             #r.RooFit.Optimize(False),
                             r.RooFit.NumCPU(4)]
-            result = w.pdf('model').fitTo(*(self.fitArgs+
-                                            [r.RooFit.PrintLevel(-1),
-                                             r.RooFit.Save(True),
-                                             r.RooFit.PrintEvalErrors(-1),
-                                             ]))
-            print>>output, dqq.getVal(), w.arg('alphaL').getVal(), w.arg('alphaL').getError(), w.arg('f_gg').getVal(), w.arg('f_qg').getVal(), w.arg('f_qq').getVal(), w.arg('f_qg').getVal()
+            result = self.model.w.pdf('model').fitTo(*(self.fitArgs+
+                                                       [r.RooFit.PrintLevel(-1),
+                                                        r.RooFit.Save(True),
+                                                        r.RooFit.PrintEvalErrors(-1),
+                                                        ]))
+            print>>output, dqq.getVal(), self.model.w.arg('alphaL').getVal(), self.model.w.arg('alphaL').getError(), self.model.w.arg('f_gg').getVal(), self.model.w.arg('f_qg').getVal(), self.model.w.arg('f_qq').getVal(), self.model.w.arg('f_qg').getVal()
             #self.print_fracs(w)
             #self.print_n(w)
             #result.Print()
@@ -67,14 +46,14 @@ class topAsymmFit(object) :
         #self.contourProfileNLL(w, result)
 
     def print_fracs(self,w) :
-        for item in ['lumi_mu','lumi_el','f_gg','f_qg','f_qq','f_ag']+['xs_'+i for i in self.channels['el'].samples if i!='data'] : print "%s: %.04f"%(item, w.arg(item).getVal())
+        for item in ['lumi_mu','lumi_el','f_gg','f_qg','f_qq','f_ag']+['xs_'+i for i in self.model.channels['el'].samples if i!='data'] : print "%s: %.04f"%(item, w.arg(item).getVal())
         print
 
     def print_n(self,w) :
         length = 24
         tots = {'el':0,'mu':0}
         print (' ').join(i.rjust(8) for i in ['']+tots.keys())
-        for xs in self.channels['el'].samples :
+        for xs in self.model.channels['el'].samples :
             if xs=='data' : continue
             print xs.rjust(length/3),
             for chan in tots :
@@ -92,119 +71,20 @@ class topAsymmFit(object) :
         w.var('d_qq').setVal(0)
         w.var('R_ag').setVal(w.arg('f_ag_hat').getVal()/w.arg('f_qq_hat').getVal())
 
-    def setUp(self,useData) :
-        w = r.RooWorkspace('Workspace')
-        init_sequence = ['fractions','constraints','efficiencies','shapes','model','data']
-        for item in init_sequence :
-            print item,
-            sys.stdout.flush()
-            getattr(self, 'import_'+item)(*([w]+([useData] if item=='data' else [])))
-            print '.'
-        return w
-
-    def import_fractions(self,w) :
-        [wimport(w, r.RooConstVar("f_%s_hat"%comp,"#hat{f}_{%s}"%comp, self.channels['el'].samples['tt'+comp].frac)) for comp in self.ttcomps]
-        factory(w, "R_ag[%f,0.07,1]"%(self.channels['el'].samples['ttag'].frac/self.channels['el'].samples['ttqq'].frac) )
-        #factory(w, "R_ag[%f,%f,%f]"%(3*(self.channels['el'].samples['ttag'].frac/self.channels['el'].samples['ttqq'].frac,) ))
-        factory(w, "d_qq[-0.9999999,1]")
-        factory(w, "expr::f_qq('(1+@0)*@1',{d_qq,f_qq_hat})")
-        factory(w, "prod::f_ag(R_ag,f_qq)")
-        factory(w, "expr::f_qg('(1-@0-@1)/(1+@2*@3*@4/(@5*@6))',{f_qq,f_ag,R_ag,f_gg_hat,f_qq_hat,f_ag_hat,f_qg_hat})")
-        factory(w, "expr::f_gg('1-@0-@1-@2',{f_qq,f_ag,f_qg})")
-
-    def import_constraints(self,w) :
-        factory(w, "Gaussian::lumi_constraint( d_lumi[0,-0.2,0.2], 0, %f)"%self.channels['el'].lumi_sigma)
-        for channel in self.channels.values() :
-            wimport_const( w, 'lumi_%s_hat'%channel.lepton, channel.lumi )
-            factory(w, "expr::lumi_%s('(1+@0)*@1', {d_lumi, lumi_%s_hat})"%(channel.lepton,channel.lepton))
-
-        xs_constraints = dict([(samp[:2],(data.xs,data.xs_sigma)) for samp,data in self.channels['el'].samples.items() if data.xs>0])
-
-        for sample,(xs,delta) in xs_constraints.items() :
-            wimport_const(w, 'xs_%s_hat'%sample, xs)
-            factory(w, "Gaussian::xs_%s_constraint( d_xs_%s[0,-1,1.5], 0, %f)"%(sample,sample,delta))
-            factory(w, "expr::xs_%s('(1+@0)*@1',{d_xs_%s, xs_%s_hat})"%(sample,sample,sample))
-        
-        factory(w, "PROD::constraints(%s)"%', '.join([s+'_constraint' for s in ['lumi']+['xs_'+t for t in xs_constraints]]))
-
-        [factory(w, "prod::xs_tt%s(f_%s,xs_tt)"%(comp,comp)) for comp in self.ttcomps]
-        wimport_const(w, 'xs_qcd', 100)
-        
-        
-    def import_efficiencies(self,w) :
-        [wimport(w, 
-                 r.RooConstVar(*( 2*['eff_%s_%s'%(channel.lepton,sample)] + [data.eff] ) ) if data.eff>0 else
-                 r.RooRealVar (*( 2*['eff_%s_%s'%(channel.lepton,sample)] + [0.01,0,1]) ))
-         for channel in self.channels.values()
-         for sample,data in channel.samples.items()
-         if sample!='data']
-
-    def import_shapes(self,w) :
-        factory(w, "channel[%s]"%','.join("%s=%d"%(s,i) for i,s in enumerate(self.channels)))
-        [factory(w, "%s[-1,1]"%obs) for obs in self.observables]
-
-        [self.import_shape(w,channel.lepton,sample,data)
-         for channel in self.channels.values()
-         for sample,data in channel.samples.items()
-         if sample!='data' ]
-        
-    @roo_quiet
-    def import_shape(self,w,lepton,sample,data) :
-        name = '_'.join([lepton,sample])
-        arglist = r.RooArgList(*[w.var(o) for o in self.observables])
-        argset = r.RooArgSet(arglist)
-
-        for i,label in enumerate(['both','symm']) :
-            wimport(w, r.RooDataHist('%s_sim_%s'%(name,label), '', arglist, data.datas[i]))
-            wimport(w, r.RooHistPdf('%s_%s'%(name,label),'', argset, w.data('%s_sim_%s'%(name,label))))
-
-        factory(w, "prod::expect_%s(%s)"%(name, ','.join(['lumi_'+lepton,
-                                                          'xs_'+sample,
-                                                          'eff_'+name])))
-
-    def import_model(self,w) :
-        wimport_const(w, 'alphaT', 1.0)
-        factory(w, "alphaL[1, -15, 20]")
-
-        [factory(w, "SUM::%(n)s( alphaT * %(n)s_both, %(n)s_symm )"%{'n':lepton+'_ttag'}) for lepton in self.channels]
-        [factory(w, "SUM::%(n)s( alphaT * %(n)s_both, %(n)s_symm )"%{'n':lepton+'_ttqg'}) for lepton in self.channels]
-        [factory(w, "SUM::%(n)s( alphaL * %(n)s_both, %(n)s_symm )"%{'n':lepton+'_ttqq'}) for lepton in self.channels]
-
-        [factory(w, "SUM::model_%s( %s )"%(lepton, ','.join([ 'expect_%s_%s * %s_%s%s'%(lepton, key, lepton, key, value)
-                                                              for key,value in {'qcd' :'_symm',
-                                                                                'dy'  :'_symm',
-                                                                                'wj'  :'_both',
-                                                                                'st'  :'_both',
-                                                                                'ttgg':'_both',
-                                                                                'ttag':'',
-                                                                                'ttqg':'',
-                                                                                'ttqq':''}.items()
-                                                              ]) ) ) for lepton in self.channels]
-
-        factory(w, "SIMUL::model(channel, %s)"%', '.join("%(chan)s=model_%(chan)s"%{'chan':lepton} for lepton in self.channels))
-        factory(w, "PROD::constrained_model( model, constraints )")
-
-
-    @roo_quiet
-    def import_data(self,w, useData) :
-        obs_ = w.argSet(','.join(self.observables))
+    @roo.quiet
+    def import_data(self,w) :
+        obs_ = w.argSet(','.join(self.model.observables))
         obs = r.RooArgList(obs_)
 
-        [w.var(v).setBins( getattr( self.channels['el'].samples['data'].datas[0], 'GetNbins'+X)() ) for v,X in zip(self.observables,'XY')]
+        datas = [(lepton, r.RooDataHist('data_'+lepton,'N_{obs}^{%s}'%lepton,obs,chan.samples['data'].datas[0])) for lepton,chan in self.model.channels.items()]
 
-        datas = [(lepton, r.RooDataHist('data_'+lepton,'N_{obs}^{%s}'%lepton,obs,chan.samples['data'].datas[0])) for lepton,chan in self.channels.items()]
-
-        gens = [(lepton,w.pdf('model_'+lepton).generateBinned( obs_,
-                                                               349030 if chan=='mu' else 338286, #r.RooFit.Extended(),
-                                                               r.RooFit.Name('data_'+lepton))) for lepton in self.channels]
-
-        [wimport(w, dat[1]) for dat in (datas if useData else gens)]
-        args = [r.RooFit.Import(*dat) for dat in (datas if useData else gens)]
-        wimport(w, r.RooDataHist('data', 'N_{obs}', 
-                                 obs,
-                                 r.RooFit.Index(w.arg('channel')),
-                                 *args
-                                 ),
+        [roo.wimport(w, dat) for _,dat in datas]
+        args = [r.RooFit.Import(*dat) for dat in datas]
+        roo.wimport(w, r.RooDataHist('data', 'N_{obs}', 
+                                     obs,
+                                     r.RooFit.Index(w.arg('channel')),
+                                     *args
+                                     ),
                 )
 
     def test(self, w) :
@@ -214,12 +94,12 @@ class topAsymmFit(object) :
         print w.arg('fsum').getVal(), w.arg('fprod').getVal()
 
 
-    @roo_quiet
+    @roo.quiet
     def draw(self, w, fileName) :
         if not hasattr(self,'maxi') : self.maxi = {}
         leg = r.TLegend(0.7,0.5,0.99,0.99)
         c = r.TCanvas()
-        cats = self.channels.keys()
+        cats = self.model.channels.keys()
         data = w.data('data')
         fakedata = w.pdf('model').generate(r.RooArgSet(w.argSet(','.join(self.observables+['channel']))),
                                            r.RooFit.AllBinned() )
@@ -294,7 +174,7 @@ class topAsymmFit(object) :
         r.gErrorIgnoreLevel = r.kInfo
         c.Print('fractions.pdf]')
 
-    @roo_quiet
+    @roo.quiet
     def contourProfileNLL(self, w, result, levels = [1.15, 3.0], nSpokes = 40, scale_dqq = 0.05, scale_Rag = 0.1, tolerance = 0.015) :
         nll = w.pdf('model').createNLL(*self.fitArgs)
         prof = r.RooProfileLL('prof','',nll,w.argSet('d_qq,R_ag'))
