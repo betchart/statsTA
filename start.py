@@ -22,16 +22,27 @@ class topAsymmFit(object) :
         self.print_n(self.model.w)
         #self.draw(w,'before')
 
+        self.fitArgs = [self.model.w.data('data'),
+                        r.RooFit.Extended(True),
+                        r.RooFit.ExternalConstraints(r.RooArgSet(self.model.w.pdf('constraints'))),
+                        #r.RooFit.Optimize(False),
+                        r.RooFit.NumCPU(4)]
+        result = self.model.w.pdf('model').fitTo(*(self.fitArgs+
+                                                   [r.RooFit.PrintLevel(-1),
+                                                    r.RooFit.Save(True),
+                                                    r.RooFit.PrintEvalErrors(-1),
+                                                    ]))
+        self.print_fracs(self.model.w)
+        self.print_n(self.model.w)
+        result.Print()
+
+        sys.exit(0)
+        #scan
         dqq = self.model.w.arg('d_qq')
         dqq.setConstant()
         output = open('dqq_scan.txt','w')
         for i in range(120) :
             dqq.setVal(0.2 - i*0.01)
-            self.fitArgs = [self.model.w.data('data'),
-                            r.RooFit.Extended(True),
-                            r.RooFit.ExternalConstraints(r.RooArgSet(self.model.w.pdf('constraints'))),
-                            #r.RooFit.Optimize(False),
-                            r.RooFit.NumCPU(4)]
             result = self.model.w.pdf('model').fitTo(*(self.fitArgs+
                                                        [r.RooFit.PrintLevel(-1),
                                                         r.RooFit.Save(True),
@@ -40,7 +51,6 @@ class topAsymmFit(object) :
             print>>output, dqq.getVal(), self.model.w.arg('alphaL').getVal(), self.model.w.arg('alphaL').getError(), self.model.w.arg('f_gg').getVal(), self.model.w.arg('f_qg').getVal(), self.model.w.arg('f_qq').getVal(), self.model.w.arg('f_qg').getVal()
             #self.print_fracs(w)
             #self.print_n(w)
-            #result.Print()
         output.close()
         #self.draw(w,'fit')
         #self.contourProfileNLL(w, result)
