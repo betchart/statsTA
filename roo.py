@@ -4,8 +4,11 @@ def quiet(function) :
     def wrapped(*args,**kwargs) :
         msg = r.RooMsgService.instance()
         cache = msg.globalKillBelow()            # get current message level
-        #msg.setGlobalKillBelow(r.RooFit.WARNING) # suppress messages
-        msg.setGlobalKillBelow(r.RooFit.ERROR) # suppress messages
+        msg.setGlobalKillBelow([r.RooFit.INFO,
+                                r.RooFit.WARNING,
+                                r.RooFit.ERROR,
+                                r.RooFit.FATAL
+                                ][-2]) # suppress messages
         val = function(*args,**kwargs)                 # call function
         msg.setGlobalKillBelow(cache)            # resume prior message level
         return val
