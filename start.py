@@ -16,34 +16,64 @@ class topAsymmFit(object) :
         self.model.w.data('data_el').Print()
         self.model.w.data('data_mu').Print()
 
-        self.plot_fracs(self.model.w)
+        #self.plot_fracs(self.model.w)
         self.defaults(self.model.w)
         self.print_fracs(self.model.w)
         self.print_n(self.model.w)
         #self.draw(w,'before')
 
-        self.fitArgs = [self.model.w.data('data'),
-                        r.RooFit.Extended(True),
+        self.fitArgs = [r.RooFit.Extended(True),
                         r.RooFit.ExternalConstraints(r.RooArgSet(self.model.w.pdf('constraints'))),
                         #r.RooFit.Optimize(False),
-                        r.RooFit.NumCPU(4)]
-        result = self.model.w.pdf('model').fitTo(*(self.fitArgs+
-                                                   [r.RooFit.PrintLevel(-1),
-                                                    r.RooFit.Save(True),
-                                                    r.RooFit.PrintEvalErrors(-1),
-                                                    ]))
+                        r.RooFit.NumCPU(4),
+                        r.RooFit.PrintLevel(-1),
+                        r.RooFit.PrintEvalErrors(-1),
+                        r.RooFit.Warnings(False)
+                        ]
+        result = self.model.w.pdf('model').fitTo(self.model.w.data('data'),
+                                                 *(self.fitArgs+[r.RooFit.Save(True)]))
         self.print_fracs(self.model.w)
         self.print_n(self.model.w)
         result.Print()
+        self.defaults(self.model.w)
+        self.print_fracs(self.model.w)
+        self.print_n(self.model.w)
+
+        dqq = self.model.w.arg('d_qq')
+        dqq.setConstant()
+        dqq.Print()
+
+        mcstudy = r.RooMCStudy( self.model.w.pdf('model'), self.model.w.argSet(','.join(self.model.observables+['channel'])),
+                                r.RooFit.Binned(True), r.RooFit.Extended(True), r.RooFit.FitOptions(*self.fitArgs) )
+
+        mcstudy.generateAndFit(100)
+        
+        c = r.TCanvas()
+        c.Divide(2,2)
+        c.Print('plots.pdf[')
+        frame4 = mcstudy.plotNLL(r.RooFit.Bins(40))
+        c.cd(4)
+        frame4.Draw()
+        bins = r.RooFit.Bins(40)
+        for var in ['alphaL','R_ag','d_lumi']+['d_xs_%s'%s for s in ['tt','wj','dy','st']]+['eff_%s_qcd'%l for l in ['el','mu']] :
+            arg = self.model.w.arg(var)
+            for i,name in enumerate(['Param','Error','Pull']) :
+                frame = getattr(mcstudy, "plot"+name)(*([arg,bins]+([r.RooFit.FitGauss(True)] if name=='Pull' else [])))
+                c.cd(i+1)
+                frame.Draw()
+            c.Print('plots.pdf')
+        c.Print('plots.pdf]')
+
+        self.print_fracs(self.model.w)
+        self.print_n(self.model.w)
 
         sys.exit(0)
         #scan
-        dqq = self.model.w.arg('d_qq')
-        dqq.setConstant()
         output = open('dqq_scan.txt','w')
         for i in range(120) :
             dqq.setVal(0.2 - i*0.01)
-            result = self.model.w.pdf('model').fitTo(*(self.fitArgs+
+            result = self.model.w.pdf('model').fitTo(self.model.w.data('data'),
+                                                     *(self.fitArgs+
                                                        [r.RooFit.PrintLevel(-1),
                                                         r.RooFit.Save(True),
                                                         r.RooFit.PrintEvalErrors(-1),
