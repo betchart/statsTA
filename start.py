@@ -23,30 +23,41 @@ class topAsymmFit(object) :
         #self.draw(w,'before')
 
         self.fitArgs = [r.RooFit.Extended(True),
-                        r.RooFit.ExternalConstraints(r.RooArgSet(self.model.w.pdf('constraints'))),
-                        #r.RooFit.Optimize(False),
+                        r.RooFit.ExternalConstraints(self.model.w.argSet('constraints')),
+                        r.RooFit.Constrain(self.model.w.argSet('d_lumi,alphaT,d_xs_st,d_xs_dy,d_xs_tt,d_xs_wj')),
+                        r.RooFit.Optimize(False),
                         r.RooFit.NumCPU(4),
                         r.RooFit.PrintLevel(-1),
-                        r.RooFit.PrintEvalErrors(-1),
-                        r.RooFit.Warnings(False)
+                        #r.RooFit.PrintEvalErrors(-1),
+                        #r.RooFit.Warnings(False),
+                        #r.RooFit.Verbose(True),
+                        #r.RooFit.Strategy(0)
                         ]
+        for arg in self.fitArgs : arg.Print()
         result = self.model.w.pdf('model').fitTo(self.model.w.data('data'),
                                                  *(self.fitArgs+[r.RooFit.Save(True)]))
         self.print_fracs(self.model.w)
         self.print_n(self.model.w)
         result.Print()
-        self.defaults(self.model.w)
-        self.print_fracs(self.model.w)
-        self.print_n(self.model.w)
+        print 'NLL:', result.minNll()
+        self.model.w.pdf('constrained_model').getAllConstraints(self.model.w.argSet(','.join(self.model.observables+['channel'])),
+                                                    self.model.w.argSet("d_lumi,alphaT,d_xs_st,d_xs_dy,d_xs_tt,d_xs_wj")).Print()
+
+        #self.defaults(self.model.w)
+        #self.print_fracs(self.model.w)
+        #self.print_n(self.model.w)
 
         dqq = self.model.w.arg('d_qq')
         dqq.setConstant()
         dqq.Print()
+        #self.model.w.arg('d_xs_dy').setConstant()
+        #self.model.w.arg('d_xs_st').setConstant()
 
+        raw_input()
         mcstudy = r.RooMCStudy( self.model.w.pdf('model'), self.model.w.argSet(','.join(self.model.observables+['channel'])),
                                 r.RooFit.Binned(True), r.RooFit.Extended(True), r.RooFit.FitOptions(*self.fitArgs) )
 
-        mcstudy.generateAndFit(100)
+        mcstudy.generateAndFit(1000)
         
         c = r.TCanvas()
         c.Divide(2,2)
@@ -55,7 +66,7 @@ class topAsymmFit(object) :
         c.cd(4)
         frame4.Draw()
         bins = r.RooFit.Bins(40)
-        for var in ['alphaL','R_ag','d_lumi']+['d_xs_%s'%s for s in ['tt','wj','dy','st']]+['eff_%s_qcd'%l for l in ['el','mu']] :
+        for var in ['alphaL','alphaT','R_ag','d_lumi']+['d_xs_%s'%s for s in ['tt','wj','dy','st']]+['eff_%s_qcd'%l for l in ['el','mu']] :
             arg = self.model.w.arg(var)
             for i,name in enumerate(['Param','Error','Pull']) :
                 frame = getattr(mcstudy, "plot"+name)(*([arg,bins]+([r.RooFit.FitGauss(True)] if name=='Pull' else [])))
