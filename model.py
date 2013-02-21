@@ -40,7 +40,7 @@ class topAsymmModel(object) :
             roo.factory(w, "Gaussian::xs_%s_constraint( d_xs_%s[0,-1,2], 0, %f)"%(sample,sample,delta))
             roo.factory(w, "expr::xs_%s('(1+@0)*@1',{d_xs_%s, xs_%s_hat})"%(sample,sample,sample))
 
-        roo.factory(w, "Gaussian::alphaT_constraint( alphaT[1,0.5,1.5], 1, 0.1)")
+        roo.factory(w, "Gaussian::alphaT_constraint( alphaT[1,0.5,1.5], 1, 0.08)")
         roo.factory(w, "PROD::constraints(%s)"%', '.join([s+'_constraint' for s in ['lumi','alphaT']+['xs_'+t for t in xs_constraints]]))
 
         [roo.factory(w, "prod::xs_tt%s(f_%s,xs_tt)"%(comp,comp)) for comp in self.ttcomps]
