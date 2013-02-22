@@ -34,22 +34,29 @@ class topAsymmFit(object) :
                         #r.RooFit.Strategy(0)
                         ]
         for arg in self.fitArgs : arg.Print()
-        result = self.model.w.pdf('model').fitTo(self.model.w.data('data'),
-                                                 *(self.fitArgs+[r.RooFit.Save(True)]))
-        self.print_fracs(self.model.w)
-        self.print_n(self.model.w)
-        result.Print()
-        print 'NLL:', result.minNll()
-        self.model.w.pdf('constrained_model').getAllConstraints(self.model.w.argSet(','.join(self.model.observables+['channel'])),
-                                                    self.model.w.argSet("d_lumi,alphaT,d_xs_st,d_xs_dy,d_xs_tt,d_xs_wj")).Print()
+        print
+        for item in ['d_qq','d_lumi','d_xs_dy','d_xs_st'] :
+            arg = self.model.w.arg(item)
+            arg.setConstant()
+            arg.Print()
+
+        results = dict([(suffix,
+                         self.model.w.pdf('model'+suffix).fitTo(self.model.w.data('data'+suffix),
+                                                                *(self.fitArgs+[r.RooFit.Save(True)]))
+                         )
+                        for suffix in ['','_el','_mu']])
+
+        for suff,result in results.items() :
+            #self.print_fracs(self.model.w)
+            #self.print_n(self.model.w)
+            print suff
+            print 'NLL:', result.minNll()
+            result.Print()
 
         #self.defaults(self.model.w)
         #self.print_fracs(self.model.w)
         #self.print_n(self.model.w)
 
-        dqq = self.model.w.arg('d_qq')
-        dqq.setConstant()
-        dqq.Print()
         #self.model.w.arg('d_xs_dy').setConstant()
         #self.model.w.arg('d_xs_st').setConstant()
 
