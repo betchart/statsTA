@@ -78,7 +78,7 @@ class topAsymmModel(object) :
                                                               'eff_'+name])))
 
     def import_model(self,w) :
-        roo.factory(w, "alphaL[1, -15, 20]")
+        roo.factory(w, "alphaL[1, -15, 15]")
 
         [roo.factory(w, "SUM::%(n)s( alphaT * %(n)s_both, %(n)s_symm )"%{'n':lepton+'_ttag'}) for lepton in self.channels]
         [roo.factory(w, "SUM::%(n)s( alphaT * %(n)s_both, %(n)s_symm )"%{'n':lepton+'_ttqg'}) for lepton in self.channels]
