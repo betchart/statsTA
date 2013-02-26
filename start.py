@@ -1,21 +1,14 @@
 import sys,math,model,roo,ROOT as r
-r.gROOT.SetBatch(1)
+from systematics import systematics
+#r.gROOT.SetBatch(1)
 
 class topAsymmFit(object) :
     @roo.quiet
     def __init__(self) :
         self.model = model.topAsymmModel()
-        print
-        print self.model.channels['el']
-        print
-        print self.model.channels['mu']
-        print
-
         self.import_data(self.model.w)
-        self.model.w.data('data').Print()
-        self.model.w.data('data_el').Print()
-        self.model.w.data('data_mu').Print()
 
+        print '\n'.join(str(i) for i in ['',self.model.channels['el'],'',self.model.channels['mu'],''])
         #self.plot_fracs(self.model.w)
         self.defaults(self.model.w)
         self.print_fracs(self.model.w)
@@ -30,42 +23,84 @@ class topAsymmFit(object) :
                         r.RooFit.PrintLevel(-1),
                         #r.RooFit.PrintEvalErrors(-1),
                         #r.RooFit.Warnings(False),
-                        #r.RooFit.Verbose(True),
-                        #r.RooFit.Strategy(0)
                         ]
-        for arg in self.fitArgs : arg.Print()
-        print
+
         for item in ['d_qq','d_lumi','d_xs_dy','d_xs_st'] :
             arg = self.model.w.arg(item)
             arg.setConstant()
             arg.Print()
 
-        results = dict([(suffix,
-                         self.model.w.pdf('model'+suffix).fitTo(self.model.w.data('data'+suffix),
-                                                                *(self.fitArgs+[r.RooFit.Save(True)]))
-                         )
-                        for suffix in ['','_el','_mu']])
+        with open('dqq_scan.txt','w') as output :
+            slices = 100
+            lo = -0.8
+            hi = 0.2
+            for i in range(slices+1) :
+                print 'slice %d'%i
+                self.dqq_slice( hi - i*(hi-lo)/slices, output)
 
-        for suff,result in results.items() :
-            #self.print_fracs(self.model.w)
-            #self.print_n(self.model.w)
-            print suff
-            print 'NLL:', result.minNll()
-            result.Print()
+    def dqq_slice(self, dqq, output) :
+        results = {'dqq':dqq}
+        format = '\t'.join(["%("+item+")+.4f" for item in ['dqq','alphaL','alphaL_err','minNLL',
+                                                           'alphaL_profile_up','alphaL_profile_down',
+                                                           'sys_d_lumi_up','sys_d_lumi_down',
+                                                           'sys_d_xs_dy_up','sys_d_xs_dy_down',
+                                                           'sys_d_xs_st_up','sys_d_xs_st_down',
+                                                           'MINUIT_cov_quality','alphaT','R_ag'
+                                                           ]])
+
+        model = self.model.w.pdf('model')
+        data = self.model.w.data('data')
+        self.model.w.arg('d_qq').setVal(dqq)
+
+
+        central = model.fitTo( data, *(self.fitArgs+[r.RooFit.Save(True)]))
+
+        def getValue(parName, fit=central, error = False) :
+            args = fit.floatParsFinal()
+            i = args.index(parName)
+            return args.at(i).getVal() if not error else args.at(i).getError()
+
+        results['alphaL'] = getValue('alphaL')
+        results['alphaL_err'] = getValue('alphaL',error=True)
+        results['minNLL'] = central.minNll()
+        results['MINUIT_cov_quality'] = central.covQual()
+        results['alphaT'] = getValue('alphaT')
+        results['R_ag'] = getValue('R_ag')
+
+        nll = model.createNLL(data, *self.fitArgs[:-1] )
+        pll = nll.createProfile(self.model.w.argSet('alphaL'))
+        pll_1sigma = 0.5
+        results['alphaL_profile_down'] = pll.findRoot(self.model.w.arg('alphaL'), results['alphaL']-5.0, results['alphaL']-0.1, pll_1sigma)
+        results['alphaL_profile_up']   = pll.findRoot(self.model.w.arg('alphaL'), results['alphaL']+0.1, results['alphaL']+10.0, pll_1sigma)
+        pll.IsA().Destructor(pll)
+        nll.IsA().Destructor(nll)
+
+        for s,(nom,err) in systematics.items() :
+            for sign,label in [(-1,'down'),(+1,'up')] :
+                self.model.w.arg(s).setVal(nom+sign*err)
+                fit = model.fitTo( data, *(self.fitArgs+[r.RooFit.Save(True)]))
+                results['sys_%s_%s'%(s,label)] = getValue('alphaL',fit) - results['alphaL']
+                del fit
+            self.model.w.arg(s).setVal(nom)
+
+        del central
+        print >>output, format%results
+        output.flush()
 
         #self.defaults(self.model.w)
         #self.print_fracs(self.model.w)
         #self.print_n(self.model.w)
 
-        #self.model.w.arg('d_xs_dy').setConstant()
-        #self.model.w.arg('d_xs_st').setConstant()
+        #mcstudy = r.RooMCStudy( self.model.w.pdf('model'), self.model.w.argSet(','.join(self.model.observables+['channel'])),
+        #                        r.RooFit.Binned(True), r.RooFit.Extended(True), r.RooFit.FitOptions(*self.fitArgs) )
+        #
+        #mcstudy.generateAndFit(1000)
+        #self.plotMCStudy(mcstudy)
+        #
+        #self.print_fracs(self.model.w)
+        #self.print_n(self.model.w)
 
-        raw_input()
-        mcstudy = r.RooMCStudy( self.model.w.pdf('model'), self.model.w.argSet(','.join(self.model.observables+['channel'])),
-                                r.RooFit.Binned(True), r.RooFit.Extended(True), r.RooFit.FitOptions(*self.fitArgs) )
-
-        mcstudy.generateAndFit(1000)
-        
+    def plotMCStudy(self,mcstudy) :
         c = r.TCanvas()
         c.Divide(2,2)
         c.Print('plots.pdf[')
@@ -81,27 +116,8 @@ class topAsymmFit(object) :
                 frame.Draw()
             c.Print('plots.pdf')
         c.Print('plots.pdf]')
+        del c
 
-        self.print_fracs(self.model.w)
-        self.print_n(self.model.w)
-
-        sys.exit(0)
-        #scan
-        output = open('dqq_scan.txt','w')
-        for i in range(120) :
-            dqq.setVal(0.2 - i*0.01)
-            result = self.model.w.pdf('model').fitTo(self.model.w.data('data'),
-                                                     *(self.fitArgs+
-                                                       [r.RooFit.PrintLevel(-1),
-                                                        r.RooFit.Save(True),
-                                                        r.RooFit.PrintEvalErrors(-1),
-                                                        ]))
-            print>>output, dqq.getVal(), self.model.w.arg('alphaL').getVal(), self.model.w.arg('alphaL').getError(), self.model.w.arg('f_gg').getVal(), self.model.w.arg('f_qg').getVal(), self.model.w.arg('f_qq').getVal(), self.model.w.arg('f_qg').getVal()
-            #self.print_fracs(w)
-            #self.print_n(w)
-        output.close()
-        #self.draw(w,'fit')
-        #self.contourProfileNLL(w, result)
 
     def print_fracs(self,w) :
         for item in ['lumi_mu','lumi_el','f_gg','f_qg','f_qq','f_ag']+['xs_'+i for i in self.model.channels['el'].samples if i!='data'] : print "%s: %.04f"%(item, w.arg(item).getVal())
