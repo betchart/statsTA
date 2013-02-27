@@ -1,5 +1,5 @@
 import sys,math,model,roo,ROOT as r
-from systematics import systematics
+from dqqSlice import dqqSlice
 #r.gROOT.SetBatch(1)
 
 class topAsymmFit(object) :
@@ -7,6 +7,7 @@ class topAsymmFit(object) :
     def __init__(self) :
         self.model = model.topAsymmModel()
         self.import_data(self.model.w)
+        for item in ['d_qq','d_lumi','d_xs_dy','d_xs_st'] : arg = self.model.w.arg(item).setConstant()
 
         print '\n'.join(str(i) for i in ['',self.model.channels['el'],'',self.model.channels['mu'],''])
         #self.plot_fracs(self.model.w)
@@ -18,74 +19,19 @@ class topAsymmFit(object) :
         self.fitArgs = [r.RooFit.Extended(True),
                         r.RooFit.ExternalConstraints(self.model.w.argSet('constraints')),
                         r.RooFit.Constrain(self.model.w.argSet('d_lumi,alphaT,d_xs_st,d_xs_dy,d_xs_tt,d_xs_wj')),
-                        r.RooFit.Optimize(False),
+                        #r.RooFit.Optimize(False),
                         r.RooFit.NumCPU(4),
                         r.RooFit.PrintLevel(-1),
-                        #r.RooFit.PrintEvalErrors(-1),
-                        #r.RooFit.Warnings(False),
                         ]
 
-        for item in ['d_qq','d_lumi','d_xs_dy','d_xs_st'] :
-            arg = self.model.w.arg(item)
-            arg.setConstant()
-            arg.Print()
-
         with open('dqq_scan.txt','w') as output :
-            slices = 100
-            lo = -0.8
-            hi = 0.2
+            slices,lo,hi = 40,-0.6,0.4
+            print >> output, '#'+'\t'.join(dqqSlice.columns())
             for i in range(slices+1) :
                 print 'slice %d'%i
-                self.dqq_slice( hi - i*(hi-lo)/slices, output)
-
-    def dqq_slice(self, dqq, output) :
-        results = {'dqq':dqq}
-        format = '\t'.join(["%("+item+")+.4f" for item in ['dqq','alphaL','alphaL_err','minNLL',
-                                                           'alphaL_profile_up','alphaL_profile_down',
-                                                           'sys_d_lumi_up','sys_d_lumi_down',
-                                                           'sys_d_xs_dy_up','sys_d_xs_dy_down',
-                                                           'sys_d_xs_st_up','sys_d_xs_st_down',
-                                                           'MINUIT_cov_quality','alphaT','R_ag'
-                                                           ]])
-
-        model = self.model.w.pdf('model')
-        data = self.model.w.data('data')
-        self.model.w.arg('d_qq').setVal(dqq)
-
-
-        central = model.fitTo( data, *(self.fitArgs+[r.RooFit.Save(True)]))
-
-        def getValue(parName, fit=central, error = False) :
-            args = fit.floatParsFinal()
-            i = args.index(parName)
-            return args.at(i).getVal() if not error else args.at(i).getError()
-
-        results['alphaL'] = getValue('alphaL')
-        results['alphaL_err'] = getValue('alphaL',error=True)
-        results['minNLL'] = central.minNll()
-        results['MINUIT_cov_quality'] = central.covQual()
-        results['alphaT'] = getValue('alphaT')
-        results['R_ag'] = getValue('R_ag')
-
-        nll = model.createNLL(data, *self.fitArgs[:-1] )
-        pll = nll.createProfile(self.model.w.argSet('alphaL'))
-        pll_1sigma = 0.5
-        results['alphaL_profile_down'] = pll.findRoot(self.model.w.arg('alphaL'), results['alphaL']-5.0, results['alphaL']-0.1, pll_1sigma)
-        results['alphaL_profile_up']   = pll.findRoot(self.model.w.arg('alphaL'), results['alphaL']+0.1, results['alphaL']+10.0, pll_1sigma)
-        pll.IsA().Destructor(pll)
-        nll.IsA().Destructor(nll)
-
-        for s,(nom,err) in systematics.items() :
-            for sign,label in [(-1,'down'),(+1,'up')] :
-                self.model.w.arg(s).setVal(nom+sign*err)
-                fit = model.fitTo( data, *(self.fitArgs+[r.RooFit.Save(True)]))
-                results['sys_%s_%s'%(s,label)] = getValue('alphaL',fit) - results['alphaL']
-                del fit
-            self.model.w.arg(s).setVal(nom)
-
-        del central
-        print >>output, format%results
-        output.flush()
+                sl = dqqSlice( hi - i*(hi-lo)/slices, self.model.w, self.fitArgs )
+                print >> output, str(sl)
+                output.flush()
 
         #self.defaults(self.model.w)
         #self.print_fracs(self.model.w)
