@@ -1,5 +1,4 @@
-import ROOT as r
-import roo
+import roo,ROOT as r
 from systematics import systematics
 from parabola import parabola
 
@@ -37,8 +36,6 @@ class dqqSlice(object):
         pll = nll.createProfile(workspace.argSet('alphaL'))
 
         res['MINUIT_cov_quality'] = central.covQual()
-        res['alphaT'] = self.getFitValue('alphaT',central)
-        res['R_ag'] = self.getFitValue('R_ag',central)
 
         aL,aLe = self.getFitValue('alphaL',central,error=True)
         aLarg = workspace.arg('alphaL')
@@ -56,6 +53,8 @@ class dqqSlice(object):
         res['alphaL'] = prbl.xmin
         res['alphaL_err'] = prbl.dx(pll_1sigma)
         res['alphaL_2err'] = prbl.dx(pll_2sigma)
+        pll.getVal()
+        for item in ['alphaT','R_ag'] : res[item] = workspace.arg(item).getVal()
 
         for sign,lab in zip([-1,1],['down','up']) :
             xTrial = res['alphaL']+sign*res['alphaL_err']
