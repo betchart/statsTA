@@ -1,6 +1,6 @@
 import sys,math,model,roo,ROOT as r
 from dqqSlice import dqqSlice
-#r.gROOT.SetBatch(1)
+r.gROOT.SetBatch(1)
 
 class topAsymmFit(object) :
     @roo.quiet
@@ -29,9 +29,41 @@ class topAsymmFit(object) :
             print >> output, '#'+'\t'.join(dqqSlice.columns())
             for i in range(slices+1) :
                 print 'slice %d'%i
-                sl = dqqSlice( hi - i*(hi-lo)/slices, self.model.w, self.fitArgs )
+                dqq = hi - i*(hi-lo)/slices
+                self.model.w.arg('d_qq').setVal(dqq)
+                sl = dqqSlice(  self.model.w, self.fitArgs )
                 print >> output, str(sl)
                 output.flush()
+                if dqq==0 :
+                    self.print_fracs(self.model.w)
+                    self.print_n(self.model.w)
+                    c = r.TCanvas()
+                    c.Divide(2,2)
+                    fileName = 'ensembleTest%03d.pdf'%(1000*dqq)
+                    c.Print(fileName+'[')
+                    pullMean = {}
+                    pullSigma = {}
+                    for alphaL in [-1.5,-1,-0.5,0,0.5,1,1.5,2,2.5,3] :
+                        fit = self.model.w.pdf('model').fitTo( self.model.w.data('data'), *(self.fitArgs+[r.RooFit.Save(True)]))
+                        self.model.w.arg('alphaL').setVal(alphaL)
+                        mcstudy = r.RooMCStudy( self.model.w.pdf('model'), self.model.w.argSet(','.join(self.model.observables+['channel'])),
+                                                r.RooFit.Binned(True), r.RooFit.Extended(True), r.RooFit.FitOptions(*self.fitArgs) )
+
+                        mcstudy.generateAndFit(1000)
+                        bins = r.RooFit.Bins(40)
+                        frame4 = mcstudy.plotNLL(bins)
+                        c.cd(4)
+                        frame4.Draw()
+                        arg = self.model.w.arg('alphaL')
+                        for i,name in enumerate(['Param','Error','Pull']) :
+                            frame = getattr(mcstudy, "plot"+name)(*([arg,bins]+([r.RooFit.FitGauss(True)] if name=='Pull' else [])))
+                            c.cd(i+1)
+                            frame.Draw()
+                            #if name=='Pull':
+                            # where is the f#$%ing programatic access to the gaussian fit to the pull distribution?
+                        c.Print(fileName)
+                    #
+                    c.Print(fileName+']')
 
         #self.defaults(self.model.w)
         #self.print_fracs(self.model.w)
@@ -40,8 +72,6 @@ class topAsymmFit(object) :
         #mcstudy = r.RooMCStudy( self.model.w.pdf('model'), self.model.w.argSet(','.join(self.model.observables+['channel'])),
         #                        r.RooFit.Binned(True), r.RooFit.Extended(True), r.RooFit.FitOptions(*self.fitArgs) )
         #
-        #mcstudy.generateAndFit(1000)
-        #self.plotMCStudy(mcstudy)
         #
         #self.print_fracs(self.model.w)
         #self.print_n(self.model.w)
@@ -50,10 +80,10 @@ class topAsymmFit(object) :
         c = r.TCanvas()
         c.Divide(2,2)
         c.Print('plots.pdf[')
-        frame4 = mcstudy.plotNLL(r.RooFit.Bins(40))
+        bins = r.RooFit.Bins(40)
+        frame4 = mcstudy.plotNLL(bins)
         c.cd(4)
         frame4.Draw()
-        bins = r.RooFit.Bins(40)
         for var in ['alphaL','alphaT','R_ag','d_lumi']+['d_xs_%s'%s for s in ['tt','wj','dy','st']]+['eff_%s_qcd'%l for l in ['el','mu']] :
             arg = self.model.w.arg(var)
             for i,name in enumerate(['Param','Error','Pull']) :

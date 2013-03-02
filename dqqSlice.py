@@ -24,12 +24,12 @@ class dqqSlice(object):
         return args.at(i).getVal() if not error else (args.at(i).getVal(), args.at(i).getError())
 
 
-    def __init__(self, dqq, workspace, fitArgs ) :
-        res = {'dqq':dqq}
+    def __init__(self, workspace, fitArgs ) :
+        res = {'dqq': workspace.arg('d_qq').getVal()
+}
 
         model = workspace.pdf('model')
         data = workspace.data('data')
-        workspace.arg('d_qq').setVal(dqq)
 
         central = model.fitTo( data, *(fitArgs+[r.RooFit.Save(True)]))
         nll = model.createNLL(data, *fitArgs[:-1] )
