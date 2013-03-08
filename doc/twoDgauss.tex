@@ -1,0 +1,14 @@
+\documentclass[11pt]{article}
+
+\newcommand{\dee}{\mathrm{d}}
+
+\begin{document}
+
+\[A(R) = N\int_0^R e^{-\frac{r^2}{\sigma^2}} r\dee r\dee\theta\]
+\[A(R) = N'\int_0^R e^{-\frac{r^2}{\sigma^2}} r\dee r\]
+\[A(R) = N'\int_0^R e^{-\frac{r^2}{\sigma^2}} r\dee r\]
+\[A(R) = N'\left[-\frac{\sigma^2}{2}e^{-\frac{r^2}{\sigma^2}}\right|_0^R\]
+\[A(R) = N''\left(1-e^{-\frac{R^2}{\sigma^2}}\right)\]
+\[x(R) = A(R)/A(\infty) = \left(1-e^{-\frac{R^2}{\sigma^2}}\right)\]
+\[R(x)/\sigma = \sqrt{-\log(1-x)}\]
+\end{document}
