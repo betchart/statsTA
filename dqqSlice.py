@@ -10,7 +10,9 @@ class dqqSlice(object):
                             'sys_d_lumi_up','sys_d_lumi_down',
                             'sys_d_xs_dy_up','sys_d_xs_dy_down',
                             'sys_d_xs_st_up','sys_d_xs_st_down',
-                            'MINUIT_cov_quality','alphaT','R_ag'
+                            'MINUIT_cov_quality','alphaT','R_ag',
+                            'f_qq','f_qg','f_gg','f_ag',
+                            'A','B','C'
                             ]
 
     def __str__(self) :
@@ -53,8 +55,9 @@ class dqqSlice(object):
         res['alphaL'] = prbl.xmin
         res['alphaL_err'] = prbl.dx(pll_1sigma)
         res['alphaL_2err'] = prbl.dx(pll_2sigma)
+        res['A'],res['B'],res['C'] = prbl.ABC
         pll.getVal()
-        for item in ['alphaT','R_ag'] : res[item] = workspace.arg(item).getVal()
+        for item in ['alphaT','R_ag','f_qq','f_qg','f_ag','f_gg'] : res[item] = workspace.arg(item).getVal()
 
         for sign,lab in zip([-1,1],['down','up']) :
             xTrial = res['alphaL']+sign*res['alphaL_err']

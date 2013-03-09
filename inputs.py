@@ -31,7 +31,7 @@ class channel_data(object) :
     __samples__ = ['wj','dy','st','ttgg','ttqg','ttqq','ttag','qcd','data']
     __xs_uncertainty__ = {'tt':1.0,'wj':2.0,'st':0.04,'dy':0.04}
 
-    def __init__(self,lepton, filePattern="data/stats_melded_%s_ph_c_20.root",
+    def __init__(self,lepton, filePattern="data/stats_melded_%s_ph_pn_sn_jn_20.root",
                  signal="fitTopQueuedBin7TridiscriminantWTopQCD", 
                  preselection="allweighted/" ) :
         tfile = r.TFile.Open(filePattern%lepton)

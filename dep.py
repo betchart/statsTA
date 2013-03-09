@@ -12,7 +12,7 @@ c_ratio = r.TCanvas()
 leptons = ['el','mu']
 
 for el in leptons :
-    tfile = r.TFile.Open('data/stats_melded_%s_ph_c_20.root'%el)
+    tfile = r.TFile.Open('data/stats_melded_%s_ph_pn_sn_jn_20.root'%el)
     d = 'fitTopQueuedBin7TridiscriminantWTopQCD'
     samples = [key.GetName() for key in tfile.Get(d).GetListOfKeys()]
     fileName = "%s_dep.pdf"%el

@@ -25,7 +25,7 @@ class topAsymmFit(object) :
                         ]
 
         with open('dqq_scan.txt','w') as output :
-            slices,lo,hi = 40,-0.6,0.4
+            slices,lo,hi = 80,-0.6,0.4
             print >> output, '#'+'\t'.join(dqqSlice.columns())
             for i in range(slices+1) :
                 print 'slice %d'%i
@@ -34,7 +34,8 @@ class topAsymmFit(object) :
                 sl = dqqSlice(  self.model.w, self.fitArgs )
                 print >> output, str(sl)
                 output.flush()
-                if dqq==0 :
+                if False :
+                #if dqq==0 :
                     self.print_fracs(self.model.w)
                     self.print_n(self.model.w)
                     c = r.TCanvas()
