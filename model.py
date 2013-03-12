@@ -1,10 +1,10 @@
 import sys,roo,inputs,ROOT as r
 
-class topAsymmModel(object) :
+class topModel(object) :
     @roo.quiet
-    def __init__(self, w = None) :
+    def __init__(self, w = None, dist='fitTopQueuedBin7TridiscriminantWTopQCD') :
         self.observables = ['queuedbins','tridiscr']
-        self.channels = dict((lepton,inputs.channel_data(lepton)) for lepton in ['el','mu'])
+        self.channels = dict((lepton,inputs.channel_data(lepton,signal=dist)) for lepton in ['el','mu'])
         self.ttcomps = ('qq','ag','gg','qg')
 
         if not w : w = r.RooWorkspace('Workspace')
@@ -21,7 +21,7 @@ class topAsymmModel(object) :
     def import_fractions(self,w) :
         [roo.wimport(w, r.RooConstVar("f_%s_hat"%comp,"#hat{f}_{%s}"%comp, self.channels['el'].samples['tt'+comp].frac)) for comp in self.ttcomps]
         roo.factory(w, "R_ag[%f,0.07,1]"%(self.channels['el'].samples['ttag'].frac/self.channels['el'].samples['ttqq'].frac) )
-        roo.factory(w, "d_qq[-0.9999999,1]")
+        roo.factory(w, "d_qq[-0.999999,1]")
         roo.factory(w, "expr::f_qq('(1+@0)*@1',{d_qq,f_qq_hat})")
         roo.factory(w, "prod::f_ag(R_ag,f_qq)")
         roo.factory(w, "expr::f_qg('(1-@0-@1)/(1+@2*@3*@4/(@5*@6))',{f_qq,f_ag,R_ag,f_gg_hat,f_qq_hat,f_ag_hat,f_qg_hat})")
