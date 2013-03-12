@@ -13,7 +13,10 @@ leptons = ['el','mu']
 
 for el in leptons :
     tfile = r.TFile.Open('data/stats_melded_%s_ph_pn_sn_jn_20.root'%el)
-    d = 'fitTopQueuedBin7TridiscriminantWTopQCD'
+    #d = 'fitTopQueuedBin7TridiscriminantWTopQCD'
+    #d = 'fitTopTanhRapiditySum_triD'
+    #d = 'fitTopPtOverSumPt_triD'
+    d = 'fitTopTanhAvgAbsSumRapidities_triD'
     samples = [key.GetName() for key in tfile.Get(d).GetListOfKeys()]
     fileName = "%s_dep.pdf"%el
     symmName = "%s_symm.pdf"%el
@@ -27,6 +30,7 @@ for el in leptons :
     for s in samples :
         h = tfile.Get("%s/%s"%(d,s))
         h_ = h.RebinY(20)
+        if "QueuedBin" not in d : h.RebinX()
         #h_dep = dependence(h_,"",3,True)
         h_dep = dependence(h_,"",0.3)
         h_dep.SetTitle(s)
