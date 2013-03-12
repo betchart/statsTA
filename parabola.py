@@ -25,5 +25,6 @@ class parabola(object) :
     
     def dx(self,dy) :
         A,B,C = self.ABC
-        return 0.5 * math.sqrt(B*B - 4*A*(C-dy)) / A
+        d = B*B - 4*A*(C-dy)
+        return 0.5 * math.sqrt(d) / A if d>0 else None
 
