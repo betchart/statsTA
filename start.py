@@ -24,7 +24,7 @@ class topAsymmFit(object) :
                         r.RooFit.PrintLevel(-1),
                         ]
 
-        with open('dqq_scan.txt','w') as output :
+        with open('data/dqq_scan.txt','w') as output :
             slices,lo,hi = 80,-0.6,0.4
             print >> output, '#'+'\t'.join(dqqSlice.columns())
             for i in range(slices+1) :
@@ -40,7 +40,7 @@ class topAsymmFit(object) :
                     self.print_n(self.model.w)
                     c = r.TCanvas()
                     c.Divide(2,2)
-                    fileName = 'ensembleTest%03d.pdf'%(1000*dqq)
+                    fileName = 'graphics/ensembleTest%03d.pdf'%(1000*dqq)
                     c.Print(fileName+'[')
                     pullMean = {}
                     pullSigma = {}
@@ -80,7 +80,7 @@ class topAsymmFit(object) :
     def plotMCStudy(self,mcstudy) :
         c = r.TCanvas()
         c.Divide(2,2)
-        c.Print('plots.pdf[')
+        c.Print('graphics/plots.pdf[')
         bins = r.RooFit.Bins(40)
         frame4 = mcstudy.plotNLL(bins)
         c.cd(4)
@@ -91,8 +91,8 @@ class topAsymmFit(object) :
                 frame = getattr(mcstudy, "plot"+name)(*([arg,bins]+([r.RooFit.FitGauss(True)] if name=='Pull' else [])))
                 c.cd(i+1)
                 frame.Draw()
-            c.Print('plots.pdf')
-        c.Print('plots.pdf]')
+            c.Print('graphics/plots.pdf')
+        c.Print('graphics/plots.pdf]')
         del c
 
 
@@ -264,7 +264,7 @@ class topAsymmFit(object) :
             return ( coord if abs(cache[coord]-level) < tolerance else
                      getPoint(phi, level, last = (guess,cache[coord]), guess = parab_guess if parab_guess else simple_parab_guess   ) )
 
-        files = [open('nll_%.3f.txt'%lev,'w') for lev in levels]
+        files = [open('data/nll_%.3f.txt'%lev,'w') for lev in levels]
         for iPhi in range(nSpokes) :
             print iPhi
             points = [getPoint( iPhi*2*math.pi/nSpokes, lev, guess = previous[lev]) for lev in levels]

@@ -12,7 +12,7 @@ set arrow 1 from dqq_best,0. to dqq_best,-2 head filled
 set arrow 2 from dqq_best+dqq_pll05,0.5 to dqq_best+dqq_pll05,-2 head lt 2
 set arrow 3 from dqq_best-dqq_pll05,0.5 to dqq_best-dqq_pll05,-2 head lt 2
 
-set output 'dqq_pll.eps'
+set output 'graphics/dqq_pll.eps'
 plot [] [-2:6]\
     1/0 lc 2 lw 3 lt 1 title 'POWHEG CT10', \
     'dqq_scan.txt' using 1:(-pll_min+$2) w lines ls 1 lw 2 lc 3 title 'PLL({/Symbol d}_{q@^{/=18-}q})', \
@@ -31,7 +31,7 @@ set label 1 '{}_{no asymmetry}' at -0.585,-0.1
 
 set style fill transparent pattern 4 bo
 
-set output 'dqq_scan.eps'
+set output 'graphics/dqq_scan.eps'
 plot [] [-2:6] \
     (x>dqq_best-dqq_pll05&&x<dqq_best+dqq_pll05)?3:1/0 w filledcurves y1=-2 lw 1 lt 2 lc rgb "#eeeeee" notitle, \
     1 lc 2 lw 3 lt 1 title 'POWHEG CT10', \
@@ -60,7 +60,7 @@ f(nll,A,B,C,level) = nll>level ? 1/0 : 0.5 * sqrt(B*B - 4*A*(C-(level-nll))) / A
 sixtyeight2D=1.139434283188365
 ninetyfive2D=2.99573227355399
 
-set output 'dqq_contour.eps'
+set output 'graphics/dqq_contour.eps'
 plot [-0.6:0.4] [-2:6] \
     'dqq_scan.txt' using 1:($1==0?1:1/0) ps 3 lw 5 lc 2 title 'POWHEG CT10', \
     'dqq_scan.txt' using 1:($2==pll_min?$3:1/0) ps 2 pt 2 lw 2 lc 3 title 'Maximum Likelihood', \
@@ -76,7 +76,7 @@ Ac_qq=0.0295211983565
 set xlabel 'f_{q@^{/=18-}q}'
 set ylabel 'A_c^{q@^{/=18-}q}'
 
-set output 'ac_contour.eps'
+set output 'graphics/ac_contour.eps'
 plot [0.06:0.2] [-0.05:0.15] \
     'dqq_scan.txt' using (fqq*(1+$1)):($1==0?Ac_qq:1/0) ps 3 lw 5 lc 2 title 'POWHEG CT10', \
     'dqq_scan.txt' using (fqq*(1+$1)):($2==pll_min?(Ac_qq*$3):1/0) ps 2 pt 2 lw 2 lc 3 title 'Maximum Likelihood', \
