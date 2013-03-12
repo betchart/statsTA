@@ -5,7 +5,7 @@ r.gROOT.SetBatch(1)
 class topAsymmFit(object) :
     @roo.quiet
     def __init__(self) :
-        self.model = model.topAsymmModel()
+        self.model = model.topModel()
         self.import_data(self.model.w)
         for item in ['d_qq','d_lumi','d_xs_dy','d_xs_st'] : arg = self.model.w.arg(item).setConstant()
 
@@ -31,7 +31,7 @@ class topAsymmFit(object) :
                 print 'slice %d'%i
                 dqq = hi - i*(hi-lo)/slices
                 self.model.w.arg('d_qq').setVal(dqq)
-                sl = dqqSlice(  self.model.w, self.fitArgs )
+                sl = dqqSlice(  self.model.w, self.fitArgs , 'alphaL' )
                 print >> output, str(sl)
                 output.flush()
                 if False :
