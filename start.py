@@ -2,12 +2,25 @@ import sys,math,model,roo,ROOT as r
 from dqqSlice import dqqSlice
 r.gROOT.SetBatch(1)
 
+distributions = ['fitTopQueuedBin7TridiscriminantWTopQCD',
+                 'fitTopPtOverSumPt_triD',
+                  ]
+dist = distributions[1]
+variables = ['alphaL','R_ag']
+provar = variables[1]
+
+
 class topAsymmFit(object) :
     @roo.quiet
     def __init__(self) :
-        self.model = model.topModel()
+        self.model = model.topModel( dist = dist )
         self.import_data(self.model.w)
-        for item in ['d_qq','d_lumi','d_xs_dy','d_xs_st'] : arg = self.model.w.arg(item).setConstant()
+        for item in ['d_qq','d_lumi','d_xs_dy','d_xs_st'] : self.model.w.arg(item).setConstant()
+
+        if dist!=distributions[0] :
+            for item in ['alphaL','alphaT'] :
+                self.model.w.arg(item).setConstant()
+                self.model.w.arg(item).setVal(1)
 
         print '\n'.join(str(i) for i in ['',self.model.channels['el'],'',self.model.channels['mu'],''])
         #self.plot_fracs(self.model.w)
@@ -24,14 +37,15 @@ class topAsymmFit(object) :
                         r.RooFit.PrintLevel(-1),
                         ]
 
-        with open('data/dqq_scan.txt','w') as output :
-            slices,lo,hi = 80,-0.6,0.4
+        with open('data/dqq_scan_%s_%s.txt'%(dist,provar),'w') as output :
+            slices,lo,hi = 20,-0.6,0.4
             print >> output, '#'+'\t'.join(dqqSlice.columns())
             for i in range(slices+1) :
                 print 'slice %d'%i
                 dqq = hi - i*(hi-lo)/slices
                 self.model.w.arg('d_qq').setVal(dqq)
-                sl = dqqSlice(  self.model.w, self.fitArgs , 'alphaL' )
+                #sl = dqqSlice(  self.model.w, self.fitArgs , 'alphaL' )
+                sl = dqqSlice(  self.model.w, self.fitArgs , provar )
                 print >> output, str(sl)
                 output.flush()
                 if False :

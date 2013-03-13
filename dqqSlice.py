@@ -8,7 +8,7 @@ class dqqSlice(object):
     def columns() : return ['dqq','minNLL','alphaL','err',
                             'profile_up','profile_down',
                             'MINUIT_cov_quality','alphaT','R_ag',
-                            'f_qq','f_qg','f_gg','f_ag',
+                            'f_qq','f_qg','f_gg','f_ag','d_xs_tt','d_xs_wj','eff_el_qcd','eff_mu_qcd',
                             'A','B','C'
                             ]
 
@@ -51,6 +51,7 @@ class dqqSlice(object):
         res['A'],res['B'],res['C'] = prbl.ABC
         pll.getVal()
         for item in ['alphaT','f_qq','f_qg','f_ag','f_gg'] : res[item] = workspace.arg(item).getVal()
+        for item in ['d_xs_tt','d_xs_wj','eff_el_qcd','eff_mu_qcd'] : res[item] = workspace.arg(item).getVal()
 
         for sign,lab in zip([-1,1],['down','up']) :
             xTrial = res[varToProfile]+sign*res['err']
