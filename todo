@@ -1,7 +1,7 @@
+!!! don't symmetrize QCD, DY for rapidity measurements!!!
 
-: scan dqq, and for each value,
-  : optional ensemble tests of at central parameters, scanning alphaL
-    - record bias, pull, nll mean/sigma
+* hackages to compare with other CMS/ATLAS/Tevatron results
+* less hacky ensemble testing
 
 * get other systematics off the batch
 * get other plots off the batch / write fit for tt production fractions
