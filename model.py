@@ -1,11 +1,14 @@
 import sys,roo,inputs,ROOT as r
 
+defaultDist = 'fitTopQueuedBin7TridiscriminantWTopQCD'
+
 class topModel(object) :
     @roo.quiet
-    def __init__(self, w = None, dist='fitTopQueuedBin7TridiscriminantWTopQCD') :
+    def __init__(self, w = None, dist=defaultDist) :
         self.observables = ['queuedbins','tridiscr']
         self.channels = dict((lepton,inputs.channel_data(lepton,signal=dist)) for lepton in ['el','mu'])
         self.ttcomps = ('qq','ag','gg','qg')
+        self.toSymmetrize = ['dy','qcd'] if dist==defaultDist else []
 
         if not w : w = r.RooWorkspace('Workspace')
         init_sequence = ['fractions','constraints','efficiencies','shapes','model']
@@ -85,8 +88,8 @@ class topModel(object) :
         [roo.factory(w, "SUM::%(n)s( alphaL * %(n)s_both, %(n)s_symm )"%{'n':lepton+'_ttqq'}) for lepton in self.channels]
 
         [roo.factory(w, "SUM::model_%s( %s )"%(lepton, ','.join([ 'expect_%s_%s * %s_%s%s'%(lepton, key, lepton, key, value)
-                                                                  for key,value in {'qcd' :'_symm',
-                                                                                    'dy'  :'_symm',
+                                                                  for key,value in {'qcd' :'_symm' if 'qcd' in self.toSymmetrize else '_both',
+                                                                                    'dy'  :'_symm' if 'dy'  in self.toSymmetrize else '_both',
                                                                                     'wj'  :'_both',
                                                                                     'st'  :'_both',
                                                                                     'ttgg':'_both',
