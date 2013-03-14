@@ -9,9 +9,8 @@ class sample_data(object) :
         self.datas = signalDistributions if all(signalDistributions) else ((signalDistributions[0],) + tuple(utils.symmAnti(signalDistributions[0])))
         norm = self.datas[0].Integral()
         for d in filter(None,self.datas) :
-            #d.Scale(1./norm)
             d.RebinY(20)
-            if 'QueuedBin' not in d.GetName() : d.RebinX()
+            if d.GetNbinsX()>80 : d.RebinX()
         
         self.datasX = tuple(d.ProjectionX() if d else None for d in self.datas)
         self.datasY = tuple(d.ProjectionY() if d else None for d in self.datas)
