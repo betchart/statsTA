@@ -24,14 +24,14 @@ class sample_data(object) :
     def key(self) : return ( self.xs, self.frac )
 
 class channel_data(object) :
-    __samples__ = ['wj','dy','st','ttgg','ttqg','ttqq','ttag','qcd','data','tt']
+    __samples__ = ['wj','dy','st','ttgg','ttqg','ttqq','ttag','data','tt']
     __xs_uncertainty__ = {'tt':1.0,'wj':2.0,'st':0.04,'dy':0.04}
 
-    def __init__(self,lepton, filePattern="data/stats_melded_%s_ph_pn_sn_jn_20.root",
+    def __init__(self,lepton, partition, filePattern="data/stats_%s_%s_ph_pn_sn_jn_20.root",
                  signal="fitTopQueuedBin7TridiscriminantWTopQCD", 
                  preselection="allweighted/",
                  getTT = False) :
-        tfile = r.TFile.Open(filePattern%lepton)
+        tfile = r.TFile.Open(filePattern%(partition, lepton))
 
         self.lepton = lepton
         self.lumi = tfile.Get('lumiHisto/data').GetBinContent(1)
@@ -39,6 +39,7 @@ class channel_data(object) :
         self.samples = {}
 
         for s in self.__samples__[:None if getTT else -1]:
+            if s=='dy' and partition=='QCD' : continue
             pre = tfile.Get(preselection+s)
             doSymmAnti = s[:2]=='tt' and 'QueuedBin' in signal
             datas = ( tfile.Get(signal+     '/'+s).Clone(lepton+'_'+s),
