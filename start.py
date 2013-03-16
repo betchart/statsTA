@@ -2,17 +2,10 @@ import sys,math,model,roo,ROOT as r
 from dqqSlice import dqqSlice
 r.gROOT.SetBatch(1)
 
-distributions = ['fitTopQueuedBin7TridiscriminantWTopQCD',
-                 'fitTopPtOverSumPt_triD',
-                  ]
-dist = distributions[1]
-variables = ['alphaL','R_ag']
-provar = variables[1]
-
 
 class topAsymmFit(object) :
     @roo.quiet
-    def __init__(self) :
+    def __init__(self, dist, provar, tag ) :
         self.model = model.topModel( dist = dist )
         self.import_data(self.model.w)
         for item in ['d_qq','d_lumi','d_xs_dy','d_xs_st'] : self.model.w.arg(item).setConstant()
@@ -38,7 +31,7 @@ class topAsymmFit(object) :
                         ]
 
         with open('data/dqq_scan_%s_%s.txt'%(dist,provar),'w') as output :
-            slices,lo,hi = 20,-0.6,0.4
+            slices,lo,hi = 40,-0.99,0.4
             print >> output, '#'+'\t'.join(dqqSlice.columns())
             for i in range(slices+1) :
                 print 'slice %d'%i
@@ -287,4 +280,14 @@ class topAsymmFit(object) :
                 f.flush()
         for f in files : f.close()
 
-if __name__=='__main__' : topAsymmFit()
+if __name__=='__main__' :
+    distributions = ['fitTopQueuedBin7TridiscriminantWTopQCD',
+                     'fitTopPtOverSumPt_triD',
+                     'fitTopTanhRapiditySum_triD',
+                     'fitTopTanhAvgRapidity_triD',
+                     ]
+    dist = distributions[0]
+    variables = ['alphaL','R_ag']
+    provar = variables[0]
+
+    topAsymmFit( dist, provar, tag=None)
