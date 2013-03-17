@@ -10,7 +10,7 @@ class topAsymmFit(object) :
         self.import_data(self.model.w)
         for item in ['d_qq','d_lumi','d_xs_dy','d_xs_st'] : self.model.w.arg(item).setConstant()
 
-        if dist!=distributions[0] :
+        if 'QueuedBin' not in dist :
             for item in ['alphaL','alphaT'] :
                 self.model.w.arg(item).setConstant()
                 self.model.w.arg(item).setVal(1)
@@ -29,7 +29,20 @@ class topAsymmFit(object) :
                         r.RooFit.NumCPU(4),
                         r.RooFit.PrintLevel(-1),
                         ]
+        #self.model.w.arg('d_qq').setVal(0)
+        #self.model.w.arg('R_ag').setConstant()
+        #self.model.w.arg('alphaL').setConstant()
+        #self.model.w.arg('alphaT').setConstant()
+        #central = self.model.w.pdf('model').fitTo( self.model.w.data('data'), *(self.fitArgs+[r.RooFit.Save(True)]))
+        #central.Print()
 
+        #self.print_fracs(self.model.w)
+        #self.print_n(self.model.w)
+        #print
+        #print
+        #self.model.w.Print()
+        #return
+    
         with open('data/dqq_scan_%s_%s.txt'%(dist,provar),'w') as output :
             slices,lo,hi = 40,-0.99,0.4
             print >> output, '#'+'\t'.join(dqqSlice.columns())
@@ -111,7 +124,7 @@ class topAsymmFit(object) :
         length = 24
         tots = {'el':0,'mu':0}
         print (' ').join(i.rjust(8) for i in ['']+tots.keys())
-        for xs in self.model.channels['el'].samples :
+        for xs in ['tt','wj','mj','st','dy'] :
             if xs=='data' : continue
             print xs.rjust(length/3),
             for chan in tots :
