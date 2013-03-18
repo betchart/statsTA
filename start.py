@@ -20,12 +20,10 @@ class topAsymmFit(object) :
         self.defaults(self.model.w)
         self.print_fracs(self.model.w)
         self.print_n(self.model.w)
-        #self.draw(w,'before')
 
         self.fitArgs = [r.RooFit.Extended(True),
                         r.RooFit.ExternalConstraints(self.model.w.argSet('constraints')),
                         r.RooFit.Constrain(self.model.w.argSet('d_lumi,d_xs_st,d_xs_dy,d_xs_tt,d_xs_wj')),
-                        #r.RooFit.Optimize(False),
                         r.RooFit.NumCPU(4),
                         r.RooFit.PrintLevel(-1),
                         ]
@@ -37,7 +35,7 @@ class topAsymmFit(object) :
         print
     
         with open('data/falphaL_scan_%s_%s.txt'%(dist,provar),'w') as output :
-            slices,lo,hi = 40,0.0,0.3
+            slices,lo,hi = 40,-0.2,0.4
             print >> output, '#'+'\t'.join(falphaLSlice.columns())
             for i in range(slices+1) :
                 print 'slice %d'%i
