@@ -24,7 +24,7 @@ class sample_data(object) :
     def key(self) : return ( self.xs, self.frac )
 
 class channel_data(object) :
-    __samples__ = ['wj','dy','st','ttgg','ttqg','ttqq','ttag','data','tt']
+    __samples__ = ['data','wj','dy','st','ttgg','ttqg','ttqq','ttag','tt']
     __xs_uncertainty__ = {'tt':1.0,'wj':2.0,'st':0.04,'dy':0.04}
 
     def __init__(self,lepton, partition, filePattern="data/stats_%s_%s_ph_pn_sn_jn_20.root",
@@ -38,7 +38,7 @@ class channel_data(object) :
         self.lumi_sigma = 0.04
         self.samples = {}
 
-        for s in self.__samples__[:None if getTT else -1]:
+        for s in self.__samples__[4 if getTT else 0:None if getTT else -1]:
             if s=='dy' and partition=='QCD' : continue
             pre = tfile.Get(preselection+s)
             doSymmAnti = s[:2]=='tt' and 'QueuedBin' in signal
