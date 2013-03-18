@@ -44,8 +44,8 @@ class topModel(object) :
             roo.factory(w, "Gaussian::xs_%s_constraint( d_xs_%s[0,-1,2], 0, %f)"%(sample,sample,delta))
             roo.factory(w, "expr::xs_%s('(1+@0)*@1',{d_xs_%s, xs_%s_hat})"%(sample,sample,sample))
 
-        roo.factory(w, "Gaussian::alphaT_constraint( alphaT[1,0.5,1.5], 1, 0.08)")
-        roo.factory(w, "PROD::constraints(%s)"%', '.join([s+'_constraint' for s in ['lumi','alphaT']+['xs_'+t for t in xs_constraints]]))
+        #roo.factory(w, "Gaussian::alphaT_constraint( alphaT[1,0.5,1.5], 1, 0.08)")
+        roo.factory(w, "PROD::constraints(%s)"%', '.join([s+'_constraint' for s in ['lumi','alphaT'][:-1]+['xs_'+t for t in xs_constraints]]))
 
         [roo.factory(w, "prod::xs_tt%s(f_%s,xs_tt)"%(comp,comp)) for comp in self.ttcomps]
 
@@ -97,7 +97,10 @@ class topModel(object) :
             roo.factory(w, "expr::expect_%s_data('@0*%f*@1',{lumi_%s,factor_%s})"%(lepton,N/channel.lumi,lepton,lepton))
 
     def import_model(self,w) :
-        roo.factory(w, "alphaL[1, -15, 15]")
+        roo.factory(w, "falphaL[0.1, -15, 15]")
+        roo.factory(w, "falphaT[0.2, -15, 15]")
+        roo.factory(w, "expr::alphaL('@0/@1',{falphaL,f_qq})")
+        roo.factory(w, "expr::alphaT('@0/@1',{falphaT,f_qg})")
 
         [roo.factory(w, "SUM::%(n)s( alphaT * %(n)s_both, %(n)s_symm )"%{'n':lepton+'_ttag'}) for lepton in self.channels.keys()+self.channels_qcd.keys()]
         [roo.factory(w, "SUM::%(n)s( alphaT * %(n)s_both, %(n)s_symm )"%{'n':lepton+'_ttqg'}) for lepton in self.channels.keys()+self.channels_qcd.keys()]

@@ -24,24 +24,24 @@ class topAsymmFit(object) :
 
         self.fitArgs = [r.RooFit.Extended(True),
                         r.RooFit.ExternalConstraints(self.model.w.argSet('constraints')),
-                        r.RooFit.Constrain(self.model.w.argSet('d_lumi,alphaT,d_xs_st,d_xs_dy,d_xs_tt,d_xs_wj')),
+                        r.RooFit.Constrain(self.model.w.argSet('d_lumi,d_xs_st,d_xs_dy,d_xs_tt,d_xs_wj')),
                         #r.RooFit.Optimize(False),
                         r.RooFit.NumCPU(4),
                         r.RooFit.PrintLevel(-1),
                         ]
-        #self.model.w.arg('d_qq').setVal(0)
+        self.model.w.arg('d_qq').setVal(0)
         #self.model.w.arg('R_ag').setConstant()
         #self.model.w.arg('alphaL').setConstant()
         #self.model.w.arg('alphaT').setConstant()
-        #central = self.model.w.pdf('model').fitTo( self.model.w.data('data'), *(self.fitArgs+[r.RooFit.Save(True)]))
-        #central.Print()
+        central = self.model.w.pdf('model').fitTo( self.model.w.data('data'), *(self.fitArgs+[r.RooFit.Save(True)]))
+        central.Print()
 
-        #self.print_fracs(self.model.w)
-        #self.print_n(self.model.w)
-        #print
-        #print
-        #self.model.w.Print()
-        #return
+        self.print_fracs(self.model.w)
+        self.print_n(self.model.w)
+        print
+        print
+        self.model.w.Print()
+        return
     
         with open('data/dqq_scan_%s_%s.txt'%(dist,provar),'w') as output :
             slices,lo,hi = 40,-0.99,0.4
