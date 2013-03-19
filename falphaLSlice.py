@@ -9,6 +9,7 @@ class falphaLSlice(object):
                             'profile_up','profile_down',
                             'MINUIT_cov_quality','alphaT','alphaL','d_qq','R_ag',
                             'f_qq','f_qg','f_gg','f_ag','d_xs_tt','d_xs_wj','expect_el_mj','expect_mu_mj',
+                            'Ac_y_ttqq','Ac_y_ttqg','Ac_phi_ttqq','Ac_phi_ttqg','Ac_phi_ttag',
                             'A','B','C'
                             ]
 
@@ -50,8 +51,10 @@ class falphaLSlice(object):
         res['err'] = prbl.dx(pll_1sigma)
         res['A'],res['B'],res['C'] = prbl.ABC
         pll.getVal()
-        for item in ['alphaL','alphaT','f_qq','f_qg','f_ag','f_gg'] : res[item] = workspace.arg(item).getVal()
-        for item in ['d_qq','R_ag','d_xs_tt','d_xs_wj','expect_el_mj','expect_mu_mj'] : res[item] = workspace.arg(item).getVal()
+        for item in ['alphaL','alphaT','f_qq','f_qg','f_ag','f_gg',
+                     'Ac_y_ttqq','Ac_y_ttqg','Ac_phi_ttqq','Ac_phi_ttqg','Ac_phi_ttag',
+                     'd_qq','R_ag','d_xs_tt','d_xs_wj','expect_el_mj','expect_mu_mj'
+                     ] : res[item] = workspace.arg(item).getVal()
 
         for sign,lab in zip([-1,1],['down','up']) :
             xTrial = res[varToProfile]+sign*res['err']
