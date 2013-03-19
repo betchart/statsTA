@@ -1,4 +1,4 @@
-import sys,roo,inputs,ROOT as r
+import sys,roo,inputs,utils,ROOT as r
 
 defaultDist = 'fitTopQueuedBin7TridiscriminantWTopQCD'
 
@@ -6,13 +6,14 @@ class topModel(object) :
     @roo.quiet
     def __init__(self, w = None, dist=defaultDist) :
         self.observables = ['queuedbins','tridiscr']
+        self.gen = inputs.channel_data('mu','top',signal='2_x_y',getTT=True, noRebin=True)
         self.channels = dict((lepton,inputs.channel_data(lepton,'top',signal=dist)) for lepton in ['el','mu'])
         self.channels_qcd = dict((lepton+'qcd',inputs.channel_data(lepton,'QCD',signal=dist)) for lepton in ['el','mu'])
         self.ttcomps = ('qq','ag','gg','qg')
         self.toSymmetrize = ['dy'] if dist==defaultDist else []
 
         if not w : w = r.RooWorkspace('Workspace')
-        init_sequence = ['fractions','constraints','efficiencies','shapes','qcd','model','expressions']
+        init_sequence = ['fractions','constraints','efficiencies','shapes','qcd','model','expressions','rawAc']
         for item in init_sequence :
             print item,
             sys.stdout.flush()
@@ -131,3 +132,13 @@ class topModel(object) :
         [roo.factory(w, "sum::expect_%s_tt(%s)"%(lep,','.join(['expect_%s_tt%s'%(lep,f) for f in ['gg','qg','qq','ag']]))) for lep in self.channels]
         [roo.factory(w, "sum::expect_%s_notqcd(%s)"%(lep,','.join(['expect_%s_%s'%(lep,samp) for samp in ['wj','st','ttgg','ttag','ttqg','ttqq']]))) for lep in self.channels_qcd]
         [roo.factory(w, "sum::expect_%(n)s_mj(expect_%(n)sqcd_data,expect_%(n)sqcd_notqcd)"%{'n':lep}) for lep in self.channels]
+
+    def import_rawAc(self,w) :
+        assert self.gen.samples['tt'].datas[0].GetXaxis().GetTitle() == 'genTopPhiBoost'
+        assert self.gen.samples['tt'].datas[0].GetYaxis().GetTitle() == 'genTopDeltaBetazRel'
+
+        for name,data in self.gen.samples.items() :
+            roo.wimport(w, r.RooConstVar(*(2*['Ac_y_'+name]+[utils.asymmetry(data.datasY[0])]))) #A_c^y(**)
+            roo.wimport(w, r.RooConstVar(*(2*['Ac_phi_'+name]+[utils.asymmetry(data.datasX[0])]))) #A_c^\phi(**)
+            w.arg('Ac_y_'+name).Print()
+            w.arg('Ac_phi_'+name).Print()
