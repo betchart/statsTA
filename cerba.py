@@ -1,7 +1,8 @@
 
-import inputs,ROOT as r
+import os,inputs,ROOT as r
 
-txtname = 'cerba_efficiencies.txt'
+os.system('mkdir -p cerba')
+txtname = 'cerba/cerba_efficiencies.txt'
 with open(txtname,'w') as txt:
     print>>txt, '# sample    efficiency-5j/4j      efficiency3dcut'
     for lep in ['el','mu'] :
@@ -10,7 +11,7 @@ with open(txtname,'w') as txt:
 
         print>>txt
         print>>txt, '# ', lep
-        filename = "cerba_%s.root"%lep
+        filename = "cerba/cerba_%s.root"%lep
         f = r.TFile.Open(filename,'RECREATE')
         for item in chan.samples:
             eff5jet = chan.samples[item].datas[0].Integral()/chan4.samples[item].datas[0].Integral()
