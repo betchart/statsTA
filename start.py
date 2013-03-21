@@ -6,14 +6,9 @@ r.gROOT.SetBatch(1)
 class topAsymmFit(object) :
     @roo.quiet
     def __init__(self, dist, provar, tag ) :
-        self.model = model.topModel( dist = dist )
+        self.model = model.topModel( dist = dist , asymmetry = 'QueuedBin' in dist)
         self.import_data(self.model.w)
-        for item in ['falphaL','d_lumi','d_xs_dy','d_xs_st'] : self.model.w.arg(item).setConstant()
-
-        if 'QueuedBin' not in dist :
-            for item in ['alphaL','alphaT'] :
-                self.model.w.arg(item).setConstant()
-                self.model.w.arg(item).setVal(1)
+        for item in ['d_lumi','d_xs_dy','d_xs_st'] : self.model.w.arg(item).setConstant()
 
         print '\n'.join(str(i) for i in ['',self.model.channels['el'],'',self.model.channels['mu'],''])
         #self.plot_fracs(self.model.w)
@@ -33,7 +28,9 @@ class topAsymmFit(object) :
         self.print_fracs(self.model.w)
         self.print_n(self.model.w)
         print
+        return
     
+        self.model.w.arg('falphaL').setConstant()
         with open('data/falphaL_scan_%s_%s.txt'%(dist,provar),'w') as output :
             slices,lo,hi = 40,-0.2,0.4
             print >> output, '#'+'\t'.join(falphaLSlice.columns())
@@ -112,9 +109,8 @@ if __name__=='__main__' :
     distributions = ['fitTopQueuedBin7TridiscriminantWTopQCD',
                      'fitTopPtOverSumPt_triD',
                      'fitTopTanhRapiditySum_triD',
-                     'fitTopTanhAvgRapidity_triD',
                      ]
-    dist = distributions[0]
+    dist = distributions[2]
     variables = ['alphaL','R_ag']
     provar = variables[0]
 
