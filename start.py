@@ -22,7 +22,8 @@ class topAsymmFit(object) :
                         r.RooFit.NumCPU(4),
                         r.RooFit.PrintLevel(-1),
                         ]
-        central = self.model.w.pdf('model').fitTo( self.model.w.data('data'), *(self.fitArgs+[r.RooFit.Save(True)]))
+        for i in range(5):
+            central = self.model.w.pdf('model').fitTo( self.model.w.data('data'), *(self.fitArgs+[r.RooFit.Save(True)]))
         central.Print()
 
         self.print_fracs(self.model.w)
@@ -105,12 +106,25 @@ class topAsymmFit(object) :
         r.gErrorIgnoreLevel = r.kInfo
         c.Print('fractions.pdf]')
 
+
+
+
 if __name__=='__main__' :
     distributions = ['fitTopQueuedBin7TridiscriminantWTopQCD',
                      'fitTopPtOverSumPt_triD',
                      'fitTopTanhRapiditySum_triD',
                      ]
-    dist = distributions[2]
+    if len(sys.argv)>1 :
+        iDist = sys.argv[1]
+    else:
+        print '\n'.join('%d %s'%i for i in enumerate(distributions))
+        iDist = raw_input("Which?")
+    dist = distributions[int(iDist)] if int(iDist) in range(len(distributions)) else ''
+    if not dist :
+        print 'not a number'
+        exit(0)
+    else: print "fitting",dist
+
     variables = ['alphaL','R_ag']
     provar = variables[0]
 
