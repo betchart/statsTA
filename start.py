@@ -113,6 +113,7 @@ if __name__=='__main__' :
     distributions = ['fitTopQueuedBin7TridiscriminantWTopQCD',
                      'fitTopPtOverSumPt_triD',
                      'fitTopTanhRapiditySum_triD',
+                     'TridiscriminantQQggQg_triD'
                      ]
     if len(sys.argv)>1 :
         iDist = sys.argv[1]
