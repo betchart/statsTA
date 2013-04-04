@@ -24,7 +24,5 @@ class parabola(object) :
     def ymin(self) : return self.y(self.xmin)
     
     def dx(self,dy) :
-        A,B,C = self.ABC
-        d = B*B - 4*A*(C-dy)
-        return 0.5 * math.sqrt(d) / A if d>0 else None
-
+        A,_,_ = self.ABC
+        return math.sqrt(dy/A) if dy/A>0 else None
