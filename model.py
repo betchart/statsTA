@@ -135,3 +135,22 @@ class topModel(object) :
         [roo.factory(w, "sum::expect_%s_tt(%s)"%(lep,','.join(['expect_%s_tt%s'%(lep,f) for f in ['gg','qg','qq','ag']]))) for lep in self.channels]
         [roo.factory(w, "sum::expect_%s_notqcd(%s)"%(lep,','.join(['expect_%s_%s'%(lep,samp) for samp in ['wj','st','ttgg','ttag','ttqg','ttqq']]))) for lep in self.channels_qcd]
         [roo.factory(w, "sum::expect_%(n)s_mj(expect_%(n)sqcd_data,expect_%(n)sqcd_notqcd)"%{'n':lep}) for lep in self.channels]
+
+
+    @roo.quiet
+    def import_data(self) :
+        w = self.w
+        obs_ = w.argSet(','.join(self.observables))
+        obs = r.RooArgList(obs_)
+
+        datas = [(lepton, r.RooDataHist('data_'+lepton,'N_{obs}^{%s}'%lepton,obs,chan.samples['data'].datas[0])) for lepton,chan in self.channels.items()]
+
+        [roo.wimport(w, dat) for _,dat in datas]
+        args = [r.RooFit.Import(*dat) for dat in datas]
+        roo.wimport(w, r.RooDataHist('data', 'N_{obs}',
+                                     obs,
+                                     r.RooFit.Index(w.arg('channel')),
+                                     *args
+                                     ),
+                )
+

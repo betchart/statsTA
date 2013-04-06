@@ -8,7 +8,7 @@ class topAsymmFit(object) :
     @roo.quiet
     def __init__(self, dist, provar, tag ) :
         self.model = model.topModel( dist = dist , asymmetry = 'QueuedBin' in dist)
-        self.import_data(self.model.w)
+        self.model.import_data()
 
         print '\n'.join(str(i) for i in ['',self.model.channels['el'],'',self.model.channels['mu'],''])
         #self.plot_fracs(self.model.w)
@@ -75,23 +75,6 @@ class topAsymmFit(object) :
         print ' '.join(["tot".ljust(length/3)] +
                        [("%d"%t).rjust(length/3) for chan,t in tots.items()])
         print
-
-    @roo.quiet
-    def import_data(self,w) :
-        obs_ = w.argSet(','.join(self.model.observables))
-        obs = r.RooArgList(obs_)
-
-        datas = [(lepton, r.RooDataHist('data_'+lepton,'N_{obs}^{%s}'%lepton,obs,chan.samples['data'].datas[0])) for lepton,chan in self.model.channels.items()]
-
-        [roo.wimport(w, dat) for _,dat in datas]
-        args = [r.RooFit.Import(*dat) for dat in datas]
-        roo.wimport(w, r.RooDataHist('data', 'N_{obs}', 
-                                     obs,
-                                     r.RooFit.Index(w.arg('channel')),
-                                     *args
-                                     ),
-                )
-
 
     def plot_fracs(self,w, logy = False) :
         r.gErrorIgnoreLevel = r.kWarning
