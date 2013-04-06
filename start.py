@@ -9,7 +9,6 @@ class topAsymmFit(object) :
     def __init__(self, dist, provar, tag ) :
         self.model = model.topModel( dist = dist , asymmetry = 'QueuedBin' in dist)
         self.import_data(self.model.w)
-        for item in ['d_lumi','d_xs_dy','d_xs_st'] : self.model.w.arg(item).setConstant()
 
         print '\n'.join(str(i) for i in ['',self.model.channels['el'],'',self.model.channels['mu'],''])
         #self.plot_fracs(self.model.w)
