@@ -4,7 +4,8 @@ defaultDist = 'fitTopQueuedBin7TridiscriminantWTopQCD'
 
 class topModel(object) :
     @roo.quiet
-    def __init__(self, w = None, dist=defaultDist, asymmetry=True) :
+    def __init__(self, w = None, dist=defaultDist, asymmetry=True, quiet = False) :
+        self.quiet = quiet
         self.asymmetry=asymmetry
         self.observables = ['queuedbins','tridiscr']
         self.gen = inputs.channel_data('mu','top',signal='2_x_y',getTT=True, noRebin=True)
@@ -16,10 +17,10 @@ class topModel(object) :
         if not w : w = r.RooWorkspace('Workspace')
         init_sequence = ['fractions','xs_lumi','efficiencies','shapes','qcd','asymmetry','model','expressions']
         for item in init_sequence :
-            print item,
+            if not quiet : print item,
             sys.stdout.flush()
             getattr(self, 'import_'+item)(w)
-            print '!'
+            if not quiet : print '!'
         [w.var(v).setBins( getattr( self.channels['el'].samples['data'].datas[0], 'GetNbins'+X)() ) for v,X in zip(self.observables,'XY')]
 
         for item in ['d_lumi','d_xs_dy','d_xs_st'] : w.arg(item).setConstant()
@@ -114,8 +115,9 @@ class topModel(object) :
         for name,data in self.gen.samples.items() :
             roo.wimport(w, r.RooConstVar(*(2*['Ac_y_'+name]+[utils.asymmetry(data.datasY[0])]))) #A_c^y(**)
             roo.wimport(w, r.RooConstVar(*(2*['Ac_phi_'+name]+[utils.asymmetry(data.datasX[0])]))) #A_c^\phi(**)
-            w.arg('Ac_y_'+name).Print()
-            w.arg('Ac_phi_'+name).Print()
+            if not self.quiet : 
+                w.arg('Ac_y_'+name).Print()
+                w.arg('Ac_phi_'+name).Print()
 
     def import_model(self,w) :
         which = dict((i,'_both') for i in ['dy','wj','st','ttgg','ttqq','ttqg','ttag'])
