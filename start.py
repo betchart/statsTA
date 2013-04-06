@@ -7,17 +7,15 @@ r.gROOT.SetBatch(1)
 class topAsymmFit(object) :
     @roo.quiet
     def __init__(self, dist, provar, tag ) :
-        self.model = model.topModel( dist = dist , asymmetry = 'QueuedBin' in dist)
+        self.model = model.topModel( dist = dist , asymmetry = 'QueuedBin' in dist, quiet=True)
         self.model.import_data()
 
-        print '\n'.join(str(i) for i in ['',self.model.channels['el'],'',self.model.channels['mu'],''])
-        #self.plot_fracs(self.model.w)
-        self.print_fracs(self.model.w)
-        self.print_n(self.model.w)
+        #print '\n'.join(str(i) for i in ['',self.model.channels['el'],'',self.model.channels['mu'],''])
+        ##self.plot_fracs(self.model.w)
 
         self.fitArgs = [r.RooFit.Extended(True), r.RooFit.NumCPU(4), r.RooFit.PrintLevel(-1) ]
-        for i in range(2):
-            central = self.model.w.pdf('model').fitTo( self.model.w.data('data'), *(self.fitArgs+[r.RooFit.Save(i==1)]))
+        for i in reversed(range(3)):
+            central = self.model.w.pdf('model').fitTo( self.model.w.data('data'), *(self.fitArgs+[r.RooFit.Save(not i)]))
         central.Print()
 
         self.print_fracs(self.model.w)
