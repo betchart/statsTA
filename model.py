@@ -22,7 +22,7 @@ class topModel(object) :
             print '!'
         [w.var(v).setBins( getattr( self.channels['el'].samples['data'].datas[0], 'GetNbins'+X)() ) for v,X in zip(self.observables,'XY')]
 
-        for item in ['d_lumi','d_xs_dy','d_xs_st'] : self.model.w.arg(item).setConstant()
+        for item in ['d_lumi','d_xs_dy','d_xs_st'] : w.arg(item).setConstant()
 
         self.w = w
 
