@@ -18,8 +18,6 @@ class topAsymmFit(object) :
         self.print_n(self.model.w)
 
         self.fitArgs = [r.RooFit.Extended(True),
-                        r.RooFit.ExternalConstraints(self.model.w.argSet('constraints')),
-                        r.RooFit.Constrain(self.model.w.argSet('d_lumi,d_xs_st,d_xs_dy,d_xs_tt,d_xs_wj')),
                         r.RooFit.NumCPU(4),
                         r.RooFit.PrintLevel(-1),
                         ]

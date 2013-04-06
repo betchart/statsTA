@@ -14,7 +14,7 @@ class topModel(object) :
         self.toSymmetrize = ['dy'] if dist==defaultDist else []
 
         if not w : w = r.RooWorkspace('Workspace')
-        init_sequence = ['fractions','constraints','efficiencies','shapes','qcd','asymmetry','model','expressions']
+        init_sequence = ['fractions','xs_lumi','efficiencies','shapes','qcd','asymmetry','model','expressions']
         for item in init_sequence :
             print item,
             sys.stdout.flush()
@@ -33,8 +33,8 @@ class topModel(object) :
         roo.factory(w, "expr::f_qg('(1-@0-@1)/(1+@2*@3*@4/(@5*@6))',{f_qq,f_ag,R_ag,f_gg_hat,f_qq_hat,f_ag_hat,f_qg_hat})")
         roo.factory(w, "expr::f_gg('1-@0-@1-@2',{f_qq,f_ag,f_qg})")
 
-    def import_constraints(self,w) :
-        roo.factory(w, "Gaussian::lumi_constraint( d_lumi[0,-0.2,0.2], 0, %f)"%self.channels['el'].lumi_sigma)
+    def import_xs_lumi(self,w) :
+        roo.factory(w, "d_lumi[0,-0.2,0.2]")
         for lepton,channel in self.channels.items() + self.channels_qcd.items():
             roo.wimport_const( w, 'lumi_%s_hat'%lepton, channel.lumi )
             roo.factory(w, "expr::lumi_%s('(1+@0)*@1', {d_lumi, lumi_%s_hat})"%(lepton,lepton))
@@ -43,11 +43,8 @@ class topModel(object) :
 
         for sample,(xs,delta) in xs_constraints.items() :
             roo.wimport_const(w, 'xs_%s_hat'%sample, xs)
-            roo.factory(w, "Gaussian::xs_%s_constraint( d_xs_%s[0,-1,2], 0, %f)"%(sample,sample,delta))
+            roo.factory(w, "d_xs_%s[0,-1,2]"%sample)
             roo.factory(w, "expr::xs_%s('(1+@0)*@1',{d_xs_%s, xs_%s_hat})"%(sample,sample,sample))
-
-        #roo.factory(w, "Gaussian::alphaT_constraint( alphaT[1,0.5,1.5], 1, 0.08)")
-        roo.factory(w, "PROD::constraints(%s)"%', '.join([s+'_constraint' for s in ['lumi','alphaT'][:-1]+['xs_'+t for t in xs_constraints]]))
 
         [roo.factory(w, "prod::xs_tt%s(f_%s,xs_tt)"%(comp,comp)) for comp in self.ttcomps]
 
@@ -130,7 +127,6 @@ class topModel(object) :
          for lepton in self.channels]
 
         roo.factory(w, "SIMUL::model(channel, %s)"%', '.join("%(chan)s=model_%(chan)s"%{'chan':lepton} for lepton in self.channels))
-        roo.factory(w, "PROD::constrained_model( model, constraints )")
 
 
     def import_expressions(self,w) :
