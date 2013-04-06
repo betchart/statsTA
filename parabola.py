@@ -5,20 +5,20 @@ class parabola(object) :
     
     def __init__(self, points = [] ) :
         if len(points)!=3 : raise "NPointsNot3"
-        self.ABC = np.linalg.solve( np.array([[x**2, x, 1] for x,_ in points]),
+        self.ABC = np.linalg.solve( np.array([[x**2, 2*x, 1] for x,_ in points]),
                                     [y for _,y in points])
     def y(self,x) :
         A,B,C = self.ABC
-        return A*x*x + B*x + C
+        return A*x*x + 2*B*x + C
 
     def slope(self,x) :
         A,B,C = self.ABC
-        return 2*A*x + B
+        return 2*(A*x + B)
 
     @property
     def xmin(self) :
-        A,B,C = self.ABC
-        return -0.5 * B / A
+        A,B,_ = self.ABC
+        return - B / A
 
     @property
     def ymin(self) : return self.y(self.xmin)

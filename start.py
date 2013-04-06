@@ -1,5 +1,6 @@
-import sys,math,model,roo,ROOT as r
+import sys,math,model,roo,numpy as np,ROOT as r
 from falphaLSlice import falphaLSlice
+from paraboloid import paraboloid
 r.gROOT.SetBatch(1)
 
 
@@ -29,19 +30,37 @@ class topAsymmFit(object) :
         self.print_fracs(self.model.w)
         self.print_n(self.model.w)
         print
-        return
-    
-        self.model.w.arg('falphaL').setConstant()
-        with open('data/falphaL_scan_%s_%s.txt'%(dist,provar),'w') as output :
-            slices,lo,hi = 40,-0.2,0.4
-            print >> output, '#'+'\t'.join(falphaLSlice.columns())
-            for i in range(slices+1) :
-                print 'slice %d'%i
-                falphaL = hi - i*(hi-lo)/slices
-                self.model.w.arg('falphaL').setVal(falphaL)
-                sl = falphaLSlice(  self.model.w, self.fitArgs , 'falphaT' )
-                print >> output, str(sl)
-                output.flush()
+
+        faL,faLe = self.model.w.arg('falphaL').getVal(), self.model.w.arg('falphaL').getError()
+        faT,faTe = self.model.w.arg('falphaT').getVal(), self.model.w.arg('falphaT').getError()
+
+        nll = self.model.w.pdf('model').createNLL( self.model.w.data('data'), *self.fitArgs[:-1] )
+        pll = nll.createProfile(self.model.w.argSet('falphaL,falphaT'))
+
+        def point(faL_,faT_) :
+            self.model.w.arg('falphaL').setVal(faL+dfaL)
+            self.model.w.arg('falphaT').setVal(faT+dfaT)
+            return faL_,faT_,pll.getVal()
+
+        points = [point(faL+dfaL,faT+dfaT) for dfaL,dfaT in [(0,0),(-faLe,0),(faLe,0),(0,-faTe),(0,faTe),(faLe/2,faTe/2)]]
+        parb = paraboloid(points)
+        oneSigmaNLL = 1.14
+        twoSigmaNLL = 3.0
+        oneSigmas = parb.dxy(oneSigmaNLL)
+        print oneSigmas
+        print math.sqrt(oneSigmas[0,0]), math.sqrt(oneSigmas[1,1])
+        param1sigma = parb.parametricEllipse(oneSigmaNLL)
+        param2sigma = parb.parametricEllipse(twoSigmaNLL)
+        scales = [self.model.w.arg(a).getVal() for a in ['Ac_y_ttqq','Ac_y_ttqg']]
+        with open('points.txt','w') as wfile :
+            for t in np.arange(0,2*math.pi+0.00001,math.pi/50) :
+                point1 = param1sigma.dot([math.cos(t),math.sin(t),1])
+                point2 = param2sigma.dot([math.cos(t),math.sin(t),1])
+                point1/=point1[2]
+                point2/=point2[2]
+                seq = list(parb.xymin) + list(point1[:2]) + list(point2[:2]) + scales
+                print>>wfile, '\t'.join(str(f) for f in seq)
+        print "Wrote points.txt"
 
     def print_fracs(self,w) :
         for item in ['lumi_mu','lumi_el','f_gg','f_qg','f_qq','f_ag']+['xs_'+i for i in self.model.channels['el'].samples if i!='data'] : print "%s: %.04f"%(item, w.arg(item).getVal())
