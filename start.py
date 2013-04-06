@@ -15,12 +15,9 @@ class topAsymmFit(object) :
         self.print_fracs(self.model.w)
         self.print_n(self.model.w)
 
-        self.fitArgs = [r.RooFit.Extended(True),
-                        r.RooFit.NumCPU(4),
-                        r.RooFit.PrintLevel(-1),
-                        ]
-        for i in range(5):
-            central = self.model.w.pdf('model').fitTo( self.model.w.data('data'), *(self.fitArgs+[r.RooFit.Save(True)]))
+        self.fitArgs = [r.RooFit.Extended(True), r.RooFit.NumCPU(4), r.RooFit.PrintLevel(-1) ]
+        for i in range(2):
+            central = self.model.w.pdf('model').fitTo( self.model.w.data('data'), *(self.fitArgs+[r.RooFit.Save(i==1)]))
         central.Print()
 
         self.print_fracs(self.model.w)
