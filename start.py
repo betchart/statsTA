@@ -12,7 +12,6 @@ class topAsymmFit(object) :
 
         print '\n'.join(str(i) for i in ['',self.model.channels['el'],'',self.model.channels['mu'],''])
         #self.plot_fracs(self.model.w)
-        self.defaults(self.model.w)
         self.print_fracs(self.model.w)
         self.print_n(self.model.w)
 
@@ -79,11 +78,6 @@ class topAsymmFit(object) :
         print ' '.join(["tot".ljust(length/3)] +
                        [("%d"%t).rjust(length/3) for chan,t in tots.items()])
         print
-
-
-    def defaults(self,w ) :
-        w.var('d_qq').setVal(0)
-        w.var('R_ag').setVal(w.arg('f_ag_hat').getVal()/w.arg('f_qq_hat').getVal())
 
     @roo.quiet
     def import_data(self,w) :
