@@ -36,53 +36,53 @@ class sample_data(object):
 
 
 class channel_data(object):
-    __samples__ = ['data', 'wj', 'dy', 'st',
-                   'ttgg', 'ttqg', 'ttqq', 'ttag', 'tt']
+    __samples__ = ['data', 'wj', 'dy', 'st', 'ttgg', 'ttqg', 'ttqq', 'ttag', 'tt']
     __xs_uncertainty__ = {'tt': 1.0, 'wj': 2.0, 'st': 0.04, 'dy': 0.04}
 
     def __init__(self, lepton, partition,
                  filePattern="data/stats_%s_%s_ph_pn_sn_jn_20.root",
                  signal="fitTopQueuedBin7TridiscriminantWTopQCD",
-                 signalPrefix="",
-                 dirPrefix="",
-                 preselection="allweighted/",
-                 getTT=False,
+                 sigPrefix="", dirPrefix="", getTT=False,
                  noRebin=False):
         tfile = r.TFile.Open(filePattern % (partition, lepton))
 
+        self.noRebin = noRebin
         self.lepton = lepton
         self.lumi = tfile.Get('lumiHisto/data').GetBinContent(1)
         self.lumi_sigma = 0.04
-        self.samples = {}
+
         fullDirName = next((ky.GetName() + '/' for ky in tfile.GetListOfKeys()
                             if dirPrefix == ky.GetName().split('_')[0]),
                            '')
+        path = fullDirName + sigPrefix + signal
 
+        self.samples = {}
         for s in self.__samples__[4 if getTT else 0:None if getTT else -1]:
-            if s == 'dy' and partition == 'QCD': continue
-            pre = tfile.Get(preselection + s)
-            doSymmAnti = s[:2] == 'tt' and 'QueuedBin' in signal
-            path = fullDirName + signalPrefix + signal
-            datas = (tfile.Get(path + '/' + s).Clone(lepton + '_' + s),
-                     tfile.Get(path + '_symm/' + s).Clone(lepton + '_symm_' + s)
-                     if doSymmAnti else None)
-            if doSymmAnti:
-                datas += (datas[0].Clone(lepton + '_anti_' + s),)
-                datas[2].Add(datas[0], -1)
-
-            for d in filter(None, datas): d.SetDirectory(0)
-            xs = tfile.Get('xsHisto/' + s).GetBinContent(1) if s != 'data' else None
-            delta = (self.__xs_uncertainty__[s[:2]]
-                     if s[:2] in self.__xs_uncertainty__ else None)
-
-            named = \
-                {'noRebin': noRebin,
-                 'selectionEfficiency': (datas[0].Integral() / pre.Integral() if pre else 0),
-                 'preselectionFraction': (1.0 if s[:2] != 'tt' else
-                                          pre.Integral() / tfile.Get(preselection + 'tt'
-                                                                     ).Integral())}
-            self.samples[s] = sample_data(datas, xs, delta, **named)
+            self.add(s, tfile, path)
         tfile.Close()
+
+    def add(self, s, tfile, path):
+        pre = tfile.Get('allweighted/' + s)
+        if not pre and not s == 'data': return
+        doSymmAnti = s[:2] == 'tt' and 'QueuedBin' in path
+        datas = (tfile.Get(path + '/' + s).Clone(self.lepton + '_' + s),
+                 tfile.Get(path + '_symm/' + s).Clone(self.lepton + '_symm_' + s)
+                 if doSymmAnti else None)
+        if doSymmAnti:
+            datas += (datas[0].Clone(self.lepton + '_anti_' + s),)
+            datas[2].Add(datas[0], -1)
+
+        for d in filter(None, datas): d.SetDirectory(0)
+        xs = tfile.Get('xsHisto/' + s).GetBinContent(1) if s != 'data' else None
+        delta = (self.__xs_uncertainty__[s[:2]]
+                 if s[:2] in self.__xs_uncertainty__ else None)
+
+        named = \
+            {'selectionEfficiency': (datas[0].Integral() / pre.Integral() if pre else 0),
+             'preselectionFraction': (1.0 if s[:2] != 'tt' else
+                                      pre.Integral() / tfile.Get('allweighted/tt').Integral()),
+             'noRebin': self.noRebin}
+        self.samples[s] = sample_data(datas, xs, delta, **named)
 
     def __str__(self):
         return ('%s : %.2f/pb  (%.2f)\n' % (self.lepton, self.lumi, self.lumi_sigma) +
