@@ -1,158 +1,188 @@
-import sys,roo,inputs,utils,ROOT as r
+import sys
+import roo
+import utils
+import ROOT as r
+from inputs import channel_data
 
-defaultDist = 'fitTopQueuedBin7TridiscriminantWTopQCD'
 
-class topModel(object) :
+class topModel(object):
     @roo.quiet
-    def __init__(self, w = None, dist=defaultDist, asymmetry=True, quiet = False) :
-        self.quiet = quiet
-        self.asymmetry=asymmetry
-        self.observables = ['queuedbins','tridiscr']
-        self.gen = inputs.channel_data('mu','top',signal='genTopDeltaBetazRel',dirPrefix='R01',getTT=True)
-        self.channels = dict((lepton,inputs.channel_data(lepton,'top',signal=dist)) for lepton in ['el','mu'])
-        self.channels_qcd = dict((lepton+'qcd',inputs.channel_data(lepton,'QCD',signal=dist)) for lepton in ['el','mu'])
-        self.ttcomps = ('qq','ag','gg','qg')
-        self.toSymmetrize = ['dy'] if dist==defaultDist else []
+    def __init__(self, w=None, dist='fitTopQueuedBin7TridiscriminantWTopQCD',
+                 asymmetry=True, quiet=False):
 
-        if not w : w = r.RooWorkspace('Workspace')
-        init_sequence = ['fractions','xs_lumi','efficiencies','shapes','qcd','asymmetry','model','expressions']
-        for item in init_sequence :
-            if not quiet : print item,
+        leptons = ['el', 'mu']
+        ttcomps = ('qq', 'ag', 'gg', 'qg')
+        observables = ['queuedbins', 'tridiscr']
+
+        channels = dict((L, channel_data(L, 'top', signal=dist)) for L in leptons)
+        channels_qcd = dict((L + 'qcd', channel_data(L, 'QCD', signal=dist)) for L in leptons)
+        gen = channel_data('mu', 'top', signal='genTopDeltaBetazRel',
+                           dirPrefix='R01', getTT=True)
+
+        if not w: w = r.RooWorkspace('Workspace')
+
+        for item in ['quiet', 'asymmetry', 'gen', 'channels', 'channels_qcd',
+                     'ttcomps', 'observables', 'w']: setattr(self, item, eval(item))
+
+        for item in ['fractions', 'xs_lumi', 'efficiencies', 'shapes',
+                     'qcd', 'asymmetry', 'model', 'expressions']:
+            if not quiet: print item,
             sys.stdout.flush()
-            getattr(self, 'import_'+item)(w)
-            if not quiet : print '!'
-        [w.var(v).setBins( getattr( self.channels['el'].samples['data'].datas[0], 'GetNbins'+X)() ) for v,X in zip(self.observables,'XY')]
+            getattr(self, 'import_' + item)(w)
+            if not quiet: print '!'
 
-        for item in ['d_lumi','d_xs_dy','d_xs_st'] : w.arg(item).setConstant()
+        for item in ['d_lumi', 'd_xs_dy', 'd_xs_st']: w.arg(item).setConstant()
 
-        self.w = w
+        for v, X in zip(observables, 'XY'):
+            w.var(v).setBins(getattr(self.channels['el'].samples['data'].datas[0],
+                                     'GetNbins' + X)())
 
-    def import_fractions(self,w) :
-        [roo.wimport(w, r.RooConstVar("f_%s_hat"%comp,"#hat{f}_{%s}"%comp, self.channels['el'].samples['tt'+comp].frac)) for comp in self.ttcomps]
-        roo.factory(w, "R_ag[%f,0.07,1]"%(self.channels['el'].samples['ttag'].frac/self.channels['el'].samples['ttqq'].frac) )
+    def import_fractions(self, w):
+        [roo.wimport_const(w, "f_%s_hat" % comp, self.gen.samples['tt' + comp].frac)
+         for comp in self.ttcomps]
+        roo.factory(w, "R_ag[%f,0.07,1]" %
+                    (self.gen.samples['ttag'].frac / self.gen.samples['ttqq'].frac))
         roo.factory(w, "d_qq[-0.999999,1]")
         roo.factory(w, "expr::f_qq('(1+@0)*@1',{d_qq,f_qq_hat})")
         roo.factory(w, "prod::f_ag(R_ag,f_qq)")
-        roo.factory(w, "expr::f_qg('(1-@0-@1)/(1+@2*@3*@4/(@5*@6))',{f_qq,f_ag,R_ag,f_gg_hat,f_qq_hat,f_ag_hat,f_qg_hat})")
+        roo.factory(w, "expr::f_qg('(1-@0-@1)/(1+@2*@3*@4/(@5*@6))'," +\
+                        "{f_qq,f_ag,R_ag,f_gg_hat,f_qq_hat,f_ag_hat,f_qg_hat})")
         roo.factory(w, "expr::f_gg('1-@0-@1-@2',{f_qq,f_ag,f_qg})")
 
-    def import_xs_lumi(self,w) :
+    def import_xs_lumi(self, w):
         roo.factory(w, "d_lumi[0,-0.2,0.2]")
-        for lepton,channel in self.channels.items() + self.channels_qcd.items():
-            roo.wimport_const( w, 'lumi_%s_hat'%lepton, channel.lumi )
-            roo.factory(w, "expr::lumi_%s('(1+@0)*@1', {d_lumi, lumi_%s_hat})"%(lepton,lepton))
+        for L, channel in self.channels.items() + self.channels_qcd.items():
+            roo.wimport_const(w, 'lumi_%s_hat' % L, channel.lumi)
+            roo.factory(w, "expr::lumi_%s('(1+@0)*@1', {d_lumi, lumi_%s_hat})" % (L, L))
 
-        xs_constraints = dict([(samp[:2],(data.xs,data.xs_sigma)) for samp,data in self.channels['el'].samples.items() if data.xs>0])
+        xs_constraints = dict([(samp[:2], (data.xs, data.xs_sigma))
+                               for samp, data in self.channels['el'].samples.items()
+                               if data.xs > 0])
 
-        for sample,(xs,delta) in xs_constraints.items() :
-            roo.wimport_const(w, 'xs_%s_hat'%sample, xs)
-            roo.factory(w, "d_xs_%s[0,-1,2]"%sample)
-            roo.factory(w, "expr::xs_%s('(1+@0)*@1',{d_xs_%s, xs_%s_hat})"%(sample,sample,sample))
+        for sample, (xs, delta) in xs_constraints.items():
+            roo.wimport_const(w, 'xs_%s_hat' % sample, xs)
+            roo.factory(w, "d_xs_%s[0,-1,2]" % sample)
+            roo.factory(w, "expr::xs_%s('(1+@0)*@1',{d_xs_%s, xs_%s_hat})" % (3 * (sample,)))
 
-        [roo.factory(w, "prod::xs_tt%s(f_%s,xs_tt)"%(comp,comp)) for comp in self.ttcomps]
+        [roo.factory(w, "prod::xs_tt%s(f_%s,xs_tt)" % (c, c)) for c in self.ttcomps]
 
-    def import_efficiencies(self,w, channels = None) :
-        if not channels : channels = self.channels
-        [roo.wimport(w, r.RooConstVar(*( 2*['eff_%s_%s'%(lepton,sample)] + [data.eff] ) ))
-         for lepton,channel in channels.items()
-         for sample,data in channel.samples.items()
-         if sample!='data']
+    def import_efficiencies(self, w, channels=None):
+        if not channels: channels = self.channels
+        [roo.wimport_const(w, 'eff_%s_%s' % (lepton, sample), data.eff)
+         for lepton, channel in channels.items()
+         for sample, data in channel.samples.items()
+         if sample != 'data']
 
-    def import_shapes(self,w, channels = None) :
-        if not channels :
+    def import_shapes(self, w, channels=None):
+        if not channels:
             channels = self.channels
-            roo.factory(w, "channel[%s]"%','.join("%s=%d"%(s,i) for i,s in enumerate(channels)))
-            [roo.factory(w, "%s[-1,1]"%obs) for obs in self.observables]
+            [roo.factory(w, "%s[-1,1]" % obs) for obs in self.observables]
+            roo.factory(w, "channel[%s]" % ','.join("%s=%d" % (s, i)
+                                                    for i, s in enumerate(channels)))
 
-        [self.import_shape(w,lepton,sample,data)
-         for lepton,channel in channels.items()
-         for sample,data in channel.samples.items()
-         if sample!='data' ]
+        [self.import_shape(w, lepton, sample, data)
+         for lepton, channel in channels.items()
+         for sample, data in channel.samples.items()
+         if sample != 'data']
 
     @roo.quiet
-    def import_shape(self,w,lepton,sample,data) :
-        name = '_'.join([lepton,sample])
+    def import_shape(self, w, lepton, sample, data):
+        name = '_'.join([lepton, sample])
         arglist = r.RooArgList(*[w.var(o) for o in self.observables])
         argset = r.RooArgSet(arglist)
 
-        for i,label in enumerate(['both','symm'][:None if sample in ['ttag','ttqg','ttqq','dy'] else -1]) :
-            roo.wimport(w, r.RooDataHist('%s_sim_%s'%(name,label), '', arglist, data.datas[i]))
-            roo.wimport(w, r.RooHistPdf('%s_%s'%(name,label),'', argset, w.data('%s_sim_%s'%(name,label))))
+        for i, label in enumerate(['both', 'symm'][
+                :None if sample in ['ttag', 'ttqg', 'ttqq', 'dy'] else -1]):
+            nL = (name, label)
+            roo.wimport(w, r.RooDataHist('_sim_'.join(nL), '', arglist, data.datas[i]))
+            roo.wimport(w, r.RooHistPdf('_'.join(nL), '', argset, w.data('_sim_'.join(nL))))
 
-        roo.factory(w, "prod::expect_%s(%s)"%(name, ','.join(['lumi_'+lepton,
-                                                              'xs_'+sample,
-                                                              'eff_'+name,
-                                                              '-1',
-                                                              'factor_%s'%lepton][:None if 'qcd' in lepton else -2])))
+        roo.factory(w, "prod::expect_%s(%s)" %
+                    (name, ','.join(['lumi_' + lepton,
+                                     'xs_' + sample,
+                                     'eff_' + name,
+                                     '-1',
+                                     'factor_%s' % lepton][:None if 'qcd' in lepton else -2])))
 
-    def import_qcd(self,w) :
-        [roo.factory(w, "factor_%s[1,0,10]"%lepton) for lepton in self.channels_qcd]
+    def import_qcd(self, w):
+        [roo.factory(w, "factor_%s[1,0,10]" % lepton) for lepton in self.channels_qcd]
 
-        self.import_efficiencies(w,self.channels_qcd)
-        self.import_shapes(w,self.channels_qcd)
+        self.import_efficiencies(w, self.channels_qcd)
+        self.import_shapes(w, self.channels_qcd)
         arglist = r.RooArgList(*[w.var(o) for o in self.observables])
         argset = r.RooArgSet(arglist)
-        for lepton,channel in self.channels_qcd.items() :
-            roo.wimport(w, r.RooDataHist('%s_data_sim_both'%lepton, '', arglist, channel.samples['data'].datas[0]))
-            roo.wimport(w, r.RooHistPdf('%s_data_both'%lepton, '', argset, w.data('%s_data_sim_both'%lepton)))
-            N = channel.samples['data'].datas[0].Integral()
-            roo.factory(w, "expr::expect_%s_data('@0*%f*@1',{lumi_%s,factor_%s})"%(lepton,N/channel.lumi,lepton,lepton))
+        for lepton, channel in self.channels_qcd.items():
+            hist = channel.samples['data'].datas[0]
+            dhist = '%s_data_sim_both' % lepton
+            roo.wimport(w, r.RooDataHist(dhist, '', arglist, hist))
+            roo.wimport(w, r.RooHistPdf('%s_data_both' % lepton, '', argset, w.data(dhist)))
+            roo.factory(w, "expr::expect_%s_data('@0*%f*@1',{lumi_%s,factor_%s})" %
+                        (lepton, hist.Integral() / channel.lumi, lepton, lepton))
 
-    def import_asymmetry(self,w) :
-        if not self.asymmetry : return
+    def import_asymmetry(self, w):
+        if not self.asymmetry: return
         roo.factory(w, "falphaL[0.1, -15, 15]")
         roo.factory(w, "falphaT[0.2, -15, 15]")
         roo.factory(w, "expr::alphaL('@0/@1',{falphaL,f_qq})")
         roo.factory(w, "expr::alphaT('@0/@1',{falphaT,f_qg})")
 
-        [roo.factory(w, "SUM::%(n)s( alphaT * %(n)s_both, %(n)s_symm )"%{'n':lepton+'_ttag'}) for lepton in self.channels.keys()+self.channels_qcd.keys()]
-        [roo.factory(w, "SUM::%(n)s( alphaT * %(n)s_both, %(n)s_symm )"%{'n':lepton+'_ttqg'}) for lepton in self.channels.keys()+self.channels_qcd.keys()]
-        [roo.factory(w, "SUM::%(n)s( alphaL * %(n)s_both, %(n)s_symm )"%{'n':lepton+'_ttqq'}) for lepton in self.channels.keys()+self.channels_qcd.keys()]
+        [(roo.factory(w, "SUM::%(n)s( alphaT * %(n)s_both, %(n)s_symm )" % {'n': L + '_ttag'}),
+          roo.factory(w, "SUM::%(n)s( alphaT * %(n)s_both, %(n)s_symm )" % {'n': L + '_ttqg'}),
+          roo.factory(w, "SUM::%(n)s( alphaL * %(n)s_both, %(n)s_symm )" % {'n': L + '_ttqq'}))
+         for L in self.channels.keys() + self.channels_qcd.keys()]
 
         assert self.gen.samples['tt'].datas[0].GetXaxis().GetTitle() == 'genTopDeltaBetazRel'
         #assert self.gen.samples['tt'].datas[0].GetYaxis().GetTitle() == 'genTopPhiBoost'
 
-        for name,data in self.gen.samples.items() :
-            roo.wimport(w, r.RooConstVar(*(2*['Ac_y_'+name]+[utils.asymmetry(data.datasX[0])]))) #A_c^y(**)
-            roo.wimport(w, r.RooConstVar(*(2*['Ac_phi_'+name]+[utils.asymmetry(data.datasY[0])]))) #A_c^\phi(**)
-            if not self.quiet : 
-                w.arg('Ac_y_'+name).Print()
-                w.arg('Ac_phi_'+name).Print()
+        for n, d in self.gen.samples.items():
+            roo.wimport_const(w, 'Ac_y_' + n, utils.asymmetry(d.datasX[0]))
+            roo.wimport_const(w, 'Ac_phi_' + n, utils.asymmetry(d.datasY[0]))
+            if not self.quiet:
+                w.arg('Ac_y_' + name).Print()
+                w.arg('Ac_phi_' + name).Print()
 
-    def import_model(self,w) :
-        which = dict((i,'_both') for i in ['dy','wj','st','ttgg','ttqq','ttqg','ttag'])
-        if self.asymmetry : which.update({'dy':'_symm','ttqq':'','ttqg':'','ttag':''})
+    def import_model(self, w):
+        which = dict((i, '_both') for i in ['dy', 'wj', 'st', 'ttgg', 'ttqq', 'ttqg', 'ttag'])
+        if self.asymmetry: which.update({'dy': '_symm', 'ttqq': '', 'ttqg': '', 'ttag': ''})
 
-        [roo.factory(w, "SUM::model_%s( expect_%sqcd_data * %sqcd_data_both,  %s  )"%(lepton, lepton, lepton,
-                                                                                      ','.join([ 'expect_%s_%s * %s_%s%s'%(lepton+part, key, lepton+part, key, value)
-                                                                                                 for key,value in which.items()
-                                                                                                 for part in ['','qcd']
-                                                                                                 if not (key=='dy' and 'qcd' in part)]) ) )
+        [roo.factory(w, "SUM::model_%s( expect_%sqcd_data * %sqcd_data_both, %s )" %
+                     (lepton, lepton, lepton,
+                      ','.join(['expect_%s_%s * %s_%s%s' %
+                                (lepton + part, key, lepton + part, key, value)
+                                for key, value in which.items()
+                                for part in ['', 'qcd']
+                                if not (key == 'dy' and 'qcd' in part)])))
          for lepton in self.channels]
 
-        roo.factory(w, "SIMUL::model(channel, %s)"%', '.join("%(chan)s=model_%(chan)s"%{'chan':lepton} for lepton in self.channels))
+        roo.factory(w, "SIMUL::model(channel, %s)" %
+                    ', '.join("%(chan)s=model_%(chan)s" %
+                              {'chan': lepton} for lepton in self.channels))
 
+    def import_expressions(self, w):
+        [roo.factory(w, "sum::expect_%s_tt(%s)" %
+                     (L, ','.join(['expect_%s_tt%s' %
+                                   (L, f) for f in self.ttcomps])))
+         for L in self.channels]
 
-    def import_expressions(self,w) :
-        [roo.factory(w, "sum::expect_%s_tt(%s)"%(lep,','.join(['expect_%s_tt%s'%(lep,f) for f in ['gg','qg','qq','ag']]))) for lep in self.channels]
-        [roo.factory(w, "sum::expect_%s_notqcd(%s)"%(lep,','.join(['expect_%s_%s'%(lep,samp) for samp in ['wj','st','ttgg','ttag','ttqg','ttqq']]))) for lep in self.channels_qcd]
-        [roo.factory(w, "sum::expect_%(n)s_mj(expect_%(n)sqcd_data,expect_%(n)sqcd_notqcd)"%{'n':lep}) for lep in self.channels]
+        [roo.factory(w, "sum::expect_%s_notqcd(%s)" %
+                     (L, ','.join(['expect_%s_%s' % (L, s)
+                                   for s in ['wj', 'st', 'ttgg', 'ttag', 'ttqg', 'ttqq']])))
+         for L in self.channels_qcd]
 
+        [roo.factory(w, "sum::expect_%(n)s_mj(expect_%(n)sqcd_data,expect_%(n)sqcd_notqcd)" %
+                     {'n': L}) for L in self.channels]
 
     @roo.quiet
-    def import_data(self) :
+    def import_data(self):
         w = self.w
         obs_ = w.argSet(','.join(self.observables))
         obs = r.RooArgList(obs_)
 
-        datas = [(lepton, r.RooDataHist('data_'+lepton,'N_{obs}^{%s}'%lepton,obs,chan.samples['data'].datas[0])) for lepton,chan in self.channels.items()]
+        datas = [(L, r.RooDataHist('data_' + L, 'N_{obs}^{%s}' % L, obs,
+                                   chan.samples['data'].datas[0]))
+                 for L, chan in self.channels.items()]
 
-        [roo.wimport(w, dat) for _,dat in datas]
+        [roo.wimport(w, dat) for _, dat in datas]
         args = [r.RooFit.Import(*dat) for dat in datas]
-        roo.wimport(w, r.RooDataHist('data', 'N_{obs}',
-                                     obs,
-                                     r.RooFit.Index(w.arg('channel')),
-                                     *args
-                                     ),
-                )
-
+        roo.wimport(w, r.RooDataHist('data', 'N_{obs}', obs,
+                                     r.RooFit.Index(w.arg('channel')), *args))

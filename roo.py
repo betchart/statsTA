@@ -14,10 +14,13 @@ def quiet(function) :
         return val
     return wrapped
 
+
 @quiet
 def wimport(w, *args, **kwargs) : getattr(w, "import")(*args,**kwargs)
 
+
 @quiet
 def wimport_const(w, name, value) : getattr(w, "import")(r.RooConstVar(*(2*[name]+[value])))
+
 
 def factory(w, command) :  w.factory(command)
