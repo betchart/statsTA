@@ -8,7 +8,7 @@ class topModel(object) :
         self.quiet = quiet
         self.asymmetry=asymmetry
         self.observables = ['queuedbins','tridiscr']
-        self.gen = inputs.channel_data('mu','top',signal='2_x_y',getTT=True, noRebin=True)
+        self.gen = inputs.channel_data('mu','top',signal='genTopDeltaBetazRel',dirPrefix='R01',getTT=True)
         self.channels = dict((lepton,inputs.channel_data(lepton,'top',signal=dist)) for lepton in ['el','mu'])
         self.channels_qcd = dict((lepton+'qcd',inputs.channel_data(lepton,'QCD',signal=dist)) for lepton in ['el','mu'])
         self.ttcomps = ('qq','ag','gg','qg')
@@ -109,12 +109,12 @@ class topModel(object) :
         [roo.factory(w, "SUM::%(n)s( alphaT * %(n)s_both, %(n)s_symm )"%{'n':lepton+'_ttqg'}) for lepton in self.channels.keys()+self.channels_qcd.keys()]
         [roo.factory(w, "SUM::%(n)s( alphaL * %(n)s_both, %(n)s_symm )"%{'n':lepton+'_ttqq'}) for lepton in self.channels.keys()+self.channels_qcd.keys()]
 
-        assert self.gen.samples['tt'].datas[0].GetXaxis().GetTitle() == 'genTopPhiBoost'
-        assert self.gen.samples['tt'].datas[0].GetYaxis().GetTitle() == 'genTopDeltaBetazRel'
+        assert self.gen.samples['tt'].datas[0].GetXaxis().GetTitle() == 'genTopDeltaBetazRel'
+        #assert self.gen.samples['tt'].datas[0].GetYaxis().GetTitle() == 'genTopPhiBoost'
 
         for name,data in self.gen.samples.items() :
-            roo.wimport(w, r.RooConstVar(*(2*['Ac_y_'+name]+[utils.asymmetry(data.datasY[0])]))) #A_c^y(**)
-            roo.wimport(w, r.RooConstVar(*(2*['Ac_phi_'+name]+[utils.asymmetry(data.datasX[0])]))) #A_c^\phi(**)
+            roo.wimport(w, r.RooConstVar(*(2*['Ac_y_'+name]+[utils.asymmetry(data.datasX[0])]))) #A_c^y(**)
+            roo.wimport(w, r.RooConstVar(*(2*['Ac_phi_'+name]+[utils.asymmetry(data.datasY[0])]))) #A_c^\phi(**)
             if not self.quiet : 
                 w.arg('Ac_y_'+name).Print()
                 w.arg('Ac_phi_'+name).Print()

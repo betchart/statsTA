@@ -40,9 +40,9 @@ class channel_data(object):
     __xs_uncertainty__ = {'tt': 1.0, 'wj': 2.0, 'st': 0.04, 'dy': 0.04}
 
     def __init__(self, lepton, partition,
-                 filePattern="data/stats_%s_%s_ph_pn_sn_jn_20.root",
+                 filePattern="data/stats_%s_%s_ph_sn_jn_20.root",
                  signal="fitTopQueuedBin7TridiscriminantWTopQCD",
-                 sigPrefix="", dirPrefix="", getTT=False,
+                 sigPrefix="", dirPrefix="R02", getTT=False,
                  noRebin=False):
         tfile = r.TFile.Open(filePattern % (partition, lepton))
 
