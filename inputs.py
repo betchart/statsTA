@@ -4,8 +4,7 @@ import utils
 
 class sample_data(object):
     def __init__(self, signalDistributions, xs=None, sigma=None,
-                 selectionEfficiency=1.0, preselectionFraction=1.0,
-                 noRebin=False):
+                 selectionEfficiency=1.0, preselectionFraction=1.0):
         self.xs = xs
         self.xs_sigma = sigma
         self.eff = selectionEfficiency
@@ -15,7 +14,6 @@ class sample_data(object):
                        tuple(utils.symmAnti(signalDistributions[0]))))
         norm = self.datas[0].Integral()
         for d in filter(None, self.datas):
-            if noRebin: continue
             if d.GetNbinsY() == 100: d.RebinY(20)
             if d.GetNbinsX() > 80: d.RebinX()
 
@@ -42,11 +40,9 @@ class channel_data(object):
     def __init__(self, lepton, partition,
                  filePattern="data/stats_%s_%s_ph_sn_jn_20.root",
                  signal="fitTopQueuedBin7TridiscriminantWTopQCD",
-                 sigPrefix="", dirPrefix="R02", getTT=False,
-                 noRebin=False):
+                 sigPrefix="", dirPrefix="R02", getTT=False):
         tfile = r.TFile.Open(filePattern % (partition, lepton))
 
-        self.noRebin = noRebin
         self.lepton = lepton
         self.lumi = tfile.Get('lumiHisto/data').GetBinContent(1)
         self.lumi_sigma = 0.04
@@ -80,8 +76,8 @@ class channel_data(object):
         named = \
             {'selectionEfficiency': (datas[0].Integral() / pre.Integral() if pre else 0),
              'preselectionFraction': (1.0 if s[:2] != 'tt' else
-                                      pre.Integral() / tfile.Get('allweighted/tt').Integral()),
-             'noRebin': self.noRebin}
+                                      pre.Integral() / tfile.Get('allweighted/tt').Integral())
+             }
         self.samples[s] = sample_data(datas, xs, delta, **named)
 
     def __str__(self):
