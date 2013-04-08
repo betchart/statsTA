@@ -111,13 +111,13 @@ class topModel(object):
         self.import_shapes(w, self.channels_qcd)
         arglist = r.RooArgList(*[w.var(o) for o in self.observables])
         argset = r.RooArgSet(arglist)
-        for lepton, channel in self.channels_qcd.items():
+        for L, channel in self.channels_qcd.items():
             hist = channel.samples['data'].datas[0]
-            dhist = '%s_data_sim_both' % lepton
+            dhist = '%s_data_sim_both' % L
             roo.wimport(w, r.RooDataHist(dhist, '', arglist, hist))
-            roo.wimport(w, r.RooHistPdf('%s_data_both' % lepton, '', argset, w.data(dhist)))
-            roo.factory(w, "expr::expect_%s_data('@0*%f*@1',{lumi_%s,factor_%s})" %
-                        (lepton, hist.Integral() / channel.lumi, lepton, lepton))
+            roo.wimport(w, r.RooHistPdf('%s_data_both' % L, '', argset, w.data(dhist)))
+            roo.factory(w, "expr::expect_%s_data('@0*%f',{factor_%s})" %
+                        (L, hist.Integral(), L))
 
     def import_asymmetry(self, w):
         if not self.asymmetry: return
