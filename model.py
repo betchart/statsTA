@@ -186,3 +186,25 @@ class topModel(object):
         args = [r.RooFit.Import(*dat) for dat in datas]
         roo.wimport(w, r.RooDataHist('data', 'N_{obs}', obs,
                                      r.RooFit.Index(w.arg('channel')), *args))
+
+    def plot_fracs(self, logy=False, fileName='fractions.pdf'):
+        w = self.w
+        origLevel = r.gErrorIgnoreLevel
+        r.gErrorIgnoreLevel = r.kWarning
+        c = r.TCanvas()
+        c.Print(fileName + '[')
+        c.SetLogy(logy)
+        plt = w.var('d_qq').frame()
+        plt.SetMaximum(1.0)
+        for v in range(0, 94):
+            val = v * 0.01 + 0.07
+            plt.SetTitle("R_ag = %.3f" % val)
+            w.var('R_ag').setVal(val)
+            w.arg('f_gg').plotOn(plt, r.RooFit.LineWidth(1), r.RooFit.LineColor(r.kBlue))
+            w.arg('f_qg').plotOn(plt, r.RooFit.LineWidth(1), r.RooFit.LineColor(r.kRed))
+            w.arg('f_qq').plotOn(plt, r.RooFit.LineWidth(1), r.RooFit.LineColor(r.kGreen))
+            w.arg('f_ag').plotOn(plt, r.RooFit.LineWidth(1), r.RooFit.LineColor(r.kViolet))
+            plt.Draw()
+            c.Print(fileName)
+        r.gErrorIgnoreLevel = origLevel
+        c.Print(fileName + ']')
