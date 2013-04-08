@@ -3,15 +3,51 @@ import math
 import ROOT as r
 import numpy as np
 
+import inputs
 import model
 import roo
+import systematics
 from falphaLSlice import falphaLSlice
 from paraboloid import paraboloid
+
+class fit(object):
+    def __init__(self, label, signal, profile, R0_,
+                 d_lumi, d_xs_dy, d_xs_st, tag, genPre, sigPre, dirIncrement):
+
+        channels = dict([((lep,part),
+                          inputs.channel_data(lep, part, tag, signal, sigPre, 
+                                              "R%02d" % (R0_ + dirIncrement)))
+                         for lep in ['el', 'mu']
+                         for part in ['top', 'QCD']
+                         ])
+        channels['gen'] = inputs.channel_data('mu', 'top', tag, 'genTopDeltaBetazRel',
+                                              sigPrefix = sigPre if not dirIncrement else '',
+                                              dirPrefix="R01", getTT=True)
+        
+        self.model = model.topModel(channels, asymmetry='QueuedBin' in signal, quiet=True)
+        self.model.import_data()
+        self.fitArgs = [r.RooFit.Extended(True), r.RooFit.NumCPU(4),
+                        r.RooFit.PrintLevel(-1), r.RooFit.Save()]
+        self.central()
+
+    @roo.quiet
+    def central(self):
+        w = self.model.w
+        for i in reversed(range(3)):
+            central = w.pdf('model').fitTo(w.data('data'), *self.fitArgs[:-1 if i else None])
+        central.Print()
+    
+    def profile(self):
+        pass
+
+class measurement(object):
+    def __init__(self, label, signal, profile, R0_):
+        self.central = fit(signal=signal, profile=profile, R0_=R0_, **systematics.central())
 
 
 class topAsymmFit(object):
     @roo.quiet
-    def __init__(self, dist, provar, tag):
+    def __init__(self, dist, tag):
         self.model = model.topModel(dist=dist, asymmetry=('QueuedBin' in dist), quiet=True)
         self.model.import_data()
         w = self.model.w
@@ -86,26 +122,27 @@ class topAsymmFit(object):
         print
 
 
+def query(items, default = ()):
+    display = '\n'.join('%d %s' % iD for iD in enumerate(items)) + '\nWhich? '
+    i = eval(next(default, "input(display)"))
+    return items[i] if 0 <= i <= len(items) else None
+
+
 if __name__ == '__main__':
     r.gROOT.SetBatch(1)
 
-    distributions = ['fitTopQueuedBin7TridiscriminantWTopQCD',
-                     'fitTopPtOverSumPt_triD',
-                     'fitTopTanhRapiditySum_triD',
-                     'TridiscriminantQQggQg_triD'
-                     ]
-    if len(sys.argv) > 1:
-        iDist = sys.argv[1]
-    else:
-        print '\n'.join('%d %s' % iD for iD in enumerate(distributions))
-        iDist = raw_input("Which?")
-    dist = distributions[int(iDist)] if int(iDist) in range(len(distributions)) else ''
-    if not dist:
-        print 'not an option'
+    defaults = iter(sys.argv[1:])
+    mp = [query(systematics.measurements, defaults),
+          query(systematics.partitions, defaults)]
+
+    if any(n == None for n in mp):
+        print 'invalid'
         exit(0)
-    else: print "fitting", dist
 
-    variables = ['alphaL', 'R_ag']
-    provar = variables[0]
+    print ','.join(mp)
+    pars = systematics.measurement_pars(*mp)
+    for p,v in pars.items():
+        print "   %s: %s" % (p, str(v))
+    print
 
-    topAsymmFit(dist, provar, tag=None)
+    measurement(','.join(mp), **pars)

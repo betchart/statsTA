@@ -7,15 +7,14 @@ from inputs import channel_data
 
 class topModel(object):
     @roo.quiet
-    def __init__(self, w=None, dist='fitTopQueuedBin7TridiscriminantWTopQCD',
-                 asymmetry=True, quiet=False):
+    def __init__(self, channelDict, asymmetry=True, quiet=False, w=None):
 
         leptons = ['el', 'mu']
         ttcomps = ('qq', 'ag', 'gg', 'qg')
-        observables = ['queuedbins', 'tridiscr']
+        observables = ['observable', 'tridiscr']
 
-        channels = dict((L, channel_data(L, 'top', signal=dist)) for L in leptons)
-        channels_qcd = dict((L + 'qcd', channel_data(L, 'QCD', signal=dist)) for L in leptons)
+        channels = dict((L, channelDict[(L,'top')]) for L in leptons)
+        channels_qcd = dict((L + 'qcd', channelDict[(L, 'QCD')]) for L in leptons)
         gen = channel_data('mu', 'top', signal='genTopDeltaBetazRel',
                            dirPrefix='R01', getTT=True)
 
@@ -138,8 +137,8 @@ class topModel(object):
             roo.wimport_const(w, 'Ac_y_' + n, utils.asymmetry(d.datasX[0]))
             roo.wimport_const(w, 'Ac_phi_' + n, utils.asymmetry(d.datasY[0]))
             if not self.quiet:
-                w.arg('Ac_y_' + name).Print()
-                w.arg('Ac_phi_' + name).Print()
+                w.arg('Ac_y_' + n).Print()
+                w.arg('Ac_phi_' + n).Print()
 
     def import_model(self, w):
         which = dict((i, '_both') for i in ['dy', 'wj', 'st', 'ttgg', 'ttqq', 'ttqg', 'ttag'])

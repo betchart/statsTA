@@ -1,3 +1,21 @@
+measurements = ['asymmetry', 'fraction']
+partitions = ['full', 'hiM', 'loM', 'hiY', 'loY']
+
+
+def measurement_pars(measure='asymmetry', partition='full'):
+    fields = ('R0_', 'signal', 'profile')
+    asymmetry = (2, 'fitTopQueuedBin7TridiscriminantWTopQCD', ('falphaL', 'falphaT'))
+    fraction = (4, 'fitTopTanhRapiditySum_triD', ('d_qq',))
+
+    mtype = dict([(m, dict(zip(fields, eval(m)))) for m in measurements])
+    pars = mtype[measure]
+    N = pars['R0_']
+    cycle = 4
+    pDirs = [N,
+             N + 1*cycle, (N, N + 1*cycle),
+             N + 2*cycle, (N, N + 2*cycle)]
+    pars.update({'R0_': dict(zip(partitions,pDirs))[partition]})
+    return pars
 
 
 def central():
@@ -7,7 +25,7 @@ def central():
             'tag': 'ph_sn_jn_20',
             'genPre': '',
             'sigPre': '',
-            'dirPreInc': 0,
+            'dirIncrement': 0,
             'label': 'central'
             }
 
@@ -32,8 +50,8 @@ def systematics():
             {'label': 'upJES', 'tag': 'ph_sn_ju_20'},
             {'label': 'dnJES', 'tag': 'ph_sn_jd_20'},
 
-            {'label': 'upPU', 'dirPreInc': 1, 'sigPre': '001'},
-            {'label': 'dnPU', 'dirPreInc': 1, 'sigPre': '000'},
+            {'label': 'upPU', 'dirIncrement': 1, 'sigPre': '001'},
+            {'label': 'dnPU', 'dirIncrement': 1, 'sigPre': '000'},
 
             ] +
             [{'label': '%02dPDF' % i,

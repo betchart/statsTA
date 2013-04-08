@@ -37,11 +37,10 @@ class channel_data(object):
     __samples__ = ['data', 'wj', 'dy', 'st', 'ttgg', 'ttqg', 'ttqq', 'ttag', 'tt']
     __xs_uncertainty__ = {'tt': 1.0, 'wj': 2.0, 'st': 0.04, 'dy': 0.04}
 
-    def __init__(self, lepton, partition,
-                 filePattern="data/stats_%s_%s_ph_sn_jn_20.root",
-                 signal="fitTopQueuedBin7TridiscriminantWTopQCD",
-                 sigPrefix="", dirPrefix="R02", getTT=False):
-        tfile = r.TFile.Open(filePattern % (partition, lepton))
+    def __init__(self, lepton, partition, tag = 'ph_sn_jn_20',
+                 signal="", sigPrefix="", dirPrefix="R02", getTT=False):
+        filePattern="data/stats_%s_%s_%s.root"
+        tfile = r.TFile.Open(filePattern % (partition, lepton, tag))
 
         self.lepton = lepton
         self.lumi = tfile.Get('lumiHisto/data').GetBinContent(1)
@@ -61,6 +60,7 @@ class channel_data(object):
         pre = tfile.Get('allweighted/' + s)
         if not pre and not s == 'data': return
         doSymmAnti = s[:2] == 'tt' and 'QueuedBin' in path
+
         datas = (tfile.Get(path + '/' + s).Clone(self.lepton + '_' + s),
                  tfile.Get(path + '_symm/' + s).Clone(self.lepton + '_symm_' + s)
                  if doSymmAnti else None)
