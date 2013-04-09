@@ -12,7 +12,7 @@ class sample_data(object):
         self.datas = (signalDistributions if all(signalDistributions) else
                       ((signalDistributions[0],) +
                        tuple(utils.symmAnti(signalDistributions[0]))))
-        norm = self.datas[0].Integral()
+
         for d in filter(None, self.datas):
             if d.GetNbinsY() == 100: d.RebinY(20)
             if d.GetNbinsX() > 80: d.RebinX()
@@ -20,6 +20,17 @@ class sample_data(object):
         self.datasX = tuple(d.ProjectionX() if d else None for d in self.datas)
         self.datasY = tuple(d.ProjectionY() if d else None for d in self.datas)
         for d in self.datasX + self.datasY + self.datas: d.SetDirectory(0)
+
+    def subtract(self,other):
+        assert self.xs == other.xs
+        assert self.xs_sigma == other.xs_sigma
+        assert self.frac == other.frac
+        assert self.eff >= other.eff
+
+        self.eff -= other.eff
+        for group in ['datas','datasX','datasY']:
+            for d,od in zip(getattr(self,group),getattr(other,group)):
+                d.Add(od,-1)
 
     def __str__(self):
         return ('data' if not self.xs else
@@ -81,6 +92,10 @@ class channel_data(object):
                                       pre.Integral() / tfile.Get('allweighted/tt').Integral())
              }
         self.samples[s] = sample_data(datas, xs, delta, **named)
+
+    def subtract(self, other):
+        for s,samp in self.samples.items():
+            samp.subtract(other.samples[s])
 
     def __str__(self):
         return ('%s : %.2f/pb  (%.2f)\n' % (self.lepton, self.lumi, self.lumi_sigma) +

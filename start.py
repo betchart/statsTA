@@ -15,6 +15,10 @@ class fit(object):
                  d_lumi, d_xs_dy, d_xs_st, tag, genPre, sigPre, dirIncrement, quiet = False):
 
         self.quiet = quiet
+        if type(R0_) == tuple:
+            diffR0_ = R0_[1]
+            R0_ = R0_[0]
+        else: diffR0_ = None
         channels = dict([((lep,part),
                           inputs.channel_data(lep, part, tag, signal, sigPre, 
                                               "R%02d" % (R0_ + dirIncrement)))
@@ -25,6 +29,13 @@ class fit(object):
                                               sigPrefix = sigPre if not dirIncrement else '',
                                               dirPrefix="R01", getTT=True)
         
+        if diffR0_ :
+            for lepPart,chan in channels.items():
+                if type(lepPart) != tuple: continue
+                lep,part = lepPart
+                chan.subtract(inputs.channel_data(lep,part,tag,signal,sigPre,
+                                                  "R%02d" % (diffR0_ + dirIncrement)))
+
         self.model = model.topModel(channels, asymmetry='QueuedBin' in signal, quiet=True)
         self.model.import_data()
         self.fitArgs = [r.RooFit.Extended(True), r.RooFit.NumCPU(4),
@@ -64,7 +75,7 @@ class fit(object):
         param1sigma = parb.parametricEllipse(oneSigmaNLL)
         param2sigma = parb.parametricEllipse(twoSigmaNLL)
         scales = [w.arg(a).getVal() for a in ['Ac_y_ttqq', 'Ac_y_ttqg']]
-        with open('points.txt', 'w') as wfile:
+        with open('stat.txt', 'w') as wfile:
             for t in np.arange(0, 2 * math.pi + 0.00001, math.pi / 50):
                 point1 = param1sigma.dot([math.cos(t), math.sin(t), 1])
                 point2 = param2sigma.dot([math.cos(t), math.sin(t), 1])
@@ -72,7 +83,7 @@ class fit(object):
                 point2 /= point2[2]
                 seq = list(parb.xymin) + list(point1[:2]) + list(point2[:2]) + scales
                 print>>wfile, '\t'.join(str(f) for f in seq)
-        print "Wrote points.txt"
+        print "Wrote stat.txt"
 
 
 class measurement(object):
