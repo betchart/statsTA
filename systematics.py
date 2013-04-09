@@ -41,22 +41,22 @@ def systematics():
             {'label': 'upST', "d_xs_st": +0.04},
             {'label': 'dnST', "d_xs_st": -0.04},
 
-            {'label': 'upRFS', 'tag': 'up_sn_jn_20'},
-            {'label': 'dnRFS', 'tag': 'dn_sn_jn_20'},
+            #{'label': 'upRFS', 'tag': 'up_sn_jn_20'},
+            #{'label': 'dnRFS', 'tag': 'dn_sn_jn_20'},
 
-            {'label': 'upJER', 'tag': 'ph_su_jn_20'},
-            {'label': 'dnJER', 'tag': 'ph_sd_jn_20'},
+            #{'label': 'upJER', 'tag': 'ph_su_jn_20'},
+            #{'label': 'dnJER', 'tag': 'ph_sd_jn_20'},
 
-            {'label': 'upJES', 'tag': 'ph_sn_ju_20'},
-            {'label': 'dnJES', 'tag': 'ph_sn_jd_20'},
+            #{'label': 'upJES', 'tag': 'ph_sn_ju_20'},
+            #{'label': 'dnJES', 'tag': 'ph_sn_jd_20'},
 
-            {'label': 'upPU', 'dirIncrement': 1, 'sigPre': '001'},
-            {'label': 'dnPU', 'dirIncrement': 1, 'sigPre': '000'},
+            #{'label': 'upPU', 'dirIncrement': 1, 'sigPre': '001_'},
+            #{'label': 'dnPU', 'dirIncrement': 1, 'sigPre': '000_'},
 
             ] +
             [{'label': '%02dPDF' % i,
-              'genPre': '%03d' % i,
-              'sigPre': '%03d' % i} for i in range(1, 53)]
+              'genPre': '%03d_' % i,
+              'sigPre': '%03d_' % i} for i in range(1, 53)]
             )
 
 
