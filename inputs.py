@@ -49,20 +49,22 @@ class channel_data(object):
         fullDirName = next((ky.GetName() + '/' for ky in tfile.GetListOfKeys()
                             if dirPrefix == ky.GetName().split('_')[0]),
                            '')
-        path = fullDirName + sigPrefix + signal
+        paths = (fullDirName + sigPrefix + signal,
+                 fullDirName + signal)
 
         self.samples = {}
         for s in self.__samples__[4 if getTT else 0:None if getTT else -1]:
-            self.add(s, tfile, path)
+            self.add(s, tfile, paths)
         tfile.Close()
 
-    def add(self, s, tfile, path):
+    def add(self, s, tfile, paths):
         pre = tfile.Get('allweighted/' + s)
         if not pre and not s == 'data': return
-        doSymmAnti = s[:2] == 'tt' and 'QueuedBin' in path
+        doSymmAnti = s[:2] == 'tt' and 'QueuedBin' in paths[0]
 
-        datas = (tfile.Get(path + '/' + s).Clone(self.lepton + '_' + s),
-                 tfile.Get(path + '_symm/' + s).Clone(self.lepton + '_symm_' + s)
+        def get(s): return next(iter(filter(None, [tfile.Get(p+s) for p in paths])))
+        datas = (get('/' + s).Clone(self.lepton + '_' + s),
+                 get('_symm/' + s).Clone(self.lepton + '_symm_' + s)
                  if doSymmAnti else None)
         if doSymmAnti:
             datas += (datas[0].Clone(self.lepton + '_anti_' + s),)
