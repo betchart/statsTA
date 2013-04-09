@@ -12,8 +12,9 @@ from paraboloid import paraboloid
 
 class fit(object):
     def __init__(self, label, signal, profile, R0_,
-                 d_lumi, d_xs_dy, d_xs_st, tag, genPre, sigPre, dirIncrement):
+                 d_lumi, d_xs_dy, d_xs_st, tag, genPre, sigPre, dirIncrement, quiet = False):
 
+        self.quiet = quiet
         channels = dict([((lep,part),
                           inputs.channel_data(lep, part, tag, signal, sigPre, 
                                               "R%02d" % (R0_ + dirIncrement)))
@@ -35,36 +36,12 @@ class fit(object):
         w = self.model.w
         for i in reversed(range(3)):
             central = w.pdf('model').fitTo(w.data('data'), *self.fitArgs[:-1 if i else None])
-        central.Print()
+        if not self.quiet:
+            central.Print()
     
-    def profile(self):
-        pass
-
-class measurement(object):
-    def __init__(self, label, signal, profile, R0_):
-        self.central = fit(signal=signal, profile=profile, R0_=R0_, **systematics.central())
-
-
-class topAsymmFit(object):
     @roo.quiet
-    def __init__(self, dist, tag):
-        self.model = model.topModel(dist=dist, asymmetry=('QueuedBin' in dist), quiet=True)
-        self.model.import_data()
+    def profile(self):
         w = self.model.w
-
-        print '\n'.join(str(i) for i in ['', self.model.channels['el'],
-                                         '', self.model.channels['mu'], ''])
-
-        self.fitArgs = [r.RooFit.Extended(True), r.RooFit.NumCPU(4),
-                        r.RooFit.PrintLevel(-1), r.RooFit.Save()]
-        for i in reversed(range(3)):
-            central = w.pdf('model').fitTo(w.data('data'), *self.fitArgs[:-1 if i else None])
-        central.Print()
-
-        self.print_fracs(w)
-        self.print_n(w)
-        print
-
         faL, faLe = w.arg('falphaL').getVal(), w.arg('falphaL').getError()
         faT, faTe = w.arg('falphaT').getVal(), w.arg('falphaT').getError()
 
@@ -97,29 +74,20 @@ class topAsymmFit(object):
                 print>>wfile, '\t'.join(str(f) for f in seq)
         print "Wrote points.txt"
 
-    def print_fracs(self, w):
-        for item in \
-                ['lumi_mu', 'lumi_el', 'f_gg', 'f_qg', 'f_qq', 'f_ag'] + \
-                ['xs_' + i for i in self.model.channels['el'].samples if i != 'data']:
-            print "%s: %.04f" % (item, w.arg(item).getVal())
-        print
 
-    def print_n(self, w):
-        length = 24
-        tots = {'el': 0, 'mu': 0}
-        print (' ').join(i.rjust(8) for i in [''] + tots.keys())
-        for xs in ['tt', 'wj', 'mj', 'st', 'dy']:
-            if xs == 'data': continue
-            print xs.rjust(length / 3),
-            for chan in tots:
-                val = w.arg('expect_%s_%s' % (chan, xs)).getVal()
-                tots[chan] += val
-                print ("%d" % val).rjust(length / 3),
-            print
-        print '-' * (3 + length)
-        print ' '.join(["tot".ljust(length / 3)] +
-                       [("%d" % t).rjust(length / 3) for chan, t in tots.items()])
-        print
+class measurement(object):
+    def __init__(self, label, signal, profile, R0_):
+        self.central = fit(signal=signal, profile=profile, R0_=R0_, **systematics.central())
+        self.central.profile()
+        return
+        syss = []
+        for sys in systematics.systematics():
+            pars = systematics.central()
+            pars.update(sys)
+            f = fit(signal=signal, profile=profile, R0_=R0_, quiet=True, **pars)
+            try: pass
+            except: print 'failed', pars['label']
+            else: syss.append(f)
 
 
 def query(items, default = ()):

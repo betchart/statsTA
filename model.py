@@ -207,3 +207,30 @@ class topModel(object):
             c.Print(fileName)
         r.gErrorIgnoreLevel = origLevel
         c.Print(fileName + ']')
+
+
+    def print_fracs(self):
+        w = self.w
+        for item in \
+                ['lumi_mu', 'lumi_el', 'f_gg', 'f_qg', 'f_qq', 'f_ag'] + \
+                ['xs_' + i for i in self.model.channels['el'].samples if i != 'data']:
+            print "%s: %.04f" % (item, w.arg(item).getVal())
+        print
+
+    def print_n(self):
+        w = self.w
+        length = 24
+        tots = {'el': 0, 'mu': 0}
+        print (' ').join(i.rjust(8) for i in [''] + tots.keys())
+        for xs in ['tt', 'wj', 'mj', 'st', 'dy']:
+            if xs == 'data': continue
+            print xs.rjust(length / 3),
+            for chan in tots:
+                val = w.arg('expect_%s_%s' % (chan, xs)).getVal()
+                tots[chan] += val
+                print ("%d" % val).rjust(length / 3),
+            print
+        print '-' * (3 + length)
+        print ' '.join(["tot".ljust(length / 3)] +
+                       [("%d" % t).rjust(length / 3) for chan, t in tots.items()])
+        print
