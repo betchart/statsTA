@@ -2,22 +2,19 @@ import sys
 import roo
 import utils
 import ROOT as r
-from inputs import channel_data
 
 
 class topModel(object):
     @roo.quiet
-    def __init__(self, w=None, dist='fitTopQueuedBin7TridiscriminantWTopQCD',
-                 asymmetry=True, quiet=False):
+    def __init__(self, channelDict, asymmetry=True, quiet=False, w=None):
 
         leptons = ['el', 'mu']
         ttcomps = ('qq', 'ag', 'gg', 'qg')
-        observables = ['queuedbins', 'tridiscr']
+        observables = ['observable', 'tridiscr']
 
-        channels = dict((L, channel_data(L, 'top', signal=dist)) for L in leptons)
-        channels_qcd = dict((L + 'qcd', channel_data(L, 'QCD', signal=dist)) for L in leptons)
-        gen = channel_data('mu', 'top', signal='genTopDeltaBetazRel',
-                           dirPrefix='R01', getTT=True)
+        channels = dict((L, channelDict[(L,'top')]) for L in leptons)
+        channels_qcd = dict((L + 'qcd', channelDict[(L, 'QCD')]) for L in leptons)
+        gen = channelDict['gen']
 
         if not w: w = r.RooWorkspace('Workspace')
 
@@ -121,8 +118,8 @@ class topModel(object):
 
     def import_asymmetry(self, w):
         if not self.asymmetry: return
-        roo.factory(w, "falphaL[0.1, -15, 15]")
-        roo.factory(w, "falphaT[0.2, -15, 15]")
+        roo.factory(w, "falphaL[0.1, -1, 1]")
+        roo.factory(w, "falphaT[0.2, -1, 1]")
         roo.factory(w, "expr::alphaL('@0/@1',{falphaL,f_qq})")
         roo.factory(w, "expr::alphaT('@0/@1',{falphaT,f_qg})")
 
@@ -138,8 +135,8 @@ class topModel(object):
             roo.wimport_const(w, 'Ac_y_' + n, utils.asymmetry(d.datasX[0]))
             roo.wimport_const(w, 'Ac_phi_' + n, utils.asymmetry(d.datasY[0]))
             if not self.quiet:
-                w.arg('Ac_y_' + name).Print()
-                w.arg('Ac_phi_' + name).Print()
+                w.arg('Ac_y_' + n).Print()
+                w.arg('Ac_phi_' + n).Print()
 
     def import_model(self, w):
         which = dict((i, '_both') for i in ['dy', 'wj', 'st', 'ttgg', 'ttqq', 'ttqg', 'ttag'])
@@ -208,3 +205,30 @@ class topModel(object):
             c.Print(fileName)
         r.gErrorIgnoreLevel = origLevel
         c.Print(fileName + ']')
+
+
+    def print_fracs(self):
+        w = self.w
+        for item in \
+                ['lumi_mu', 'lumi_el', 'f_gg', 'f_qg', 'f_qq', 'f_ag'] + \
+                ['xs_' + i for i in self.model.channels['el'].samples if i != 'data']:
+            print "%s: %.04f" % (item, w.arg(item).getVal())
+        print
+
+    def print_n(self):
+        w = self.w
+        length = 24
+        tots = {'el': 0, 'mu': 0}
+        print (' ').join(i.rjust(8) for i in [''] + tots.keys())
+        for xs in ['tt', 'wj', 'mj', 'st', 'dy']:
+            if xs == 'data': continue
+            print xs.rjust(length / 3),
+            for chan in tots:
+                val = w.arg('expect_%s_%s' % (chan, xs)).getVal()
+                tots[chan] += val
+                print ("%d" % val).rjust(length / 3),
+            print
+        print '-' * (3 + length)
+        print ' '.join(["tot".ljust(length / 3)] +
+                       [("%d" % t).rjust(length / 3) for chan, t in tots.items()])
+        print
