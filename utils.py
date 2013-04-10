@@ -6,6 +6,15 @@ except: pass
 #####################################
 hyphens="-"*115
 #####################################
+def get(d,key) :
+    dirs = key.split('/')[:-1]
+    key = key.split('/')[-1]
+    try:
+        for d_ in dirs: d = d.GetKey(d_).ReadObj()
+        obj = d.GetKey(key).ReadObj()
+    except: obj = d.Get(key)
+    return obj
+#####################################
 def asymmetry(hist) :
     bins = [(hist.GetBinCenter(i),hist.GetBinContent(i)) for i in range(hist.GetNbinsX()+2)]
     bans = [(y2-y1, y2+y1) for (x1,y1),(x2,y2) in zip(bins,bins[::-1]) if x1<x2 and y2+y1]
