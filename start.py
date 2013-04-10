@@ -25,7 +25,8 @@ class fit(object):
                          for lep in ['el', 'mu']
                          for part in ['top', 'QCD']
                          ])
-        channels['gen'] = inputs.channel_data('mu', 'top', tag, 'genTopDeltaBetazRel',
+        channels['gen'] = inputs.channel_data('mu', 'top', tag,
+                                              'genTopDeltaBetazRel; genTopPhiBoost',
                                               sigPrefix = sigPre if not dirIncrement else '',
                                               dirPrefix="R01", getTT=True)
         
@@ -90,7 +91,7 @@ class measurement(object):
     def __init__(self, label, signal, profile, R0_):
         self.central = fit(signal=signal, profile=profile, R0_=R0_, **systematics.central())
         self.central.profile()
-        return
+
         syss = []
         for sys in systematics.systematics():
             pars = systematics.central()
