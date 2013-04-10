@@ -2,7 +2,6 @@ import sys
 import roo
 import utils
 import ROOT as r
-from inputs import channel_data
 
 
 class topModel(object):
@@ -15,8 +14,7 @@ class topModel(object):
 
         channels = dict((L, channelDict[(L,'top')]) for L in leptons)
         channels_qcd = dict((L + 'qcd', channelDict[(L, 'QCD')]) for L in leptons)
-        gen = channel_data('mu', 'top', signal='genTopDeltaBetazRel',
-                           dirPrefix='R01', getTT=True)
+        gen = channelDict['gen']
 
         if not w: w = r.RooWorkspace('Workspace')
 
@@ -120,8 +118,8 @@ class topModel(object):
 
     def import_asymmetry(self, w):
         if not self.asymmetry: return
-        roo.factory(w, "falphaL[0.1, -15, 15]")
-        roo.factory(w, "falphaT[0.2, -15, 15]")
+        roo.factory(w, "falphaL[0.1, -1, 1]")
+        roo.factory(w, "falphaT[0.2, -1, 1]")
         roo.factory(w, "expr::alphaL('@0/@1',{falphaL,f_qq})")
         roo.factory(w, "expr::alphaT('@0/@1',{falphaT,f_qg})")
 
