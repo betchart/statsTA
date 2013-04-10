@@ -73,7 +73,7 @@ class channel_data(object):
         if not pre and not s == 'data': return
         doSymmAnti = s[:2] == 'tt' and 'QueuedBin' in paths[0]
 
-        def get(s): return next(iter(filter(None, [tfile.Get(p+s) for p in paths])))
+        def get(s): return next(iter(filter(None, [utils.get(tfile,p+s) for p in paths])))
         datas = (get('/' + s).Clone(self.lepton + '_' + s),
                  get('_symm/' + s).Clone(self.lepton + '_symm_' + s)
                  if doSymmAnti else None)
