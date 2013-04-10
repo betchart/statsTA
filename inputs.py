@@ -49,7 +49,8 @@ class channel_data(object):
     __xs_uncertainty__ = {'tt': 1.0, 'wj': 2.0, 'st': 0.04, 'dy': 0.04}
 
     def __init__(self, lepton, partition, tag = 'ph_sn_jn_20',
-                 signal="", sigPrefix="", dirPrefix="R02", getTT=False):
+                 signal="", sigPrefix="", dirPrefix="R02", getTT=False,
+                 prePre = False):
         filePattern="data/stats_%s_%s_%s.root"
         tfile = r.TFile.Open(filePattern % (partition, lepton, tag))
 
@@ -57,25 +58,33 @@ class channel_data(object):
         self.lumi = tfile.Get('lumiHisto/data').GetBinContent(1)
         self.lumi_sigma = 0.04
 
-        fullDirName = next((ky.GetName() + '/' for ky in tfile.GetListOfKeys()
-                            if dirPrefix == ky.GetName().split('_')[0]),
-                           '')
+        def full(pf) :
+            return next((ky.GetName() + '/' for ky in tfile.GetListOfKeys()
+                         if pf == ky.GetName().split('_')[0]),
+                        '')
+        fullDirName = full(dirPrefix)
+
         paths = (fullDirName + sigPrefix + signal,
                  fullDirName + signal)
 
+        prepaths = (full('R01') + (sigPrefix if prePre else '') + 'genTopDeltaBetazRel; genTopPhiBoost',
+                    'allweighted/')
+
         self.samples = {}
         for s in self.__samples__[4 if getTT else 0:None if getTT else -1]:
-            self.add(s, tfile, paths)
+            self.add(s, tfile, paths, prepaths)
         tfile.Close()
 
-    def add(self, s, tfile, paths):
-        pre = tfile.Get('allweighted/' + s)
+    def add(self, s, tfile, paths, prepaths):
+        def get(s,ps):
+            return next(iter(filter(None, [utils.get(tfile,p+s) for p in ps])), None)
+
+        pre = get( s, prepaths)
         if not pre and not s == 'data': return
         doSymmAnti = s[:2] == 'tt' and 'QueuedBin' in paths[0]
 
-        def get(s): return next(iter(filter(None, [utils.get(tfile,p+s) for p in paths])))
-        datas = (get('/' + s).Clone(self.lepton + '_' + s),
-                 get('_symm/' + s).Clone(self.lepton + '_symm_' + s)
+        datas = (get('/' + s,paths).Clone(self.lepton + '_' + s),
+                 get('_symm/' + s,paths).Clone(self.lepton + '_symm_' + s)
                  if doSymmAnti else None)
         if doSymmAnti:
             datas += (datas[0].Clone(self.lepton + '_anti_' + s),)

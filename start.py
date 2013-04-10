@@ -21,14 +21,16 @@ class fit(object):
         else: diffR0_ = None
         channels = dict([((lep,part),
                           inputs.channel_data(lep, part, tag, signal, sigPre, 
-                                              "R%02d" % (R0_ + dirIncrement)))
+                                              "R%02d" % (R0_ + dirIncrement),
+                                              prePre = not dirIncrement))
                          for lep in ['el', 'mu']
                          for part in ['top', 'QCD']
                          ])
         channels['gen'] = inputs.channel_data('mu', 'top', tag,
                                               'genTopDeltaBetazRel; genTopPhiBoost',
                                               sigPrefix = sigPre if not dirIncrement else '',
-                                              dirPrefix="R01", getTT=True)
+                                              dirPrefix="R01", getTT=True,
+                                              prePre = not dirIncrement)
         
         if diffR0_ :
             for lepPart,chan in channels.items():
@@ -37,6 +39,7 @@ class fit(object):
                 chan.subtract(inputs.channel_data(lep,part,tag,signal,sigPre,
                                                   "R%02d" % (diffR0_ + dirIncrement)))
 
+        print "###", label
         self.model = model.topModel(channels, asymmetry='QueuedBin' in signal, quiet=True)
         self.model.import_data()
         self.fitArgs = [r.RooFit.Extended(True), r.RooFit.NumCPU(4),
