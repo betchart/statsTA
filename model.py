@@ -21,12 +21,8 @@ class topModel(object):
         for item in ['quiet', 'asymmetry', 'gen', 'channels', 'channels_qcd',
                      'ttcomps', 'observables', 'w']: setattr(self, item, eval(item))
 
-        for item in ['fractions', 'xs_lumi', 'efficiencies', 'shapes',
-                     'qcd', 'asymmetry', 'model', 'expressions']:
-            if not quiet: print item,
-            sys.stdout.flush()
-            getattr(self, 'import_' + item)(w)
-            if not quiet: print '!'
+        for item in ['fractions', 'xs_lumi', 'efficiencies', 'shapes', 'qcd', 'asymmetry',
+                     'model', 'expressions']: getattr(self, 'import_' + item)(w)
 
         for item in ['d_lumi', 'd_xs_dy', 'd_xs_st']: w.arg(item).setConstant()
 
