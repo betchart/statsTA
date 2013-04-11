@@ -37,12 +37,10 @@ class topModel(object):
     def import_fractions(self, w):
         [roo.wimport_const(w, "f_%s_hat" % comp, self.gen.samples['tt' + comp].frac)
          for comp in self.ttcomps]
-        roo.factory(w, "R_ag[%f,0.07,1]" %
-                    (self.gen.samples['ttag'].frac / self.gen.samples['ttqq'].frac))
 
         if self.asymmetry:
-            alphaL_max = 0.95 * min(chan.samples['ttqq'].alphaMax
-                                    for chan in self.channels.values() +
+            alphaL_max = 0.95 * min(chan.samples['ttqq'].alphaMax for chan in
+                                    self.channels.values() +
                                     self.channels_qcd.values())
             roo.factory(w, "falphaL[0.1, -2, 2]")
             roo.factory(w, "alphaL[1, %.2f, %.2f]"%(-alphaL_max,alphaL_max))
@@ -50,6 +48,8 @@ class topModel(object):
         else:
             roo.factory(w, "d_qq[-0.999999,1]")
 
+        roo.factory(w, "R_ag[%f,0.07,1]" % (self.gen.samples['ttag'].frac /
+                                            self.gen.samples['ttqq'].frac))
         roo.factory(w, "expr::f_qq('(1+@0)*@1',{d_qq,f_qq_hat})")
         roo.factory(w, "prod::f_ag(R_ag,f_qq)")
         roo.factory(w, "expr::f_qg('(1-@0-@1)/(1+@2*@3*@4/(@5*@6))'," +\
