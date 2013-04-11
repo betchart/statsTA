@@ -41,11 +41,11 @@ class topModel(object):
                     (self.gen.samples['ttag'].frac / self.gen.samples['ttqq'].frac))
 
         if self.asymmetry:
-            alphaL_max = min(filter(None,[chan.samples['ttqq'].alphaMax
-                                          for chan in self.channels.values() +
-                                          self.channels_qcd.values()]))
+            alphaL_max = 0.95 * min(chan.samples['ttqq'].alphaMax
+                                    for chan in self.channels.values() +
+                                    self.channels_qcd.values())
             roo.factory(w, "falphaL[0.1, -2, 2]")
-            roo.factory(w, "alphaL[1, %.2f, %.2f]"%(-0.5*alphaL_max,0.5*alphaL_max))
+            roo.factory(w, "alphaL[1, %.2f, %.2f]"%(-alphaL_max,alphaL_max))
             roo.factory(w, "expr::d_qq('@0/@1/@2 -1',{falphaL,alphaL,f_qq_hat})")
         else:
             roo.factory(w, "d_qq[-0.999999,1]")
