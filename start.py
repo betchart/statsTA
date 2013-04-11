@@ -48,6 +48,8 @@ class fit(object):
 
         print "###", label
         self.model = model.topModel(channels, asymmetry=self.doAsymm, quiet=True)
+        for item in ['d_lumi', 'd_xs_dy', 'd_xs_st']:
+            self.model.w.arg(item).setVal(eval(item))
         self.model.import_data()
         self.fitArgs = [r.RooFit.Extended(True), r.RooFit.NumCPU(1),
                         r.RooFit.PrintLevel(-1), r.RooFit.Save()]
