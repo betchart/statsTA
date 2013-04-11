@@ -39,7 +39,17 @@ class topModel(object):
          for comp in self.ttcomps]
         roo.factory(w, "R_ag[%f,0.07,1]" %
                     (self.gen.samples['ttag'].frac / self.gen.samples['ttqq'].frac))
-        roo.factory(w, "d_qq[-0.999999,1]")
+
+        if self.asymmetry:
+            alphaL_max = min(filter(None,[chan.samples['ttqq'].alphaMax
+                                          for chan in self.channels.values() +
+                                          self.channels_qcd.values()]))
+            roo.factory(w, "falphaL[0.1, -2, 2]")
+            roo.factory(w, "alphaL[1, %.2f, %.2f]"%(-0.5*alphaL_max,0.5*alphaL_max))
+            roo.factory(w, "expr::d_qq('@0/@1/@2 -1',{falphaL,alphaL,f_qq_hat})")
+        else:
+            roo.factory(w, "d_qq[-0.999999,1]")
+
         roo.factory(w, "expr::f_qq('(1+@0)*@1',{d_qq,f_qq_hat})")
         roo.factory(w, "prod::f_ag(R_ag,f_qq)")
         roo.factory(w, "expr::f_qg('(1-@0-@1)/(1+@2*@3*@4/(@5*@6))'," +\
@@ -119,24 +129,8 @@ class topModel(object):
     def import_asymmetry(self, w):
         if not self.asymmetry: return
 
-        roo.factory(w, "falphaL[0.1, -10, 10]")
-        roo.factory(w, "falphaT[0.2, -10, 10]")
-        roo.factory(w, "expr::alphaL('@0/@1',{falphaL,f_qq})")
+        roo.factory(w, "falphaT[0.2, -1, 1]")
         roo.factory(w, "expr::alphaT('@0/@1',{falphaT,f_qg})")
-
-        alphaL_max = min(filter(None,[chan.samples['ttqq'].alphaMax
-                                      for chan in self.channels.values() +
-                                      self.channels_qcd.values()]))
-        alphaT_max = min(filter(None,[chan.samples[part].alphaMax
-                                      for chan in self.channels.values() +
-                                      self.channels_qcd.values()
-                                      for part in ['ttqg','ttag']]))
-        args = {'acc':100, 'alphaMaxInv':1./alphaL_max}
-        fermi = ("'0.5*%(alphaMaxInv).1f/(1+exp(%(acc)d*(@0*%(alphaMaxInv).1f - 1)))"+
-                 "-0.5*%(alphaMaxInv).1f/(1+exp(%(acc)d*(@0*%(alphaMaxInv).1f + 1)))'" ) % args
-        roo.factory(w, ("EXPR::constraint_alphaL("+fermi+",{alphaL})"))
-        roo.factory(w, ("EXPR::constraint_alphaT("+fermi+",{alphaT})"))
-        roo.factory(w, "PROD::constraint_alphas( constraint_alphaL, constraint_alphaT )")
 
         [(roo.factory(w, "SUM::%(n)s( alphaT * %(n)s_both, %(n)s_symm )" % {'n': L + '_ttag'}),
           roo.factory(w, "SUM::%(n)s( alphaT * %(n)s_both, %(n)s_symm )" % {'n': L + '_ttqg'}),

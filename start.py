@@ -49,24 +49,22 @@ class fit(object):
         self.model.import_data()
         self.fitArgs = [r.RooFit.Extended(True), r.RooFit.NumCPU(1),
                         r.RooFit.PrintLevel(-1), r.RooFit.Save()]
-        if self.doAsymm: 
-            self.fitArgs.insert(0, r.RooFit.ExternalConstraints(
-                    self.model.w.argSet("constraint_alphas")))
 
         self.doCentral()
 
     @roo.quiet
     def doCentral(self):
         w = self.model.w
-        for i in reversed(range(1)):
+        for i in reversed(range(3)):
             self.central = w.pdf('model').fitTo(w.data('data'), *self.fitArgs[:-1 if i else None])
         if not self.quiet:
             self.central.Print()
+            w.arg('d_qq').Print()
     
     @roo.quiet
     def doProfile(self):
         w = self.model.w
-        meanSigs = [(w.arg(a).getVal(),max(0.0001,w.arg(a).getError()/2)) for a in self.profileVars]
+        meanSigs = [(w.arg(a).getVal(),w.arg(a).getError()) for a in self.profileVars]
 
         nll = w.pdf('model').createNLL(w.data('data'), *self.fitArgs[:-2])
         pll = nll.createProfile(w.argSet(','.join(self.profileVars)))
@@ -88,7 +86,9 @@ class fit(object):
 
         (faL,faLe),(faT,faTe) = meanSigs
         points = [point(faL + dfaL, faT + dfaT) for dfaL, dfaT in
-                  [(0, 0), (-faLe, 0), (faLe, 0), (0, -faTe), (0, faTe), (faLe, faTe)]]
+                  [(0, 0), (-faLe, 0), (faLe, 0), (0, -faTe), (0, faTe), (-faLe, faTe)]]
+
+        print '\n'.join(str(p) for p in points)
         parb = paraboloid(points)
         oneSigmaNLL = 1.14
         twoSigmaNLL = 3.0
