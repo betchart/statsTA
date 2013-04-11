@@ -59,7 +59,6 @@ class channel_data(object):
         self.lepton = lepton
         self.lumi = tfile.Get('lumiHisto/data').GetBinContent(1)
         self.lumi_sigma = 0.04
-        self.hackZeroBins = hackZeroBins
 
         def full(pf) :
             return next((ky.GetName() + '/' for ky in tfile.GetListOfKeys()
@@ -77,6 +76,7 @@ class channel_data(object):
         for s in self.__samples__[4 if getTT else 0:None if getTT else -1]:
             self.add(s, tfile, paths, prepaths)
         tfile.Close()
+        if hackZeroBins: self.hackZeroBins()
 
     def add(self, s, tfile, paths, prepaths):
         def get(s,ps):
@@ -104,14 +104,14 @@ class channel_data(object):
                                       pre.Integral() / get( 'tt', prepaths ).Integral())
              }
         self.samples[s] = sample_data(datas, xs, delta, **named)
-        # RooFit breaks with zero bins in data but not the pdf:
-        #  this hack fixes one breaking case.
-        if self.hackZeroBins and s=='data':
-            for iX in range(1,1+self.samples[s].datas[0].GetNbinsX()):
-                for iY in range(1,1+self.samples[s].datas[0].GetNbinsY()):
-                    if not self.samples[s].datas[0].GetBinError(iX,iY):
-                        self.samples[s].datas[0].SetBinError(iX,iY,1)
-                        self.samples[s].datas[0].SetBinContent(iX,iY,1)
+
+    def hackZeroBins(self):
+        if 'data' not in self.samples: return
+        h = self.samples['data'].datas[0]
+        [h.SetBinContent(iX,iY,1e-12)
+         for iX in range(1,1+h.GetNbinsX())
+         for iY in range(1,1+h.GetNbinsY())
+         if not h.GetBinContent(iX,iY)]
 
     def subtract(self, other):
         for s,samp in self.samples.items():

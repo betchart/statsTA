@@ -1,3 +1,5 @@
+#!/usr/bin/python
+
 import sys
 import math
 import ROOT as r
@@ -27,7 +29,7 @@ class fit(object):
                           inputs.channel_data(lep, part, tag, signal, sigPre, 
                                               "R%02d" % (R0_ + dirIncrement),
                                               prePre = not dirIncrement, 
-                                              hackZeroBins=hackZeroBins))
+                                              hackZeroBins=hackZeroBins and 'QCD'==part))
                          for lep in ['el', 'mu']
                          for part in ['top', 'QCD']
                          ])
@@ -55,12 +57,12 @@ class fit(object):
     @roo.quiet
     def doCentral(self):
         w = self.model.w
-        for i in reversed(range(3)):
-            self.central = w.pdf('model').fitTo(w.data('data'), *self.fitArgs[:-1 if i else None])
+        self.central = w.pdf('model').fitTo(w.data('data'), *self.fitArgs)
         if not self.quiet:
             self.central.Print()
             w.arg('d_qq').Print()
-    
+            if self.doAsymm: w.arg('alphaT').Print()
+
     @roo.quiet
     def doProfile(self):
         w = self.model.w
