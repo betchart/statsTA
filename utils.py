@@ -20,6 +20,11 @@ def asymmetry(hist) :
     bans = [(y2-y1, y2+y1) for (x1,y1),(x2,y2) in zip(bins,bins[::-1]) if x1<x2 and y2+y1]
     return sum( n for n,_ in bans ) / sum( d for _,d in bans )
 #####################################
+def alphaMax(symm,anti):
+    tmp = symm.Clone('tmp')
+    tmp.Divide(anti)
+    return min(abs(tmp.GetBinContent(iX,iY)) for iX in range(1,1+tmp.GetNbinsX()) for iY in range(1,1+tmp.GetNbinsY()))
+#####################################
 def operateOnListUsingQueue(nCores,workerFunc,inList,daemon=True) :
     q = JoinableQueue()
     listOfProcesses=[]
