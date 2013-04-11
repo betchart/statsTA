@@ -9,12 +9,16 @@ import roo
 import systematics
 from falphaLSlice import falphaLSlice
 from paraboloid import paraboloid
+from parabola import parabola
 
 class fit(object):
-    def __init__(self, label, signal, profile, R0_,
-                 d_lumi, d_xs_dy, d_xs_st, tag, genPre, sigPre, dirIncrement, quiet = False):
+    def __init__(self, label, signal, profileVars, R0_,
+                 d_lumi, d_xs_dy, d_xs_st, tag, genPre, sigPre, dirIncrement, quiet = False,
+                 hackZeroBins=False):
 
         self.quiet = quiet
+        self.profileVars = profileVars
+        self.doAsymm = 'QueuedBin' in signal
         if type(R0_) == tuple:
             diffR0_ = R0_[1]
             R0_ = R0_[0]
@@ -22,7 +26,8 @@ class fit(object):
         channels = dict([((lep,part),
                           inputs.channel_data(lep, part, tag, signal, sigPre, 
                                               "R%02d" % (R0_ + dirIncrement),
-                                              prePre = not dirIncrement))
+                                              prePre = not dirIncrement, 
+                                              hackZeroBins=hackZeroBins))
                          for lep in ['el', 'mu']
                          for part in ['top', 'QCD']
                          ])
@@ -40,42 +45,57 @@ class fit(object):
                                                   "R%02d" % (diffR0_ + dirIncrement)))
 
         print "###", label
-        self.model = model.topModel(channels, asymmetry='QueuedBin' in signal, quiet=True)
+        self.model = model.topModel(channels, asymmetry=self.doAsymm, quiet=True)
         self.model.import_data()
-        self.fitArgs = [r.RooFit.Extended(True), r.RooFit.NumCPU(4),
+        self.fitArgs = [r.RooFit.Extended(True), r.RooFit.NumCPU(1),
                         r.RooFit.PrintLevel(-1), r.RooFit.Save()]
-        self.central()
+        if self.doAsymm: 
+            self.fitArgs.insert(0, r.RooFit.ExternalConstraints(
+                    self.model.w.argSet("constraint_alphas")))
+
+        self.doCentral()
 
     @roo.quiet
-    def central(self):
+    def doCentral(self):
         w = self.model.w
-        for i in reversed(range(3)):
-            central = w.pdf('model').fitTo(w.data('data'), *self.fitArgs[:-1 if i else None])
+        for i in reversed(range(1)):
+            self.central = w.pdf('model').fitTo(w.data('data'), *self.fitArgs[:-1 if i else None])
         if not self.quiet:
-            central.Print()
+            self.central.Print()
     
     @roo.quiet
-    def profile(self):
+    def doProfile(self):
         w = self.model.w
-        faL, faLe = w.arg('falphaL').getVal(), w.arg('falphaL').getError()
-        faT, faTe = w.arg('falphaT').getVal(), w.arg('falphaT').getError()
+        meanSigs = [(w.arg(a).getVal(),max(0.0001,w.arg(a).getError()/2)) for a in self.profileVars]
 
         nll = w.pdf('model').createNLL(w.data('data'), *self.fitArgs[:-2])
-        pll = nll.createProfile(w.argSet('falphaL,falphaT'))
+        pll = nll.createProfile(w.argSet(','.join(self.profileVars)))
 
-        def point(faL_, faT_):
-            w.arg('falphaL').setVal(faL_)
-            w.arg('falphaT').setVal(faT_)
-            return faL_, faT_, pll.getVal()
+        def point(*vals):
+            for name,val in zip(self.profileVars,vals) :
+                w.arg(name).setVal(val)
+            return tuple(vals) + (pll.getVal(),)
 
+        if not self.doAsymm:
+            mean,sigma = meanSigs[0]
+            points = [point(*p) for p in [(mean,),(mean+sigma,),(mean-sigma,)]]
+            parb = parabola(points)
+            oneSigmaNLL = 0.5
+            oneSigmas = parb.dx(oneSigmaNLL)
+            print oneSigmas
+            print parb.xmin
+            return
+
+        (faL,faLe),(faT,faTe) = meanSigs
         points = [point(faL + dfaL, faT + dfaT) for dfaL, dfaT in
-                  [(0, 0), (-faLe, 0), (faLe, 0), (0, -faTe), (0, faTe), (faLe/2, faTe/2)]]
+                  [(0, 0), (-faLe, 0), (faLe, 0), (0, -faTe), (0, faTe), (faLe, faTe)]]
         parb = paraboloid(points)
         oneSigmaNLL = 1.14
         twoSigmaNLL = 3.0
         oneSigmas = parb.dxy(oneSigmaNLL)
         print oneSigmas
         print math.sqrt(oneSigmas[0,0]), math.sqrt(oneSigmas[1,1])
+        print parb.xymin
         param1sigma = parb.parametricEllipse(oneSigmaNLL)
         param2sigma = parb.parametricEllipse(twoSigmaNLL)
         scales = [w.arg(a).getVal() for a in ['Ac_y_ttqq', 'Ac_y_ttqg']]
@@ -91,10 +111,11 @@ class fit(object):
 
 
 class measurement(object):
-    def __init__(self, label, signal, profile, R0_):
-        self.central = fit(signal=signal, profile=profile, R0_=R0_, **systematics.central())
-        self.central.profile()
-
+    def __init__(self, label, signal, profile, R0_, hackZeroBins=False):
+        self.central = fit(signal=signal, profileVars=profile, R0_=R0_,
+                           hackZeroBins=hackZeroBins, **systematics.central())
+        self.central.doProfile()
+        return
         syss = []
         for sys in systematics.systematics():
             pars = systematics.central()

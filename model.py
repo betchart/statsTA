@@ -118,10 +118,25 @@ class topModel(object):
 
     def import_asymmetry(self, w):
         if not self.asymmetry: return
-        roo.factory(w, "falphaL[0.1, -1, 1]")
-        roo.factory(w, "falphaT[0.2, -1, 1]")
+
+        roo.factory(w, "falphaL[0.1, -10, 10]")
+        roo.factory(w, "falphaT[0.2, -10, 10]")
         roo.factory(w, "expr::alphaL('@0/@1',{falphaL,f_qq})")
         roo.factory(w, "expr::alphaT('@0/@1',{falphaT,f_qg})")
+
+        alphaL_max = min(filter(None,[chan.samples['ttqq'].alphaMax
+                                      for chan in self.channels.values() +
+                                      self.channels_qcd.values()]))
+        alphaT_max = min(filter(None,[chan.samples[part].alphaMax
+                                      for chan in self.channels.values() +
+                                      self.channels_qcd.values()
+                                      for part in ['ttqg','ttag']]))
+        args = {'acc':100, 'alphaMaxInv':1./alphaL_max}
+        fermi = ("'0.5*%(alphaMaxInv).1f/(1+exp(%(acc)d*(@0*%(alphaMaxInv).1f - 1)))"+
+                 "-0.5*%(alphaMaxInv).1f/(1+exp(%(acc)d*(@0*%(alphaMaxInv).1f + 1)))'" ) % args
+        roo.factory(w, ("EXPR::constraint_alphaL("+fermi+",{alphaL})"))
+        roo.factory(w, ("EXPR::constraint_alphaT("+fermi+",{alphaT})"))
+        roo.factory(w, "PROD::constraint_alphas( constraint_alphaL, constraint_alphaT )")
 
         [(roo.factory(w, "SUM::%(n)s( alphaT * %(n)s_both, %(n)s_symm )" % {'n': L + '_ttag'}),
           roo.factory(w, "SUM::%(n)s( alphaT * %(n)s_both, %(n)s_symm )" % {'n': L + '_ttqg'}),
@@ -129,7 +144,7 @@ class topModel(object):
          for L in self.channels.keys() + self.channels_qcd.keys()]
 
         assert self.gen.samples['tt'].datas[0].GetXaxis().GetTitle() == 'genTopDeltaBetazRel'
-        #assert self.gen.samples['tt'].datas[0].GetYaxis().GetTitle() == 'genTopPhiBoost'
+        assert self.gen.samples['tt'].datas[0].GetYaxis().GetTitle() == 'genTopPhiBoost'
 
         for n, d in self.gen.samples.items():
             roo.wimport_const(w, 'Ac_y_' + n, utils.asymmetry(d.datasX[0]))
@@ -211,7 +226,7 @@ class topModel(object):
         w = self.w
         for item in \
                 ['lumi_mu', 'lumi_el', 'f_gg', 'f_qg', 'f_qq', 'f_ag'] + \
-                ['xs_' + i for i in self.model.channels['el'].samples if i != 'data']:
+                ['xs_' + i for i in self.channels['el'].samples if i != 'data']:
             print "%s: %.04f" % (item, w.arg(item).getVal())
         print
 
