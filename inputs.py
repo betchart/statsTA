@@ -13,6 +13,8 @@ class sample_data(object):
                       ((signalDistributions[0],) +
                        tuple(utils.symmAnti(signalDistributions[0]))))
 
+        self.alphaMax = utils.alphaMax(*self.datas[1:])
+
         for d in filter(None, self.datas):
             if d.GetNbinsY() == 100: d.RebinY(20)
             if d.GetNbinsX() > 80: d.RebinX()
@@ -68,7 +70,7 @@ class channel_data(object):
                  fullDirName + signal)
 
         prepaths = (full('R01') + (sigPrefix if prePre else '') + 'genTopDeltaBetazRel; genTopPhiBoost',
-                    'allweighted/')
+                    'meweighted/')
 
         self.samples = {}
         for s in self.__samples__[4 if getTT else 0:None if getTT else -1]:
@@ -88,7 +90,7 @@ class channel_data(object):
                  if doSymmAnti else None)
         if doSymmAnti:
             datas += (datas[0].Clone(self.lepton + '_anti_' + s),)
-            datas[2].Add(datas[0], -1)
+            datas[2].Add(datas[1], -1)
 
         for d in filter(None, datas): d.SetDirectory(0)
         xs = tfile.Get('xsHisto/' + s).GetBinContent(1) if s != 'data' else None
@@ -98,7 +100,7 @@ class channel_data(object):
         named = \
             {'selectionEfficiency': (datas[0].Integral() / pre.Integral() if pre else 0),
              'preselectionFraction': (1.0 if s[:2] != 'tt' else
-                                      pre.Integral() / tfile.Get('allweighted/tt').Integral())
+                                      pre.Integral() / get( 'tt', prepaths ).Integral())
              }
         self.samples[s] = sample_data(datas, xs, delta, **named)
 
