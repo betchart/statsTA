@@ -35,37 +35,37 @@ def central():
 
 def systematics():
     return ([
-            {'label': 'upLumi', "d_lumi": +0.04},
-            {'label': 'dnLumi', "d_lumi": -0.04},
+            {'label': 'lumi_up', "d_lumi": +0.04},
+            {'label': 'lumi_dn', "d_lumi": -0.04},
 
-            {'label': 'upDY', "d_xs_dy": +0.04},
-            {'label': 'dnDY', "d_xs_dy": -0.04},
+            {'label': 'DY_up', "d_xs_dy": +0.04},
+            {'label': 'DY_dn', "d_xs_dy": -0.04},
 
-            {'label': 'upST', "d_xs_st": +0.04},
-            {'label': 'dnST', "d_xs_st": -0.04},
+            {'label': 'ST_up', "d_xs_st": +0.04},
+            {'label': 'ST_dn', "d_xs_st": -0.04},
 
-            #{'label': 'upRFS', 'tag': 'up_sn_jn_20'},
-            #{'label': 'dnRFS', 'tag': 'dn_sn_jn_20'},
+            #{'label': 'RFS_up', 'tag': 'up_sn_jn_20'},
+            #{'label': 'RFS_dn', 'tag': 'dn_sn_jn_20'},
 
-            #{'label': 'upJER', 'tag': 'ph_su_jn_20'},
-            #{'label': 'dnJER', 'tag': 'ph_sd_jn_20'},
+            #{'label': 'JER_up', 'tag': 'ph_su_jn_20'},
+            #{'label': 'JER_dn', 'tag': 'ph_sd_jn_20'},
 
-            #{'label': 'upJES', 'tag': 'ph_sn_ju_20'},
-            #{'label': 'dnJES', 'tag': 'ph_sn_jd_20'},
+            #{'label': 'JES_up', 'tag': 'ph_sn_ju_20'},
+            #{'label': 'JES_dn', 'tag': 'ph_sn_jd_20'},
 
-            {'label': 'upPU', 'dirIncrement': 1, 'sigPre': '001_'},
-            {'label': 'dnPU', 'dirIncrement': 1, 'sigPre': '000_'},
+            {'label': 'PU_up', 'dirIncrement': 1, 'sigPre': '001_'},
+            {'label': 'PU_dn', 'dirIncrement': 1, 'sigPre': '000_'},
 
             ] +
-            [{'label': '%del' % i,
+            [{'label': 'el%d' % i,
               'dirIncrement': 2,
               'sigPre': '%03d_' % i,} for i in range(4)
             ]+
-            [{'label': '%dmu' % i,
+            [{'label': 'mu%d' % i,
               'dirIncrement': 3,
               'sigPre': '%03d_' % i,} for i in range(4)
             ]+
-            [{'label': '%02dPDF' % i,
+            [{'label': 'PDF%02d' % i,
               'genPre': '%03d_' % i,
               'sigPre': '%03d_' % i} for i in range(1, 53)]
             )
