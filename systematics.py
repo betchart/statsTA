@@ -57,6 +57,14 @@ def systematics():
             {'label': 'dnPU', 'dirIncrement': 1, 'sigPre': '000_'},
 
             ] +
+            [{'label': '%del' % i,
+              'dirIncrement': 2,
+              'sigPre': '%03d_' % i,} for i in range(4)
+            ]+
+            [{'label': '%dmu' % i,
+              'dirIncrement': 3,
+              'sigPre': '%03d_' % i,} for i in range(4)
+            ]+
             [{'label': '%02dPDF' % i,
               'genPre': '%03d_' % i,
               'sigPre': '%03d_' % i} for i in range(1, 53)]

@@ -4,7 +4,7 @@ class parabola(object) :
     '''Useful properties of a parabola defined by three points.'''
     
     def __init__(self, points = [] ) :
-        if len(points)!=3 : raise "NPointsNot3"
+        if len(points)!=3 : raise Exception("NPointsNot3")
         self.ABC = np.linalg.solve( np.array([[x**2, 2*x, 1] for x,_ in points]),
                                     [y for _,y in points])
     def y(self,x) :

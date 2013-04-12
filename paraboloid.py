@@ -4,7 +4,7 @@ class paraboloid(object) :
     '''Useful properties of a paraboloid defined by six points.'''
     
     def __init__(self, points = [] ) :
-        if len(points)!=6 : raise "NPointsNot6"
+        if len(points)!=6 : raise Exception("NPointsNot6")
         self.ABCDEF = np.linalg.solve( np.array([[x**2, y**2, 2*x*y, 2*x, 2*y, 1] for x,y,_ in points]),
                                        [z for _,_,z in points])
     def z(self,x,y) :

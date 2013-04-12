@@ -23,7 +23,9 @@ def asymmetry(hist) :
 def alphaMax(symm,anti):
     tmp = symm.Clone('tmp')
     tmp.Divide(anti)
-    return min(abs(tmp.GetBinContent(iX,iY)) for iX in range(1,1+tmp.GetNbinsX()) for iY in range(1,1+tmp.GetNbinsY()))
+    return min(filter(None,[abs(tmp.GetBinContent(iX,iY))
+                            for iX in range(1,1+tmp.GetNbinsX())
+                            for iY in range(1,1+tmp.GetNbinsY())]))
 #####################################
 def operateOnListUsingQueue(nCores,workerFunc,inList,daemon=True) :
     q = JoinableQueue()
