@@ -17,11 +17,12 @@ from itertools import combinations_with_replacement
 class fit(object):
     def __init__(self, label, signal, profileVars, R0_,
                  d_lumi, d_xs_dy, d_xs_st, tag, genPre, sigPre, dirIncrement, quiet = False,
-                 hackZeroBins=False, defaults = {}):
+                 hackZeroBins=False, defaults = {}, pllPoints=[]):
 
         self.label = label
         self.quiet = quiet
         self.profileVars = profileVars
+        self.pllPoints = pllPoints
         self.doAsymm = 'QueuedBin' in signal
         if type(R0_) == tuple:
             diffR0_ = R0_[1]
@@ -67,6 +68,7 @@ class fit(object):
         minu = r.RooMinuit(nll)
         minu.setPrintLevel(-1)
         minu.setNoWarn()
+        minu.migrad()
         for i in range(100):
             print i
             if not minu.migrad(): break
@@ -81,9 +83,12 @@ class fit(object):
         def vE(a) : return w.arg(a).getVal(), w.arg(a).getError()
 
         muSig = [vE(a) for a in self.profileVars]
+        if not self.pllPoints:
+            self.pllPoints = [tuple(m + i*s for i, (m, s) in zip(signs, muSig))
+                              for signs in combinations_with_replacement([0,-1, 1], N)]
+
         points = [p + (pllEval(**dict(zip(self.profileVars, p))),) 
-                  for p in [tuple(m + i*s for i, (m, s) in zip(signs, muSig))
-                            for signs in combinations_with_replacement([0,-1, 1], N)]]
+                  for p in self.pllPoints]
         print zip(*points)[2]
 
         oneSigmaNLL = {1: 0.5, 2: 1.14}[N]
@@ -109,7 +114,7 @@ class fit(object):
             print zip(*muSig)[0], self.fitPLL
             print self.profVal, self.profPLL
             print self.profErr
-            for item in ['d_qq','d_xs_tt','d_xs_wj','factor_elqcd','factor_muqcd']:
+            for item in ['d_qq','alphaL','d_xs_tt','d_xs_wj','factor_elqcd','factor_muqcd']:
                 print '\t',
                 w.arg(item).Print()
         return
@@ -161,8 +166,9 @@ class measurement(object):
             pars = systematics.central()
             pars.update(sys)
             try:
-                f = fit(signal=signal, profileVars=profile, R0_=R0_, quiet=True,
-                        defaults=defaults, **pars)
+                f = fit(signal=signal, profileVars=profile, R0_=R0_, quiet=False,
+                        defaults=defaults, pllPoints=list(self.central.pllPoints),
+                        **pars)
                 syss.append(f)
                 print zip(*f.muSig)[0], f.fitPLL
                 print f.profVal, f.profPLL
