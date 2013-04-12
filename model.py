@@ -108,7 +108,7 @@ class topModel(object):
                                      'factor_%s' % lepton][:None if 'qcd' in lepton else -2])))
 
     def import_qcd(self, w):
-        [roo.factory(w, "factor_%s[1,0,10]" % lepton) for lepton in self.channels_qcd]
+        [roo.factory(w, "factor_%s[1,0,5]" % lepton) for lepton in self.channels_qcd]
 
         self.import_efficiencies(w, self.channels_qcd)
         self.import_shapes(w, self.channels_qcd)
