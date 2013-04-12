@@ -34,7 +34,7 @@ def central():
 
 
 def systematics():
-    return ([
+    sys =  ([
             {'label': 'lumi_up', "d_lumi": +0.04},
             {'label': 'lumi_dn', "d_lumi": -0.04},
 
@@ -69,6 +69,8 @@ def systematics():
               'genPre': '%03d_' % i,
               'sigPre': '%03d_' % i} for i in range(1, 53)]
             )
+    #return [s for s in sys if s['label']=='PDF33']
+    return sys
 
 
 if __name__ == '__main__':
