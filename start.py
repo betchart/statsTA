@@ -17,7 +17,7 @@ from itertools import combinations_with_replacement
 class fit(object):
     def __init__(self, label, signal, profileVars, R0_,
                  d_lumi, d_xs_dy, d_xs_st, tag, genPre, sigPre, dirIncrement, quiet = False,
-                 hackZeroBins=False):
+                 hackZeroBins=False, defaults = {}):
 
         self.label = label
         self.quiet = quiet
@@ -50,6 +50,7 @@ class fit(object):
 
         print "###", label
         self.model = model.topModel(channels, asymmetry=self.doAsymm, quiet=True)
+        for k,v in defaults.items(): self.model.w.arg(k).setVal(v)
         for item in ['d_lumi', 'd_xs_dy', 'd_xs_st']: self.model.w.arg(item).setVal(eval(item))
         self.model.import_data()
         self.fitArgs = [r.RooFit.Extended(True), r.RooFit.NumCPU(1),
@@ -134,9 +135,11 @@ class fit(object):
     def fields(cls): return '#label Ac_y_qq  Ac_y_qg  XX  XY  YY'
 
     def __str__(self):
-        return '\t'.join(str(i) for i in [self.label] + list(self.profVal*self.scales) + [self.profErr[0,0]*self.scales[0]**2,
-                                                                                          self.profErr[0,1]*self.scales[0]*self.scales[1],
-                                                                                          self.profErr[1,1]*self.scales[1]**2])
+        return '\t'.join(str(i) for i in [self.label] +
+                         list(self.profVal*self.scales) +
+                         [self.profErr[0,0]*self.scales[0]**2,
+                          self.profErr[0,1]*self.scales[0]*self.scales[1],
+                          self.profErr[1,1]*self.scales[1]**2])
 
 class measurement(object):
     def __init__(self, label, signal, profile, R0_, hackZeroBins=False):
@@ -148,18 +151,24 @@ class measurement(object):
 
         print >> write, str(self.central)
 
+        vars = ['alphaL', 'falphaL', 'falphaT','R_ag',
+                'd_xs_tt', 'd_xs_wj', 'factor_elqcd', 'factor_muqcd']
+        defaults = dict([(v,self.central.model.w.arg(v).getVal()) for v in vars])
+        print '\n'.join(str(kv) for kv in defaults.items())
+
         syss = []
         for sys in systematics.systematics():
             pars = systematics.central()
             pars.update(sys)
             try:
-                f = fit(signal=signal, profileVars=profile, R0_=R0_, quiet=True, **pars)
+                f = fit(signal=signal, profileVars=profile, R0_=R0_, quiet=True,
+                        defaults=defaults, **pars)
                 syss.append(f)
                 print zip(*f.muSig)[0], f.fitPLL
                 print f.profVal, f.profPLL
                 print >> write, str(f)
             except:
-                print >> write, '#', label, "FAIL"
+                print >> write, '#', pars['label'], "FAIL"
             write.flush()
 
         write.close()
