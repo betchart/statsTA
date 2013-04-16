@@ -52,9 +52,7 @@ class fit(object):
         print "###", label
         self.model = model.topModel(channels, asymmetry=self.doAsymm, quiet=True,
                                     alternate=alternateModel)
-        for k,v in defaults.items():
-            self.model.w.arg(k).Print()
-            self.model.w.arg(k).setVal(v)
+        for k,v in defaults.items(): self.model.w.arg(k).setVal(v)
         for item in ['d_lumi', 'd_xs_dy', 'd_xs_st']: self.model.w.arg(item).setVal(eval(item))
 
         self.model.import_data()
