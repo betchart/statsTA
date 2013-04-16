@@ -11,7 +11,7 @@ if __name__ == '__main__':
         exit()
     
     with open(sys.argv[1]) as mFile:
-        M = dict([(line.split()[0], tuple(eval(f) for f in line.split()[1:]))
+        M = dict([(line.split()[0], tuple(eval(f) for f in line.split()[1:6]))
                              for line in mFile.readlines() if '#' not in line])
     
     form = '\t%.8f'*5
