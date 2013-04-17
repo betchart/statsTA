@@ -29,7 +29,6 @@ plot [-0.04:0.04] [-0.007:0.007] \
     '' u 5:6 w lines lt 1 lw 3 lc 3 title 'mass<450GeV', \
     "<echo '0.003953110899140473 0.0021230524809500123'" w points ls 1 lc 2 ps 3 lw 4 notitle
 
-
 plot [-0.04:0.04] [-0.007:0.007] \
     'data/asymmetry_hiY.txt' u 2:3 pt 6 lc 1 notitle, \
     'data/asymmetry_hiY_points.txt' w lines lt 4 lc 1 notitle, \
@@ -43,14 +42,6 @@ plot [-0.04:0.04] [-0.007:0.007] \
     '' u 3:4 w lines lt 2 lc 4 notitle, \
     '' u 5:6 w lines lt 1 lw 3 lc 4 title 'tanhY<0.5', \
     "<echo '0.003953110899140473 0.0021230524809500123'" w points ls 1 lc 2 ps 3 lw 4 notitle
-
-plot [-0.04:0.04] [-0.007:0.007] \
-    'data/asymmetry_loYalt.txt' u 2:3 pt 6 lc 4 notitle, \
-    'data/asymmetry_loYalt_points.txt' w lines lt 4 lc 4 notitle, \
-    '' u 3:4 w lines lt 2 lc 4 notitle, \
-    '' u 5:6 w lines lt 1 lw 3 lc 4 title 'tanhY<0.5 (alt)', \
-    "<echo '0.003953110899140473 0.0021230524809500123'" w points ls 1 lc 2 ps 3 lw 4 notitle
-
 
 plot [-0.04:0.04] [-0.007:0.007] \
     'data/asymmetry_full_points.txt' u 5:6 w lines lt 1 lw 3 lc 7 title 'full', \
