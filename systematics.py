@@ -18,7 +18,9 @@ def measurement_pars(measure='asymmetry', partition='full'):
              N + 2*cycle, (N, N + 2*cycle), (N, N + 2*cycle), (N, N + 1*cycle)]
     pars.update({'R0_': dict(zip(partitions,pDirs))[partition]})
     if measure=='fraction' and partition=='hiM': pars.update({'hackZeroBins':True})
-    if measure=='asymmetry' and 'alt'==partition[-3:]: pars.update({'alternateModel':True})
+    if measure=='asymmetry' and partition=='loY': pars.update({'alternateModel':True})
+    # hiM and loM are also candidates for alternateModel
+    # hiY and full like defaultModel
     return pars
 
 

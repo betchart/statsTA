@@ -70,8 +70,6 @@ class fit(object):
         minu.setPrintLevel(-1)
         minu.setNoWarn()
         for j in range(10):
-            minu.setStrategy(1)
-            minu.migrad()
             minu.setStrategy(2)
             for i in range(10):
                 self.status = minu.migrad()
@@ -79,6 +77,8 @@ class fit(object):
                 sys.stdout.flush()
                 if not self.status: break
             if not self.status: break
+            minu.setStrategy(1)
+            minu.migrad()
         print
         if not self.pllPoints:
             print minu.minos(w.argSet(','.join(self.profileVars)))
