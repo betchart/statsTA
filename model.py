@@ -6,7 +6,7 @@ import ROOT as r
 
 class topModel(object):
     @roo.quiet
-    def __init__(self, channelDict, asymmetry=True, quiet=False, w=None):
+    def __init__(self, channelDict, asymmetry=True, quiet=False, w=None, alternate=False):
 
         leptons = ['el', 'mu']
         ttcomps = ('qq', 'ag', 'gg', 'qg')
@@ -18,7 +18,7 @@ class topModel(object):
 
         if not w: w = r.RooWorkspace('Workspace')
 
-        for item in ['quiet', 'asymmetry', 'gen', 'channels', 'channels_qcd',
+        for item in ['quiet', 'asymmetry', 'gen', 'channels', 'channels_qcd', 'alternate',
                      'ttcomps', 'observables', 'w']: setattr(self, item, eval(item))
 
         for item in ['fractions', 'xs_lumi', 'efficiencies', 'shapes', 'qcd', 'asymmetry',
@@ -35,12 +35,15 @@ class topModel(object):
          for comp in self.ttcomps]
 
         if self.asymmetry:
-            alphaL_max = 0.95 * min(chan.samples['ttqq'].alphaMax for chan in
+            alphaL_max = 0.99 * min(chan.samples['ttqq'].alphaMax for chan in
                                     self.channels.values() +
                                     self.channels_qcd.values())
-            roo.factory(w, "falphaL[0.1, -2, 2]")
-            roo.factory(w, "alphaL[1, %.2f, %.2f]"%(-alphaL_max,alphaL_max))
-            roo.factory(w, "expr::d_qq('@0/@1/@2 -1',{falphaL,alphaL,f_qq_hat})")
+            roo.factory(w, "falphaL[0.13, -1.8, 1.8]")
+            if self.alternate:
+                roo.factory(w, "alphaL_mag[1, %.2f, %.2f]"%(0,alphaL_max))
+                roo.factory(w, "expr::d_qq('abs(@0)/@1/@2 -1',{falphaL,alphaL_mag,f_qq_hat})")
+            else:
+                roo.factory(w, "d_qq[-0.999999,1]")
         else:
             roo.factory(w, "d_qq[-0.999999,1]")
 
@@ -64,7 +67,7 @@ class topModel(object):
 
         for sample, (xs, delta) in xs_constraints.items():
             roo.wimport_const(w, 'xs_%s_hat' % sample, xs)
-            roo.factory(w, "d_xs_%s[0,-1,2]" % sample)
+            roo.factory(w, "d_xs_%s[0,-0.5,1]" % sample)
             roo.factory(w, "expr::xs_%s('(1+@0)*@1',{d_xs_%s, xs_%s_hat})" % (3 * (sample,)))
 
         [roo.factory(w, "prod::xs_tt%s(f_%s,xs_tt)" % (c, c)) for c in self.ttcomps]
@@ -108,7 +111,7 @@ class topModel(object):
                                      'factor_%s' % lepton][:None if 'qcd' in lepton else -2])))
 
     def import_qcd(self, w):
-        [roo.factory(w, "factor_%s[1,0,5]" % lepton) for lepton in self.channels_qcd]
+        [roo.factory(w, "factor_%s[1,0,3.5]" % lepton) for lepton in self.channels_qcd]
 
         self.import_efficiencies(w, self.channels_qcd)
         self.import_shapes(w, self.channels_qcd)
@@ -125,8 +128,9 @@ class topModel(object):
     def import_asymmetry(self, w):
         if not self.asymmetry: return
 
-        roo.factory(w, "falphaT[0.2, -1, 1]")
+        roo.factory(w, "falphaT[0.18, -0.8, 0.8]")
         roo.factory(w, "expr::alphaT('@0/@1',{falphaT,f_qg})")
+        roo.factory(w, "expr::alphaL('@0/@1',{falphaL,f_qq})")
 
         [(roo.factory(w, "SUM::%(n)s( alphaT * %(n)s_both, %(n)s_symm )" % {'n': L + '_ttag'}),
           roo.factory(w, "SUM::%(n)s( alphaT * %(n)s_both, %(n)s_symm )" % {'n': L + '_ttqg'}),

@@ -12,12 +12,12 @@ import systematics
 from falphaLSlice import falphaLSlice
 from paraboloid import paraboloid
 from parabola import parabola
-from itertools import combinations_with_replacement
+from itertools import combinations
 
 class fit(object):
     def __init__(self, label, signal, profileVars, R0_,
                  d_lumi, d_xs_dy, d_xs_st, tag, genPre, sigPre, dirIncrement, quiet = False,
-                 hackZeroBins=False, defaults = {}, pllPoints=[]):
+                 hackZeroBins=False, alternateModel=False, defaults = {}, pllPoints=[]):
 
         self.label = label
         self.quiet = quiet
@@ -50,9 +50,11 @@ class fit(object):
                                                   "R%02d" % (diffR0_ + dirIncrement)))
 
         print "###", label
-        self.model = model.topModel(channels, asymmetry=self.doAsymm, quiet=True)
+        self.model = model.topModel(channels, asymmetry=self.doAsymm, quiet=True,
+                                    alternate=alternateModel)
         for k,v in defaults.items(): self.model.w.arg(k).setVal(v)
         for item in ['d_lumi', 'd_xs_dy', 'd_xs_st']: self.model.w.arg(item).setVal(eval(item))
+
         self.model.import_data()
         self.fitArgs = [r.RooFit.Extended(True), r.RooFit.NumCPU(1),
                         r.RooFit.PrintLevel(-1)]
@@ -63,29 +65,38 @@ class fit(object):
     def doFit(self):
         w = self.model.w
         N = len(self.profileVars)
-
         nll = w.pdf('model').createNLL(w.data('data'), *self.fitArgs[:-1])
         minu = r.RooMinuit(nll)
         minu.setPrintLevel(-1)
         minu.setNoWarn()
-        minu.migrad()
-        for i in range(100):
-            print i
-            if not minu.migrad(): break
-        print minu.improve()
-        print minu.minos(w.argSet(','.join(self.profileVars)))
+        for j in range(10):
+            minu.setStrategy(2)
+            for i in range(10):
+                self.status = minu.migrad()
+                print i + 10*j,
+                sys.stdout.flush()
+                if not self.status: break
+            if not self.status: break
+            minu.setStrategy(1)
+            minu.migrad()
+        print
+        if not self.pllPoints:
+            print minu.minos(w.argSet(','.join(self.profileVars)))
         pll = nll.createProfile(w.argSet(','.join(self.profileVars)))
+        pll.Print()
+        pll.minuit().setStrategy(2)
 
         def pllEval(**kwargs) :
             for name,val in kwargs.items(): w.arg(name).setVal(val)
             return pll.getVal()
 
-        def vE(a) : return w.arg(a).getVal(), w.arg(a).getError()
+        def vE(a) : return w.arg(a).getVal(), max(0.08, w.arg(a).getError())
 
         muSig = [vE(a) for a in self.profileVars]
         if not self.pllPoints:
+            print muSig
             self.pllPoints = [tuple(m + i*s for i, (m, s) in zip(signs, muSig))
-                              for signs in combinations_with_replacement([0,-1, 1], N)]
+                              for signs in sorted(set(combinations([0, 1, 0, -1, 0], N)))]
 
         points = [p + (pllEval(**dict(zip(self.profileVars, p))),) 
                   for p in self.pllPoints]
@@ -104,11 +115,13 @@ class fit(object):
         if self.doAsymm: 
             self.scales = np.array([w.arg(a).getVal() for a in ['Ac_y_ttqq', 'Ac_y_ttqg']])
             self.scalesPhi= [w.arg('Ac_phi_%s'%n) for n in ['ttqq','ttgg','ttag','ttqg','tt']]
+            self.fractionHats = [w.arg('f_%s_hat' % a).getVal() for a in ['gg','qg','qq','ag']]
 
         self.parb = parb
         self.muSig = muSig
-        self.profPLL = pllEval(**dict(zip(self.profileVars,self.profVal)))
+        self.profPLL = pllEval(**dict(zip(self.profileVars, self.profVal)))
         self.fitPLL = pllEval(**dict(zip(self.profileVars,[m for m,_ in muSig])))
+        self.best = self.profVal if self.profPLL < self.fitPLL else [m for m,_ in muSig]
 
         if not self.quiet:
             print zip(*muSig)[0], self.fitPLL
@@ -119,62 +132,56 @@ class fit(object):
                 w.arg(item).Print()
         return
 
-        parb = paraboloid(points)
-        oneSigmas = parb.dxy(oneSigmaNLL)
-        print oneSigmas
-        print math.sqrt(oneSigmas[0,0]), math.sqrt(oneSigmas[1,1])
-        print parb.xymin
-        param1sigma = parb.parametricEllipse(oneSigmaNLL)
-        param2sigma = parb.parametricEllipse(twoSigmaNLL)
-        with open('stat.txt', 'w') as wfile:
-            for t in np.arange(0, 2 * math.pi + 0.00001, math.pi / 50):
-                point1 = param1sigma.dot([math.cos(t), math.sin(t), 1])
-                point2 = param2sigma.dot([math.cos(t), math.sin(t), 1])
-                point1 /= point1[2]
-                point2 /= point2[2]
-                seq = list(parb.xymin) + list(point1[:2]) + list(point2[:2]) + scales
-                print>>wfile, '\t'.join(str(f) for f in seq)
-        print "Wrote stat.txt"
-
     @classmethod
-    def fields(cls): return '#label Ac_y_qq  Ac_y_qg  XX  XY  YY'
+    def fields(cls): return ('#label fqq.Ac_y_qq  fqg.Ac_y_qg  XX  XY  YY fhat_gg ' +
+                             'fhat_qg fhat_qq fhat_ag Ac_y_gg_hat Ac_y_qq_hat Ac_y_qg_hat fitstatus')
 
     def __str__(self):
         return '\t'.join(str(i) for i in [self.label] +
-                         list(self.profVal*self.scales) +
+                         list(self.best*self.scales) +
                          [self.profErr[0,0]*self.scales[0]**2,
                           self.profErr[0,1]*self.scales[0]*self.scales[1],
-                          self.profErr[1,1]*self.scales[1]**2])
+                          self.profErr[1,1]*self.scales[1]**2] +
+                         self.fractionHats+
+                         list(self.scales) + [self.status]
+                         )
 
 class measurement(object):
-    def __init__(self, label, signal, profile, R0_, hackZeroBins=False):
+    def __init__(self, label, signal, profile, R0_, hackZeroBins=False, alternateModel=False):
         write = open('data/' + '_'.join(label.split(',')) + '.txt', 'w')
         print >> write, fit.fields()
 
         self.central = fit(signal=signal, profileVars=profile, R0_=R0_,
-                           hackZeroBins=hackZeroBins, **systematics.central())
+                           hackZeroBins=hackZeroBins, alternateModel=alternateModel,
+                           **systematics.central())
 
         print >> write, str(self.central)
 
-        vars = ['alphaL', 'falphaL', 'falphaT','R_ag',
+        para = self.central.parb.parametricEllipse(0.5)
+        angle = self.central.parb.major_angle()
+        points = [(x/w,y/w) for x,y,w in [para.dot([math.cos(angle+f*math.pi),
+                                                    math.sin(angle+f*math.pi),
+                                                    1])
+                                          for f in [0, 0.5, 0.75, 1.0, 1.5]]]
+        points.insert(0,self.central.parb.xymin)
+        self.central.pllPoints = points
+        
+        vars_ = ['d_qq' if not alternateModel else 'alphaL_mag',
+                'falphaL', 'falphaT','R_ag',
                 'd_xs_tt', 'd_xs_wj', 'factor_elqcd', 'factor_muqcd']
-        defaults = dict([(v,self.central.model.w.arg(v).getVal()) for v in vars])
+        defaults = dict([(v,self.central.model.w.arg(v).getVal()) for v in vars_])
         print '\n'.join(str(kv) for kv in defaults.items())
 
         syss = []
         for sys in systematics.systematics():
             pars = systematics.central()
             pars.update(sys)
-            try:
-                f = fit(signal=signal, profileVars=profile, R0_=R0_, quiet=False,
-                        defaults=defaults, pllPoints=list(self.central.pllPoints),
-                        **pars)
-                syss.append(f)
-                print zip(*f.muSig)[0], f.fitPLL
-                print f.profVal, f.profPLL
-                print >> write, str(f)
-            except:
-                print >> write, '#', pars['label'], "FAIL"
+            f = fit(signal=signal, profileVars=profile, R0_=R0_, quiet=False,
+                    hackZeroBins=hackZeroBins, alternateModel=alternateModel,
+                    defaults=defaults, pllPoints=list(self.central.pllPoints),
+                    **pars)
+            syss.append(f)
+            print >> write, str(f)
             write.flush()
 
         write.close()
