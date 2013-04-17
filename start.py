@@ -121,7 +121,8 @@ class fit(object):
         self.muSig = muSig
         self.profPLL = pllEval(**dict(zip(self.profileVars, self.profVal)))
         self.fitPLL = pllEval(**dict(zip(self.profileVars,[m for m,_ in muSig])))
-        self.best = self.profVal if self.profPLL < self.fitPLL else [m for m,_ in muSig]
+        choosePLL = self.profErr[0,0] > 0 and self.profErr[1,1] > 0 and self.profPLL < self.fitPLL
+        self.best = self.profVal if choosePLL else [m for m,_ in muSig]
 
         if not self.quiet:
             print zip(*muSig)[0], self.fitPLL
