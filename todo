@@ -1,7 +1,8 @@
-!!! don't symmetrize QCD, DY for rapidity measurements!!!
+* log fits in files
+* visualize
 
-* hackages to compare with other CMS/ATLAS/Tevatron results
+
 * less hacky ensemble testing
 
 * get other systematics off the batch
-* get other plots off the batch / write fit for tt production fractions
+* get other plots off the batch
