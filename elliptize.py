@@ -46,13 +46,33 @@ if __name__ == '__main__':
                     [central[3],central[4]]]
     sys_sigmas2 = np.sum(sigmas(k) for k in M) / 2
     sim_sigmas2 = np.sum(sigmasHat(h) for h in hats) / 2
+    tot_sigmas2 = stat_sigmas2 + sys_sigmas2
     
     stat = ellipse(mean=mean, sigmas2=stat_sigmas2)
     syst = ellipse(mean=mean, sigmas2=sys_sigmas2)
-    totl = ellipse(mean=mean, sigmas2=(stat_sigmas2+sys_sigmas2))
+    totl = ellipse(mean=mean, sigmas2=tot_sigmas2)
     simu = ellipse(mean=(hats['central']['f_qq.Ac_y_qq'],
                          hats['central']['f_qg.Ac_y_qq']),
                    sigmas2=sim_sigmas2) if np.all(sim_sigmas2) else None
+
+    Ac = sum(mean)
+    c45 = math.cos(math.pi/4)
+    R45 = np.array([[c45,c45],[-c45,c45]])
+    print Ac
+    print 'xsig', math.sqrt(stat_sigmas2[0][0])
+    print 'ysig', math.sqrt(stat_sigmas2[1][1])
+    d_Ac = math.sqrt(R45.dot(tot_sigmas2).dot(R45.T)[0,0])
+    print d_Ac
+
+    class line(object):
+        def __init__(self,start,end):
+            self.start = start
+            self.end = end
+        def eval(self,T):
+            t = 0.5*(1+math.cos(T))
+            x = t*self.start[0] + (1-t)*self.end[0]
+            y = t*self.start[1] + (1-t)*self.end[1]
+            return x,y
 
     with open('_points.'.join(sys.argv[1].split('.')), 'w') as wFile:
         N = 100
@@ -60,4 +80,7 @@ if __name__ == '__main__':
             T = t * 2 * math.pi / N
             print >> wFile, '\t'.join(str(f) for f in
                                       sum((getattr(item,'eval')(T)
-                                           for item in filter(None, [stat,syst,totl,simu])), ()))
+                                           for item in filter(None, [stat,syst,totl,simu,
+                                                                     line(mean,(Ac,0)),
+                                                                     line((Ac-d_Ac,0),(Ac+d_Ac,0))
+                                                                     ])), ()))
