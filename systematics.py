@@ -18,10 +18,6 @@ def measurement_pars(measure='asymmetry', partition='full'):
              N + 2*cycle, (N, N + 2*cycle), (N, N + 2*cycle), (N, N + 1*cycle)]
     pars.update({'R0_': dict(zip(partitions,pDirs))[partition]})
     if measure=='fraction' and partition=='hiM': pars.update({'hackZeroBins':True})
-    if measure=='asymmetry' and partition in ['loY','loM']: pars.update({'alternateModel':True})
-    # loY likes alternative
-    # hiY and full like defaultModel
-    # loM likes both alternative or default
     return pars
 
 
@@ -48,8 +44,8 @@ def systematics():
             {'label': 'ST_up', "d_xs_st": +0.04},
             {'label': 'ST_dn', "d_xs_st": -0.04},
 
-            #{'label': 'RFS_up', 'tag': 'up_sn_jn_20'},
-            #{'label': 'RFS_dn', 'tag': 'dn_sn_jn_20'},
+            {'label': 'RFS_up', 'tag': 'up_sn_jn_20'},
+            {'label': 'RFS_dn', 'tag': 'dn_sn_jn_20'},
 
             #{'label': 'JER_up', 'tag': 'ph_su_jn_20'},
             #{'label': 'JER_dn', 'tag': 'ph_sd_jn_20'},
@@ -73,7 +69,7 @@ def systematics():
               'genPre': '%03d_' % i,
               'sigPre': '%03d_' % i} for i in range(1, 53)]
             )
-    #return [s for s in sys if s['label']=='PDF33']
+    #return [s for s in sys if 'RFS_' in s['label']]
     return sys
 
 

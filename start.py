@@ -147,7 +147,7 @@ class fit(object):
             return ('#label d_qq error' +
                     'fhat_gg fhat_qg fhat_qq fhat_ag status')
         return ('#label fqq.Ac_y_qq  fqg.Ac_y_qg  XX  XY  YY fhat_gg ' +
-                'fhat_qg fhat_qq fhat_ag Ac_y_gg_hat Ac_y_qq_hat Ac_y_qg_hat fitstatus')
+                'fhat_qg fhat_qq fhat_ag Ac_y_qq_hat Ac_y_qg_hat fitstatus')
 
     def __str__(self):
         if not self.doAsymm:
@@ -183,8 +183,7 @@ class measurement(object):
             points.insert(0,self.central.parb.xymin)
             self.central.pllPoints = points
 
-            vars_ = ['d_qq' if not alternateModel else 'alphaL_mag',
-                     'falphaL', 'falphaT','R_ag',
+            vars_ = ['slosh', 'falphaL', 'falphaT','R_ag',
                      'd_xs_tt', 'd_xs_wj', 'factor_elqcd', 'factor_muqcd']
         else:
             vars_ = ['d_qq','R_ag','d_xs_tt','d_xs_wj','factor_elqcd','factor_muqcd']
