@@ -80,7 +80,8 @@ if __name__ == '__main__':
             T = t * 2 * math.pi / N
             print >> wFile, '\t'.join(str(f) for f in
                                       sum((getattr(item,'eval')(T)
-                                           for item in filter(None, [stat,syst,totl,simu,
+                                           for item in filter(None, [stat,syst,totl,
                                                                      line(mean,(Ac,0)),
-                                                                     line((Ac-d_Ac,0),(Ac+d_Ac,0))
+                                                                     line((Ac-d_Ac,0),(Ac+d_Ac,0)),
+                                                                     simu
                                                                      ])), ()))
