@@ -47,11 +47,11 @@ def systematics():
             {'label': 'RFS_up', 'tag': 'up_sn_jn_20'},
             {'label': 'RFS_dn', 'tag': 'dn_sn_jn_20'},
 
-            #{'label': 'JER_up', 'tag': 'ph_su_jn_20'},
-            #{'label': 'JER_dn', 'tag': 'ph_sd_jn_20'},
+            {'label': 'JER_up', 'tag': 'ph_su_jn_20'},
+            {'label': 'JER_dn', 'tag': 'ph_sd_jn_20'},
 
-            #{'label': 'JES_up', 'tag': 'ph_sn_ju_20'},
-            #{'label': 'JES_dn', 'tag': 'ph_sn_jd_20'},
+            {'label': 'JES_up', 'tag': 'ph_sn_ju_20'},
+            {'label': 'JES_dn', 'tag': 'ph_sn_jd_20'},
 
             {'label': 'PU_up', 'dirIncrement': 1, 'sigPre': '001_'},
             {'label': 'PU_dn', 'dirIncrement': 1, 'sigPre': '000_'},
@@ -69,7 +69,7 @@ def systematics():
               'genPre': '%03d_' % i,
               'sigPre': '%03d_' % i} for i in range(1, 53)]
             )
-    #return [s for s in sys if 'RFS_' in s['label']]
+    #return [s for s in sys if 'JER_' in s['label']]
     return sys
 
 
