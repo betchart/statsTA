@@ -24,3 +24,8 @@ def wimport_const(w, name, value) : getattr(w, "import")(r.RooConstVar(*(2*[name
 
 
 def factory(w, command) :  w.factory(command)
+
+def str(arg):
+    ss = r.stringstream()
+    arg.printStream(ss,arg.defaultPrintContents(""),arg.defaultPrintStyle(""))
+    return ss.str().strip()

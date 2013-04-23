@@ -9,7 +9,6 @@ import inputs
 import model
 import roo
 import systematics
-from falphaLSlice import falphaLSlice
 from paraboloid import paraboloid
 from parabola import parabola
 from itertools import combinations
@@ -17,13 +16,14 @@ from itertools import combinations
 class fit(object):
     def __init__(self, label, signal, profileVars, R0_,
                  d_lumi, d_xs_dy, d_xs_st, tag, genPre, sigPre, dirIncrement, quiet = False,
-                 hackZeroBins=False, alternateModel=False, defaults = {}, pllPoints=[]):
+                 hackZeroBins=False, alternateModel=False, defaults = {}, pllPoints=[], log=None):
 
         self.label = label
         self.quiet = quiet
         self.profileVars = profileVars
         self.pllPoints = pllPoints
         self.doAsymm = 'QueuedBin' in signal
+        self.log = log if log else sys.stdout
         if type(R0_) == tuple:
             diffR0_ = R0_[1]
             R0_ = R0_[0]
@@ -50,6 +50,7 @@ class fit(object):
                                                   "R%02d" % (diffR0_ + dirIncrement)))
 
         print "###", label
+        print>>self.log, "###", label
         self.model = model.topModel(channels, asymmetry=self.doAsymm, quiet=True,
                                     alternate=alternateModel)
         for k,v in defaults.items(): self.model.w.arg(k).setVal(v)
@@ -73,17 +74,17 @@ class fit(object):
             minu.setStrategy(2)
             for i in range(10):
                 self.status = minu.migrad()
-                print i + 10*j,
-                sys.stdout.flush()
+                print>>self.log, i + 10*j,
+                self.log.flush()
                 if not self.status: break
             if not self.status: break
             minu.setStrategy(1)
             minu.migrad()
-        print
+        print>>self.log
         if not self.pllPoints:
-            print minu.minos(w.argSet(','.join(self.profileVars)))
+            print>>self.log, minu.minos(w.argSet(','.join(self.profileVars)))
         pll = nll.createProfile(w.argSet(','.join(self.profileVars)))
-        pll.Print()
+        print>>self.log, roo.str(pll)
         pll.minuit().setStrategy(2)
 
         def pllEval(**kwargs) :
@@ -95,17 +96,17 @@ class fit(object):
 
         muSig = [vE(a) for a in self.profileVars]
         if not self.pllPoints:
-            print muSig
+            print>>self.log, muSig
             self.pllPoints = [tuple(m + i*s for i, (m, s) in zip(signs, muSig))
                               for signs in sorted(set(combinations([0, 1, 0, -1, 0], N)))]
             if N==1:
                 for i in range(len(self.pllPoints)):
                     if self.pllPoints[i][0]<-1 : self.pllPoints[i] = ((muSig[0][0]-1)/2,)
-            print self.pllPoints
+            print>>self.log, self.pllPoints
 
         points = [p + (pllEval(**dict(zip(self.profileVars, p))),) 
                   for p in self.pllPoints]
-        print zip(*points)[-1]
+        print>>self.log, zip(*points)[-1]
 
         oneSigmaNLL = {1: 0.5, 2: 1.14}[N]
         if N == 1:
@@ -133,12 +134,12 @@ class fit(object):
         if N==1 and not choosePLL: self.profErr = muSig[0][1]
 
         if not self.quiet:
-            print zip(*muSig)[0], self.fitPLL
-            print self.profVal, self.profPLL
-            print self.profErr
-            for item in ['d_qq','d_xs_tt','d_xs_wj','factor_elqcd','factor_muqcd','alphaL'][:-1 if N==1 else None]:
-                print '\t',
-                w.arg(item).Print()
+            print>>self.log, zip(*muSig)[0], self.fitPLL
+            print>>self.log, self.profVal, self.profPLL
+            print>>self.log, self.profErr
+            for item in ['d_qq','d_xs_tt','d_xs_wj',
+                         'factor_elqcd','factor_muqcd','alphaL'][:-1 if N==1 else None]:
+                print>>self.log, '\t', roo.str(w.arg(item))
         return
 
     @classmethod
@@ -151,7 +152,8 @@ class fit(object):
 
     def __str__(self):
         if not self.doAsymm:
-            return '\t'.join(str(i) for i in [self.label] + list(self.best) + [self.profErr] + self.fractionHats + [self.status])
+            return '\t'.join(str(i) for i in [self.label] + list(self.best) +
+                             [self.profErr] + self.fractionHats + [self.status])
 
         return '\t'.join(str(i) for i in [self.label] +
                          list(self.best*self.scales) +
@@ -165,9 +167,10 @@ class fit(object):
 class measurement(object):
     def __init__(self, label, signal, profile, R0_, hackZeroBins=False, alternateModel=False):
         write = open('data/' + '_'.join(label.split(',')) + '.txt', 'w')
+        log = open('data/' + '_'.join(label.split(',')) + '.log', 'w')
         print >> write, fit.fields('QueuedBin' in signal)
 
-        self.central = fit(signal=signal, profileVars=profile, R0_=R0_,
+        self.central = fit(signal=signal, profileVars=profile, R0_=R0_, log=log,
                            hackZeroBins=hackZeroBins, alternateModel=alternateModel,
                            **systematics.central())
 
@@ -189,7 +192,7 @@ class measurement(object):
             vars_ = ['d_qq','R_ag','d_xs_tt','d_xs_wj','factor_elqcd','factor_muqcd']
 
         defaults = dict([(v,self.central.model.w.arg(v).getVal()) for v in vars_])
-        print '\n'.join(str(kv) for kv in defaults.items())
+        print>>log, '\n'.join(str(kv) for kv in defaults.items())
 
         syss = []
         for sys in systematics.systematics():
@@ -197,13 +200,14 @@ class measurement(object):
             pars.update(sys)
             f = fit(signal=signal, profileVars=profile, R0_=R0_, quiet=False,
                     hackZeroBins=hackZeroBins, alternateModel=alternateModel,
-                    defaults=defaults, pllPoints=list(self.central.pllPoints),
+                    defaults=defaults, pllPoints=list(self.central.pllPoints), log=log,
                     **pars)
             syss.append(f)
             print >> write, str(f)
             write.flush()
 
         write.close()
+        log.close()
 
 def query(items, default = ()):
     display = '\n'.join('%d %s' % iD for iD in enumerate(items)) + '\nWhich? '
