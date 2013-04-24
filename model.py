@@ -240,3 +240,53 @@ class topModel(object):
         print ' '.join(["tot".ljust(length / 3)] +
                        [("%d" % t).rjust(length / 3) for chan, t in tots.items()])
         print
+
+
+    def visualize(self, fileName, canvas=None):
+
+        if not canvas: canvas = r.TCanvas()
+        else: canvas.Clear()
+
+        canvas.Divide(5,2,0,0)
+        canvas.cd(1)
+        
+        w = self.w
+        
+        for j,lep in enumerate(['el','mu']):
+            for i in range(5):
+                canvas.cd(5*j + i + 1)
+                f = w.arg('observable').frame()
+                w.arg('tridiscr').setVal(-0.8 + i*0.4)
+                tridiscrBinWidth = 0.4
+
+                mod = w.pdf('model_%s'%lep)
+                args = [r.RooFit.Project(r.RooArgSet()),
+                        r.RooFit.Normalization(tridiscrBinWidth, r.RooAbsReal.Relative),
+                        r.RooFit.LineWidth(1),
+                        ]
+                dargs = [f, 
+                         r.RooFit.Cut('%f<=tridiscr && tridiscr<%f'%(-1+i*0.4,-0.6+i*0.4)),
+                         r.RooFit.MarkerSize(0.5),
+                         r.RooFit.XErrorSize(0)]
+                w.data('data_%s'%lep).plotOn(*dargs)
+
+                pf = '' if self.asymmetry else '_both'
+                stack = [('_ttqq'+pf,),('_ttqg'+pf,'_ttag'+pf),('_ttgg_both',),('_wj_both',),
+                         ('qcd_*',), ('_dy*','_st_both')]
+                colors = [r.kViolet,r.kBlue-7,r.kBlue+2,r.kGreen+1,r.kRed,r.kGray]
+                for iStack in range(len(stack)):
+                    comps = lep+(','+lep).join(sum(stack[iStack:],()))
+                    mod.plotOn(f,
+                               r.RooFit.Components(comps),
+                               r.RooFit.LineColor(colors[iStack]),
+                               r.RooFit.FillColor(colors[iStack]),
+                               r.RooFit.DrawOption('F'),
+                               *args)
+
+                w.data('data_%s'%lep).plotOn(*dargs)
+                mod.plotOn(f, r.RooFit.LineColor(r.kOrange), *args)
+
+                f.SetMaximum(4000)
+                f.Draw()
+
+        canvas.Print(fileName + '.pdf')

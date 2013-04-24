@@ -60,7 +60,10 @@ class fit(object):
         self.fitArgs = [r.RooFit.Extended(True), r.RooFit.NumCPU(1),
                         r.RooFit.PrintLevel(-1)]
 
+        #for item in ['d_qq','R_ag']: self.model.w.arg(item).setConstant()
+        #self.model.w.pdf('model').fitTo(self.model.w.data('data'))
         self.doFit()
+        self.model.visualize(label)
 
     @roo.quiet
     def doFit(self):
