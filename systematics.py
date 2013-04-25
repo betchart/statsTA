@@ -17,7 +17,7 @@ def measurement_pars(measure='asymmetry', partition='full'):
              N + 1*cycle, (N, N + 1*cycle),
              N + 2*cycle, (N, N + 2*cycle), (N, N + 2*cycle), (N, N + 1*cycle)]
     pars.update({'R0_': dict(zip(partitions,pDirs))[partition]})
-    if measure=='fraction' and partition in ['hiM','full']: pars.update({'hackZeroBins':True})
+    if measure=='fraction': pars.update({'hackZeroBins':True}) #and partition in ['hiM','full']
     return pars
 
 
@@ -65,11 +65,11 @@ def systematics():
               'dirIncrement': 3,
               'sigPre': '%03d_' % i,} for i in range(4)
             ]+
-            [{'label': 'PDF%02d' % i,
+            [{'label': 'PD_%02d' % i,
               'genPre': '%03d_' % i,
               'sigPre': '%03d_' % i} for i in range(1, 53)]
             )
-    #return [s for s in sys if 'JES_' in s['label']]
+    #return [s for s in sys if 'PD_03' in s['label']]
     return sys
 
 
