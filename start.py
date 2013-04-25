@@ -9,6 +9,7 @@ import inputs
 import model
 import roo
 import systematics
+import utils
 from paraboloid import paraboloid
 from parabola import parabola
 from itertools import combinations
@@ -16,7 +17,8 @@ from itertools import combinations
 class fit(object):
     def __init__(self, label, signal, profileVars, R0_,
                  d_lumi, d_xs_dy, d_xs_st, tag, genPre, sigPre, dirIncrement, quiet = False,
-                 hackZeroBins=False, alternateModel=False, defaults = {}, pllPoints=[], log=None):
+                 hackZeroBins=False, defaults = {}, pllPoints=[],
+                 log=None, fixSM=False):
 
         self.label = label
         self.quiet = quiet
@@ -51,8 +53,7 @@ class fit(object):
 
         print "###", label
         print>>self.log, "###", label
-        self.model = model.topModel(channels, asymmetry=self.doAsymm, quiet=True,
-                                    alternate=alternateModel)
+        self.model = model.topModel(channels, asymmetry=self.doAsymm, quiet=True)
         for k,v in defaults.items(): self.model.w.arg(k).setVal(v)
         for item in ['d_lumi', 'd_xs_dy', 'd_xs_st']: self.model.w.arg(item).setVal(eval(item))
 
@@ -60,10 +61,18 @@ class fit(object):
         self.fitArgs = [r.RooFit.Extended(True), r.RooFit.NumCPU(1),
                         r.RooFit.PrintLevel(-1)]
 
-        #for item in ['d_qq','R_ag']: self.model.w.arg(item).setConstant()
-        #self.model.w.pdf('model').fitTo(self.model.w.data('data'))
-        self.doFit()
-        self.model.visualize(label)
+        if fixSM:
+            fixVars = (['R_ag','slosh','falphaL','falphaT'] if self.doAsymm else
+                       ['d_qq','R_ag'])
+            for item in fixVars: self.model.w.arg(item).setConstant()
+            nll = self.model.w.pdf('model').createNLL(self.model.w.data('data'), *self.fitArgs[:-1])
+            minu = r.RooMinuit(nll)
+            minu.setPrintLevel(-1)
+            minu.setNoWarn()
+            minu.setStrategy(2)
+            minu.migrad()
+        else:
+            self.doFit()
 
     @roo.quiet
     def doFit(self):
@@ -168,14 +177,22 @@ class fit(object):
                          )
 
 class measurement(object):
-    def __init__(self, label, signal, profile, R0_, hackZeroBins=False, alternateModel=False):
-        write = open('data/' + '_'.join(label.split(',')) + '.txt', 'w')
-        log = open('data/' + '_'.join(label.split(',')) + '.log', 'w')
+    def __init__(self, label, signal, profile, R0_, hackZeroBins=False):
+        outNameBase = 'data/' + '_'.join(label.split(','))
+        write = open(outNameBase + '.txt', 'w')
+        log = open(outNameBase + '.log', 'w')
         print >> write, fit.fields('QueuedBin' in signal)
 
+
+        self.SM = fit(signal=signal, profileVars=profile, R0_=R0_, log=log,
+                      hackZeroBins=hackZeroBins, fixSM=True, **systematics.central())
+        visCanvas = self.SM.model.visualize()
+        utils.tCanvasPrintPdf(visCanvas, outNameBase, verbose=False, title='SM', option='(')
+
         self.central = fit(signal=signal, profileVars=profile, R0_=R0_, log=log,
-                           hackZeroBins=hackZeroBins, alternateModel=alternateModel,
-                           **systematics.central())
+                           hackZeroBins=hackZeroBins, **systematics.central())
+        self.central.model.visualize(visCanvas)
+        utils.tCanvasPrintPdf(visCanvas, outNameBase, verbose=False, title='central')
 
         print >> write, str(self.central)
 
@@ -202,13 +219,16 @@ class measurement(object):
             pars = systematics.central()
             pars.update(sys)
             f = fit(signal=signal, profileVars=profile, R0_=R0_, quiet=False,
-                    hackZeroBins=hackZeroBins, alternateModel=alternateModel,
+                    hackZeroBins=hackZeroBins,
                     defaults=defaults, pllPoints=list(self.central.pllPoints), log=log,
                     **pars)
+            f.model.visualize(visCanvas)
+            utils.tCanvasPrintPdf(visCanvas, outNameBase, verbose=False, title=pars['label'])
             syss.append(f)
             print >> write, str(f)
             write.flush()
 
+        utils.tCanvasPrintPdf(visCanvas, outNameBase, verbose=False, option=']')
         write.close()
         log.close()
 

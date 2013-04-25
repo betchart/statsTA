@@ -27,6 +27,12 @@ def alphaMax(symm,anti):
                             for iX in range(1,1+tmp.GetNbinsX())
                             for iY in range(1,1+tmp.GetNbinsY())]))
 #####################################
+def tCanvasPrintPdf(canvas, fileName, verbose=True, option='', title=""):
+    illegal = [':','[',']','(',')']
+    for ill in illegal : fileName = fileName.replace(ill,"_")
+    canvas.Print(fileName+".pdf" + option,"pdf"+((' Title:'+title) if title else ''))
+    if verbose : print "Output file: %s.pdf"%fileName
+#####################################
 def operateOnListUsingQueue(nCores,workerFunc,inList,daemon=True) :
     q = JoinableQueue()
     listOfProcesses=[]
