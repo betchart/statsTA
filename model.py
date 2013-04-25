@@ -244,8 +244,6 @@ class topModel(object):
 
     @roo.quiet
     def visualize(self, canvas=None):
-        defX = r.gStyle.GetTitleX()
-        defY = r.gStyle.GetTitleY()
         r.gStyle.SetTitleX(0.2)
         r.gStyle.SetTitleY(0.98)
 
@@ -262,6 +260,7 @@ class topModel(object):
                 canvas.cd(5*j + i + 1)
                 f = w.arg('observable').frame()
                 f.SetTitle('%s + jets, Tridiscriminant Bin %d'%({'el':'e','mu':'#mu'}[lep],i+1))
+                f.SetLineColor(r.kWhite)
                 if not i: f.SetTitleOffset(-1,'Y')
                 w.arg('tridiscr').setVal(-0.8 + i*0.4)
                 tridiscrBinWidth = 0.4
@@ -296,6 +295,4 @@ class topModel(object):
                 f.SetMaximum(4500 if self.asymmetry  else 4000)
                 f.Draw()
 
-        r.gStyle.SetTitleX(defX)
-        r.gStyle.SetTitleX(defY)
         return canvas

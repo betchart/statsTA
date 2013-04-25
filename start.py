@@ -228,7 +228,8 @@ class measurement(object):
             print >> write, str(f)
             write.flush()
 
-        utils.tCanvasPrintPdf(visCanvas, outNameBase, verbose=False, option=']')
+        visCanvas.Clear()
+        utils.tCanvasPrintPdf(visCanvas, outNameBase, verbose=True, option=')')
         write.close()
         log.close()
 
