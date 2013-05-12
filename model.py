@@ -2,6 +2,7 @@ import sys
 import roo
 import utils
 import ROOT as r
+from asymmNames import genNameX,genNameY
 
 
 class topModel(object):
@@ -136,8 +137,8 @@ class topModel(object):
           roo.factory(w, "SUM::%(n)s( alphaL * %(n)s_both, %(n)s_symm )" % {'n': L + '_ttqq'}))
          for L in self.channels.keys() + self.channels_qcd.keys()]
 
-        assert self.gen.samples['tt'].datas[0].GetXaxis().GetTitle() == 'genTopDeltaBetazRel'
-        assert self.gen.samples['tt'].datas[0].GetYaxis().GetTitle() == 'genTopPhiBoost'
+        assert self.gen.samples['tt'].datas[0].GetXaxis().GetTitle() == genNameX
+        assert self.gen.samples['tt'].datas[0].GetYaxis().GetTitle() == genNameY
 
         for n, d in self.gen.samples.items():
             roo.wimport_const(w, 'Ac_y_' + n, utils.asymmetry(d.datasX[0]))

@@ -1,6 +1,6 @@
 import ROOT as r
 import utils
-
+from asymmNames import genNameX,genNameY
 
 class sample_data(object):
     def __init__(self, signalDistributions, xs=None, sigma=None,
@@ -51,7 +51,7 @@ class channel_data(object):
     __xs_uncertainty__ = {'tt': 1.0, 'wj': 2.0, 'st': 0.04, 'dy': 0.04}
 
     def __init__(self, lepton, partition, tag = 'ph_sn_jn_20',
-                 signal="", sigPrefix="", dirPrefix="R02", getTT=False,
+                 signal="", sigPrefix="", dirPrefix="R04", genDirPre="R01", getTT=False,
                  prePre = False, hackZeroBins=False):
         filePattern="data/stats_%s_%s_%s.root"
         tfile = r.TFile.Open(filePattern % (partition, lepton, tag))
@@ -69,7 +69,9 @@ class channel_data(object):
         paths = (fullDirName + sigPrefix + signal,
                  fullDirName + signal)
 
-        prepaths = (full('R01') + (sigPrefix if prePre else '') + 'genTopDeltaBetazRel; genTopPhiBoost',
+        prepaths = (full(genDirPre) + 
+                    (sigPrefix if prePre else '') + 
+                    '%s; %s/'%(genNameX,genNameY),
                     'meweighted/')
 
         self.samples = {}

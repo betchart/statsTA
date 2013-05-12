@@ -13,11 +13,12 @@ import utils
 from paraboloid import paraboloid
 from parabola import parabola
 from itertools import combinations
+from asymmNames import genNameX,genNameY
 
 class fit(object):
     def __init__(self, label, signal, profileVars, R0_,
-                 d_lumi, d_xs_dy, d_xs_st, tag, genPre, sigPre, dirIncrement, quiet = False,
-                 hackZeroBins=False, defaults = {}, pllPoints=[],
+                 d_lumi, d_xs_dy, d_xs_st, tag, genPre, sigPre, dirIncrement, genDirPre, 
+                 quiet = False, hackZeroBins=False, defaults = {}, pllPoints=[],
                  log=None, fixSM=False):
 
         self.label = label
@@ -30,26 +31,28 @@ class fit(object):
             diffR0_ = R0_[1]
             R0_ = R0_[0]
         else: diffR0_ = None
+        prePre = dirIncrement in [0,4,5]
         channels = dict([((lep,part),
                           inputs.channel_data(lep, part, tag, signal, sigPre, 
                                               "R%02d" % (R0_ + dirIncrement),
-                                              prePre = not dirIncrement, 
+                                              genDirPre, prePre = prePre,
                                               hackZeroBins=hackZeroBins and 'QCD'==part))
                          for lep in ['el', 'mu']
                          for part in ['top', 'QCD']
                          ])
         channels['gen'] = inputs.channel_data('mu', 'top', tag,
-                                              'genTopDeltaBetazRel; genTopPhiBoost',
-                                              sigPrefix = sigPre if not dirIncrement else '',
-                                              dirPrefix="R01", getTT=True,
-                                              prePre = not dirIncrement)
+                                              '%s; %s'%(genNameX,genNameY),
+                                              sigPrefix = sigPre if dirIncrement in [0,4,5] else '',
+                                              dirPrefix=genDirPre, genDirPre=genDirPre, 
+                                              getTT=True, prePre = prePre)
 
         if diffR0_ :
             for lepPart,chan in channels.items():
                 if type(lepPart) != tuple: continue
                 lep,part = lepPart
                 chan.subtract(inputs.channel_data(lep,part,tag,signal,sigPre,
-                                                  "R%02d" % (diffR0_ + dirIncrement)))
+                                                  "R%02d" % (diffR0_ + dirIncrement),
+                                                  genDirPre, prePre = prePre ))
 
         print "###", label
         print>>self.log, "###", label
