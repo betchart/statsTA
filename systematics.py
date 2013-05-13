@@ -39,6 +39,12 @@ def systematics():
             {'label': 'RF_dn', 'dirIncrement': 4, 'sigPre': '000_', 'genDirPre':'R02', 'genPre': '000_'},
             {'label': 'RF_up', 'dirIncrement': 5, 'sigPre': '000_', 'genDirPre':'R03', 'genPre': '000_'},
 
+            {'label': 'JER_up', 'tag': 'ph_su_jn_20'},
+            {'label': 'JER_dn', 'tag': 'ph_sd_jn_20'},
+
+            {'label': 'JES_up', 'tag': 'ph_sn_ju_20'},
+            {'label': 'JES_dn', 'tag': 'ph_sn_jd_20'},
+
             {'label': 'PU_up', 'dirIncrement': 1, 'sigPre': '001_'},
             {'label': 'PU_dn', 'dirIncrement': 1, 'sigPre': '000_'},
 
@@ -50,12 +56,6 @@ def systematics():
             
             {'label': 'ST_up', "d_xs_st": +0.05},
             {'label': 'ST_dn', "d_xs_st": -0.05},
-
-            #{'label': 'JER_up', 'tag': 'ph_su_jn_20'},
-            #{'label': 'JER_dn', 'tag': 'ph_sd_jn_20'},
-
-            #{'label': 'JES_up', 'tag': 'ph_sn_ju_20'},
-            #{'label': 'JES_dn', 'tag': 'ph_sn_jd_20'},
 
             ] +
             [{'label': 'el%d' % i,
