@@ -1,7 +1,9 @@
 import sys
 import roo
 import utils
+import math
 import ROOT as r
+from asymmNames import genNameX,genNameY
 
 
 class topModel(object):
@@ -136,12 +138,16 @@ class topModel(object):
           roo.factory(w, "SUM::%(n)s( alphaL * %(n)s_both, %(n)s_symm )" % {'n': L + '_ttqq'}))
          for L in self.channels.keys() + self.channels_qcd.keys()]
 
-        assert self.gen.samples['tt'].datas[0].GetXaxis().GetTitle() == 'genTopDeltaBetazRel'
-        assert self.gen.samples['tt'].datas[0].GetYaxis().GetTitle() == 'genTopPhiBoost'
+        assert self.gen.samples['tt'].datas[0].GetXaxis().GetTitle() == genNameX
+        assert self.gen.samples['tt'].datas[0].GetYaxis().GetTitle() == genNameY
 
         for n, d in self.gen.samples.items():
-            roo.wimport_const(w, 'Ac_y_' + n, utils.asymmetry(d.datasX[0]))
-            roo.wimport_const(w, 'Ac_phi_' + n, utils.asymmetry(d.datasY[0]))
+            y,ey = utils.asymmetry(d.datasX[0])
+            p,ep = utils.asymmetry(d.datasY[0])
+            roo.wimport_const(w, 'Ac_y_' + n, y)
+            roo.wimport_const(w, 'Ac_phi_' + n, p)
+            roo.wimport_const(w, 'err_Ac_y_' + n, ey)
+            roo.wimport_const(w, 'err_Ac_phi_' + n, ep)
             if not self.quiet:
                 w.arg('Ac_y_' + n).Print()
                 w.arg('Ac_phi_' + n).Print()
@@ -296,3 +302,54 @@ class topModel(object):
                 f.Draw()
 
         return canvas
+
+
+    def PrintTTbarComponents(self):
+        '''Print a table with fractions and asymmetries.'''
+
+        format = r'''
+        \begin{tabular}{c|r@{.}lr@{.}lr@{.}l}
+          \hline
+          &\multicolumn{1}{c}{}&\multicolumn{2}{r}{(\%)}&\multicolumn{3}{c}{}\\
+          Initial State & \multicolumn{2}{c}{Fraction} & \multicolumn{2}{c}{$\hat{A}_c^T$} & \multicolumn{2}{c}{$\hat{A}_c^L$} \\
+          \hline
+          \hline
+          %s \\
+          %s \\
+          %s \\
+          %s \\
+          \hline
+          %s \\
+          \hline
+        \end{tabular}'''
+
+        def form(n,e):
+            n*=100
+            e*=100
+            err_digit = int(math.floor(math.log(abs(e))/math.log(10))) if e else 0
+            scale = float(10**(-err_digit)) if e else 1
+            p,d = divmod(round(abs(n*scale))/scale,1)
+
+            return (("%s%d&%0"+str(-err_digit)+"d(%d)")%('-' if n<0 else ' ',p,d*scale,round(e*scale))).ljust(8)
+
+        neff = self.gen.samples['tt'].datas[0].GetEffectiveEntries()
+        def frac_unc(f) : return math.sqrt(f*(1-f)*neff) / neff
+
+        labels = [r'$\Pq\Paq$', r'$\Paq\Pg$', r'$\Pg\Pg$', '$\Pq\Pg$','$\Pp\Pp$']
+        rows = dict((comp,
+                     '  &  '.join( [label.rjust(10),
+                                    form(self.w.arg('f_%s_hat'%comp).getVal() if comp else 1, frac_unc(self.w.arg('f_%s_hat'%comp).getVal()) if comp else 0),
+                                    form(self.w.arg('Ac_phi_tt%s'%comp).getVal(),self.w.arg('err_Ac_phi_tt%s'%comp).getVal()),
+                                    form(self.w.arg('Ac_y_tt%s'%comp).getVal(),self.w.arg('err_Ac_y_tt%s'%comp).getVal())
+                                    ])) for label,comp in zip(labels,self.ttcomps+('',)))
+        
+
+        
+        stuff = (['Ac_y_tt%s'%s for s in self.ttcomps+('',)]+
+                 ['err_Ac_y_tt%s'%s for s in self.ttcomps+('',)]+
+                 ['Ac_phi_tt%s'%s for s in self.ttcomps+('',)]+
+                 ['err_Ac_phi_tt%s'%s for s in self.ttcomps+('',)]+
+                 ['f_%s_hat'%s for s in self.ttcomps])
+        [self.w.arg(item).Print() for item in stuff]
+
+        print format%tuple([rows[i] for i in ['gg','qq','qg','ag','']])

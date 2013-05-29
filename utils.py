@@ -16,9 +16,12 @@ def get(d,key) :
     return obj
 #####################################
 def asymmetry(hist) :
-    bins = [(hist.GetBinCenter(i),hist.GetBinContent(i)) for i in range(hist.GetNbinsX()+2)]
-    bans = [(y2-y1, y2+y1) for (x1,y1),(x2,y2) in zip(bins,bins[::-1]) if x1<x2 and y2+y1]
-    return sum( n for n,_ in bans ) / sum( d for _,d in bans )
+    bins = [(hist.GetBinCenter(i),hist.GetBinContent(i),hist.GetBinError(i)) for i in range(hist.GetNbinsX()+2)]
+    bans = [(y2-y1, y2+y1, e1**2+e2**2) for (x1,y1,e1),(x2,y2,e2) in zip(bins,bins[::-1]) if x1<x2 and y2+y1]
+    num = sum( n for n,_,_ in bans )
+    err2 = sum( e2 for _,_,e2 in bans )
+    denom = sum( d for _,d,_ in bans )
+    return  num / denom, math.sqrt(err2) / denom
 #####################################
 def alphaMax(symm,anti):
     tmp = symm.Clone('tmp')

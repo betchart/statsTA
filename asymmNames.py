@@ -1,0 +1,2 @@
+genNameX = 'genTopTanhDeltaAbsY'
+genNameY = 'genTopDPtDPhi'
