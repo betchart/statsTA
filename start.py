@@ -190,6 +190,9 @@ class measurement(object):
         self.SM = fit(signal=signal, profileVars=profile, R0_=R0_, log=log,
                       hackZeroBins=hackZeroBins, fixSM=True, **systematics.central())
         visCanvas = self.SM.model.visualize()
+
+        self.SM.model.PrintTTbarComponents()
+
         utils.tCanvasPrintPdf(visCanvas, outNameBase, verbose=False, title='SM', option='(')
 
         self.central = fit(signal=signal, profileVars=profile, R0_=R0_, log=log,
