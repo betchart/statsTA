@@ -5,6 +5,9 @@ import math
 import ROOT as r
 from asymmNames import genNameX,genNameY
 
+def unqueue(h, doIt):
+    return utils.unQueuedBins(h,7,[-1,1],[-1,1]) if doIt else h
+
 
 class topModel(object):
     @roo.quiet
@@ -12,7 +15,7 @@ class topModel(object):
 
         leptons = ['el', 'mu']
         ttcomps = ('qq', 'ag', 'gg', 'qg')
-        observables = ['observable', 'tridiscr']
+        observables = ['XT','XL','tridiscr'] if asymmetry else ['observable', 'tridiscr']
 
         channels = dict((L, channelDict[(L,'top')]) for L in leptons)
         channels_qcd = dict((L + 'qcd', channelDict[(L, 'QCD')]) for L in leptons)
@@ -28,8 +31,8 @@ class topModel(object):
 
         for item in ['d_lumi', 'd_xs_dy', 'd_xs_st']: w.arg(item).setConstant()
 
-        for v, X in zip(observables, 'XY'):
-            w.var(v).setBins(getattr(self.channels['el'].samples['data'].datas[0],
+        for v, X in zip(observables, 'XYZ'[:None if self.asymmetry else -1]):
+            w.var(v).setBins(getattr(unqueue(self.channels['el'].samples['data'].datas[0],self.asymmetry),
                                      'GetNbins' + X)())
 
     def import_fractions(self, w):
@@ -101,7 +104,7 @@ class topModel(object):
         for i, label in enumerate(['both', 'symm'][
                 :None if sample in ['ttag', 'ttqg', 'ttqq', 'dy'] else -1]):
             nL = (name, label)
-            roo.wimport(w, r.RooDataHist('_sim_'.join(nL), '', arglist, data.datas[i]))
+            roo.wimport(w, r.RooDataHist('_sim_'.join(nL), '', arglist, unqueue(data.datas[i], self.asymmetry)))
             roo.wimport(w, r.RooHistPdf('_'.join(nL), '', argset, w.data('_sim_'.join(nL))))
 
         roo.factory(w, "prod::expect_%s(%s)" %
@@ -119,7 +122,7 @@ class topModel(object):
         arglist = r.RooArgList(*[w.var(o) for o in self.observables])
         argset = r.RooArgSet(arglist)
         for L, channel in self.channels_qcd.items():
-            hist = channel.samples['data'].datas[0]
+            hist = unqueue(channel.samples['data'].datas[0], self.asymmetry)
             dhist = '%s_data_sim_both' % L
             roo.wimport(w, r.RooDataHist(dhist, '', arglist, hist))
             roo.wimport(w, r.RooHistPdf('%s_data_both' % L, '', argset, w.data(dhist)))
@@ -190,7 +193,8 @@ class topModel(object):
         obs = r.RooArgList(obs_)
 
         datas = [(L, r.RooDataHist('data_' + L, 'N_{obs}^{%s}' % L, obs,
-                                   chan.samples['data'].datas[0]))
+                                   unqueue(chan.samples['data'].datas[0], self.asymmetry)
+                                   ))
                  for L, chan in self.channels.items()]
 
         [roo.wimport(w, dat) for _, dat in datas]
