@@ -201,6 +201,8 @@ class measurement(object):
         utils.tCanvasPrintPdf(visCanvas, outNameBase, verbose=False, title='central')
 
         print >> write, str(self.central)
+        print
+        print str(self.central)
 
         if 'QueuedBin' in signal:
             para = self.central.parb.parametricEllipse(0.5)

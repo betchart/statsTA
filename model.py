@@ -310,7 +310,7 @@ class topModel(object):
         format = r'''
         \begin{tabular}{c|r@{.}lr@{.}lr@{.}l}
           \hline
-          &\multicolumn{1}{c}{}&\multicolumn{2}{r}{(\%)}&\multicolumn{3}{c}{}\\
+          &\multicolumn{1}{c}{}&\multicolumn{2}{r}{(%s)}&\multicolumn{3}{c}{}\\
           Initial State & \multicolumn{2}{c}{Fraction} & \multicolumn{2}{c}{$\hat{A}_c^T$} & \multicolumn{2}{c}{$\hat{A}_c^L$} \\
           \hline
           \hline
@@ -343,13 +343,4 @@ class topModel(object):
                                     form(self.w.arg('Ac_y_tt%s'%comp).getVal(),self.w.arg('err_Ac_y_tt%s'%comp).getVal())
                                     ])) for label,comp in zip(labels,self.ttcomps+('',)))
         
-
-        
-        stuff = (['Ac_y_tt%s'%s for s in self.ttcomps+('',)]+
-                 ['err_Ac_y_tt%s'%s for s in self.ttcomps+('',)]+
-                 ['Ac_phi_tt%s'%s for s in self.ttcomps+('',)]+
-                 ['err_Ac_phi_tt%s'%s for s in self.ttcomps+('',)]+
-                 ['f_%s_hat'%s for s in self.ttcomps])
-        [self.w.arg(item).Print() for item in stuff]
-
-        print format%tuple([rows[i] for i in ['gg','qq','qg','ag','']])
+        print format%tuple([r'\%']+[rows[i] for i in ['gg','qq','qg','ag','']])
