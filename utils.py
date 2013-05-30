@@ -121,3 +121,24 @@ def symmAnti(hist) :
             symm.SetBinContent(i,j,0.5*(a+b)) ; symm.SetBinError(i,j,e)
             anti.SetBinContent(i,j,0.5*(a-b)) ; anti.SetBinError(i,j,e)
     return symm,anti
+#####################################
+def unQueuedBins(queued,N,limits1, limits2 ):
+    hist = ( r.TH2D('un'+queued.GetName(), '', N, limits1[0], limits1[1], N, limits2[0], limits2[1]) if queued.GetDimension() == 1 else
+             r.TH3D('un'+queued.GetName(), '', N, limits1[0], limits1[1], N, limits2[0], limits2[1], queued.GetNbinsY(), queued.GetYaxis().GetBinLowEdge(1), queued.GetYaxis().GetBinLowEdge(queued.GetNbinsY()+1))
+             )
+    for i,bins in enumerate([(sB-j,j) if sB%2 else (j,sB-j) for sB in range(N) for j in range(sB+1)]) :
+        if queued.GetDimension() == 1:
+            hist.SetBinContent(1+bins[0],1+bins[1],queued.GetBinContent(i+1))
+            hist.SetBinContent(N-bins[0],N-bins[1],queued.GetBinContent(N*N-i))
+
+            hist.SetBinError(1+bins[0],1+bins[1],queued.GetBinError(i+1))
+            hist.SetBinError(N-bins[0],N-bins[1],queued.GetBinError(N*N-i))
+        else:
+            for j in range(queued.GetNbinsY()):
+                hist.SetBinContent(1+bins[0],1+bins[1],j+1,queued.GetBinContent(i+1,j+1))
+                hist.SetBinContent(N-bins[0],N-bins[1],j+1,queued.GetBinContent(N*N-i,j+1))
+
+                hist.SetBinError(1+bins[0],1+bins[1],j+1,queued.GetBinError(i+1,j+1))
+                hist.SetBinError(N-bins[0],N-bins[1],j+1,queued.GetBinError(N*N-i,j+1))
+
+    return hist
