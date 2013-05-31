@@ -189,7 +189,7 @@ class measurement(object):
 
         self.SM = fit(signal=signal, profileVars=profile, R0_=R0_, log=log,
                       hackZeroBins=hackZeroBins, fixSM=True, **systematics.central())
-        #visCanvas = self.SM.model.visualize()
+        #visCanvas = self.SM.model.visualize2D()
 
         self.SM.model.PrintTTbarComponents()
 
@@ -197,7 +197,7 @@ class measurement(object):
 
         self.central = fit(signal=signal, profileVars=profile, R0_=R0_, log=log,
                            hackZeroBins=hackZeroBins, **systematics.central())
-        #self.central.model.visualize(visCanvas)
+        self.central.model.visualize2D(printName=outNameBase+'.pdf')
         #utils.tCanvasPrintPdf(visCanvas, outNameBase, verbose=False, title='central')
 
         print >> write, str(self.central)
@@ -223,21 +223,21 @@ class measurement(object):
         print>>log, '\n'.join(str(kv) for kv in defaults.items())
 
         syss = []
-        for sys in systematics.systematics():
+        for sys in []:# systematics.systematics():
             pars = systematics.central()
             pars.update(sys)
             f = fit(signal=signal, profileVars=profile, R0_=R0_, quiet=False,
                     hackZeroBins=hackZeroBins,
                     defaults=defaults, pllPoints=list(self.central.pllPoints), log=log,
                     **pars)
-            f.model.visualize(visCanvas)
-            utils.tCanvasPrintPdf(visCanvas, outNameBase, verbose=False, title=pars['label'])
+            #f.model.visualize(visCanvas)
+            #utils.tCanvasPrintPdf(visCanvas, outNameBase, verbose=False, title=pars['label'])
             syss.append(f)
             print >> write, str(f)
             write.flush()
 
-        visCanvas.Clear()
-        utils.tCanvasPrintPdf(visCanvas, outNameBase, verbose=True, option=')')
+        #visCanvas.Clear()
+        #utils.tCanvasPrintPdf(visCanvas, outNameBase, verbose=True, option=')')
         write.close()
         log.close()
 

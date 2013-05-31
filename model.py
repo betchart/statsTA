@@ -15,7 +15,7 @@ class topModel(object):
 
         leptons = ['el', 'mu']
         ttcomps = ('qq', 'ag', 'gg', 'qg')
-        observables = ['XT','XL','tridiscr'] if asymmetry else ['observable', 'tridiscr']
+        observables = ['XL','XT','tridiscr'] if asymmetry else ['observable', 'tridiscr']
 
         channels = dict((L, channelDict[(L,'top')]) for L in leptons)
         channels_qcd = dict((L + 'qcd', channelDict[(L, 'QCD')]) for L in leptons)
@@ -253,7 +253,7 @@ class topModel(object):
 
 
     @roo.quiet
-    def visualize(self, canvas=None):
+    def visualize1D(self, canvas=None):
         r.gStyle.SetTitleX(0.2)
         r.gStyle.SetTitleY(0.98)
 
@@ -306,6 +306,70 @@ class topModel(object):
                 f.Draw()
 
         return canvas
+
+    @roo.quiet
+    def visualize2D(self, canvas=None, printName=''):
+        w = self.w
+        titles = ['X_{L}','X_{T}','#Delta']
+        for v,t in zip(self.observables,titles) :
+            w.arg(v).SetTitle(t)
+
+        if not canvas:
+            if printName:
+                r.gROOT.ProcessLine(".L tdrstyle.C")
+                r.setTDRStyle()
+                r.TGaxis.SetMaxDigits(4)
+            canvas=r.TCanvas()
+            if not printName:
+                canvas.Divide(3,2)
+            else:
+                canvas.Print(printName+'[')
+
+        print 'visualizing',
+        sys.stdout.flush()
+
+        for j,lep in enumerate(['el','mu']):
+            for i in range(3):
+                canvas.cd(1+j*3+i)
+                f = w.arg(self.observables[i]).frame()
+                f.SetLineColor(r.kWhite)
+                mod = w.pdf('model_%s'%lep)
+                toy = mod.generateBinned(w.argSet(','.join(self.observables)), 1e7)
+                args = [r.RooFit.ProjWData(toy)]
+                dargs = [f,
+                         r.RooFit.MarkerSize(1.1),
+                         #r.RooFit.XErrorSize(0)
+                         ]
+                w.data('data_%s'%lep).plotOn(*dargs)
+
+                pf = '' if self.asymmetry else '_both'
+                stack = [('_ttqq'+pf,),('_ttqg'+pf,'_ttag'+pf),('_ttgg_both',),('_wj_both',),
+                         ('qcd_*',), ('_dy*','_st_both')]
+                colors = [r.kViolet,r.kBlue-7,r.kBlue+2,r.kGreen+1,r.kRed,r.kGray]
+                for iStack in range(len(stack)):
+                    sys.stdout.write(".,;:!|"[iStack])
+                    sys.stdout.flush()
+                    comps = lep+(','+lep).join(sum(stack[iStack:],()))
+                    mod.plotOn(f,
+                               r.RooFit.Components(comps),
+                               r.RooFit.LineColor(colors[iStack]),
+                               r.RooFit.FillColor(colors[iStack]),
+                               r.RooFit.DrawOption('F'),
+                               *args)
+
+                w.data('data_%s'%lep).plotOn(*dargs)
+                #mod.plotOn(f, r.RooFit.LineColor(r.kOrange), *args)
+
+                f.Draw()
+                if printName:
+                    canvas.Print(printName)
+                    sys.stdout.write(' ')
+        print
+        if printName:
+            canvas.Print(printName+']')
+
+        return canvas
+
 
 
     def PrintTTbarComponents(self):
