@@ -5,6 +5,9 @@ import math
 import ROOT as r
 from asymmNames import genNameX,genNameY
 
+def unqueue(h, doIt):
+    return utils.unQueuedBins(h,7,[-1,1],[-1,1]) if doIt else h
+
 
 class topModel(object):
     @roo.quiet
@@ -12,7 +15,7 @@ class topModel(object):
 
         leptons = ['el', 'mu']
         ttcomps = ('qq', 'ag', 'gg', 'qg')
-        observables = ['observable', 'tridiscr']
+        observables = ['XL','XT','tridiscr'] if asymmetry else ['observable', 'tridiscr']
 
         channels = dict((L, channelDict[(L,'top')]) for L in leptons)
         channels_qcd = dict((L + 'qcd', channelDict[(L, 'QCD')]) for L in leptons)
@@ -28,8 +31,8 @@ class topModel(object):
 
         for item in ['d_lumi', 'd_xs_dy', 'd_xs_st']: w.arg(item).setConstant()
 
-        for v, X in zip(observables, 'XY'):
-            w.var(v).setBins(getattr(self.channels['el'].samples['data'].datas[0],
+        for v, X in zip(observables, 'XYZ'[:None if self.asymmetry else -1]):
+            w.var(v).setBins(getattr(unqueue(self.channels['el'].samples['data'].datas[0],self.asymmetry),
                                      'GetNbins' + X)())
 
     def import_fractions(self, w):
@@ -101,7 +104,7 @@ class topModel(object):
         for i, label in enumerate(['both', 'symm'][
                 :None if sample in ['ttag', 'ttqg', 'ttqq', 'dy'] else -1]):
             nL = (name, label)
-            roo.wimport(w, r.RooDataHist('_sim_'.join(nL), '', arglist, data.datas[i]))
+            roo.wimport(w, r.RooDataHist('_sim_'.join(nL), '', arglist, unqueue(data.datas[i], self.asymmetry)))
             roo.wimport(w, r.RooHistPdf('_'.join(nL), '', argset, w.data('_sim_'.join(nL))))
 
         roo.factory(w, "prod::expect_%s(%s)" %
@@ -119,7 +122,7 @@ class topModel(object):
         arglist = r.RooArgList(*[w.var(o) for o in self.observables])
         argset = r.RooArgSet(arglist)
         for L, channel in self.channels_qcd.items():
-            hist = channel.samples['data'].datas[0]
+            hist = unqueue(channel.samples['data'].datas[0], self.asymmetry)
             dhist = '%s_data_sim_both' % L
             roo.wimport(w, r.RooDataHist(dhist, '', arglist, hist))
             roo.wimport(w, r.RooHistPdf('%s_data_both' % L, '', argset, w.data(dhist)))
@@ -190,7 +193,8 @@ class topModel(object):
         obs = r.RooArgList(obs_)
 
         datas = [(L, r.RooDataHist('data_' + L, 'N_{obs}^{%s}' % L, obs,
-                                   chan.samples['data'].datas[0]))
+                                   unqueue(chan.samples['data'].datas[0], self.asymmetry)
+                                   ))
                  for L, chan in self.channels.items()]
 
         [roo.wimport(w, dat) for _, dat in datas]
@@ -249,7 +253,7 @@ class topModel(object):
 
 
     @roo.quiet
-    def visualize(self, canvas=None):
+    def visualize1D(self, canvas=None):
         r.gStyle.SetTitleX(0.2)
         r.gStyle.SetTitleY(0.98)
 
@@ -302,6 +306,70 @@ class topModel(object):
                 f.Draw()
 
         return canvas
+
+    @roo.quiet
+    def visualize2D(self, canvas=None, printName=''):
+        w = self.w
+        titles = ['X_{L}','X_{T}','#Delta']
+        for v,t in zip(self.observables,titles) :
+            w.arg(v).SetTitle(t)
+
+        if not canvas:
+            if printName:
+                r.gROOT.ProcessLine(".L tdrstyle.C")
+                r.setTDRStyle()
+                r.TGaxis.SetMaxDigits(4)
+            canvas=r.TCanvas()
+            if not printName:
+                canvas.Divide(3,2)
+            else:
+                canvas.Print(printName+'[')
+
+        print 'visualizing',
+        sys.stdout.flush()
+
+        for j,lep in enumerate(['el','mu']):
+            for i in range(3):
+                canvas.cd(1+j*3+i)
+                f = w.arg(self.observables[i]).frame()
+                f.SetLineColor(r.kWhite)
+                mod = w.pdf('model_%s'%lep)
+                toy = mod.generateBinned(w.argSet(','.join(self.observables)), 1e7)
+                args = [r.RooFit.ProjWData(toy)]
+                dargs = [f,
+                         r.RooFit.MarkerSize(1.1),
+                         #r.RooFit.XErrorSize(0)
+                         ]
+                w.data('data_%s'%lep).plotOn(*dargs)
+
+                pf = '' if self.asymmetry else '_both'
+                stack = [('_ttqq'+pf,),('_ttqg'+pf,'_ttag'+pf),('_ttgg_both',),('_wj_both',),
+                         ('qcd_*',), ('_dy*','_st_both')]
+                colors = [r.kViolet,r.kBlue-7,r.kBlue+2,r.kGreen+1,r.kRed,r.kGray]
+                for iStack in range(len(stack)):
+                    sys.stdout.write(".,;:!|"[iStack])
+                    sys.stdout.flush()
+                    comps = lep+(','+lep).join(sum(stack[iStack:],()))
+                    mod.plotOn(f,
+                               r.RooFit.Components(comps),
+                               r.RooFit.LineColor(colors[iStack]),
+                               r.RooFit.FillColor(colors[iStack]),
+                               r.RooFit.DrawOption('F'),
+                               *args)
+
+                w.data('data_%s'%lep).plotOn(*dargs)
+                #mod.plotOn(f, r.RooFit.LineColor(r.kOrange), *args)
+
+                f.Draw()
+                if printName:
+                    canvas.Print(printName)
+                    sys.stdout.write(' ')
+        print
+        if printName:
+            canvas.Print(printName+']')
+
+        return canvas
+
 
 
     def PrintTTbarComponents(self):
