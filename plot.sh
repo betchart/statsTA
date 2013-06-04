@@ -1,4 +1,4 @@
-set term postscript landscape enhanced color 22 size 7in, 7in
+set term postscript enhanced color 22 size 7in, 7in
 set output 'plot.ps'
 
 set bmargin 3
