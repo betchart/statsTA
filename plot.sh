@@ -159,10 +159,12 @@ plot [-hor:hor] [-ver:ver] \
 lwidth=5
 ep = 1.5*ep
 
-set key title '68% CL' spacing 0.85
+set key spacing 0.85
+
 
 plot [-hor:hor] [-ver:ver] \
     aplot(x) w filledcurves x1 lc rgb "white" notitle, \
+    aplot(x) lt 1 lc rgb "white" lw 0 title '68% CL', \
     aplot(x) lt 1 lc 7 lw 3 notitle, \
     tic(x,-0.03) notitle lt 4 lc 7, \
     tic(x,-0.02) notitle lt 4 lc 7, \
