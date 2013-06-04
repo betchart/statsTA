@@ -223,7 +223,7 @@ class measurement(object):
         print>>log, '\n'.join(str(kv) for kv in defaults.items())
 
         syss = []
-        for sys in []:# systematics.systematics():
+        for sys in systematics.systematics():
             pars = systematics.central()
             pars.update(sys)
             f = fit(signal=signal, profileVars=profile, R0_=R0_, quiet=False,
