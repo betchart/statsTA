@@ -234,23 +234,31 @@ class topModel(object):
         print
 
     def print_n(self):
+        scale = 1000.
         w = self.w
         length = 24
-        tots = {'el': 0, 'mu': 0}
-        print (' ').join(i.rjust(8) for i in [''] + tots.keys())
-        for xs in ['tt', 'wj', 'mj', 'st', 'dy']:
-            if xs == 'data': continue
-            print xs.rjust(length / 3),
-            for chan in tots:
-                val = w.arg('expect_%s_%s' % (chan, xs)).getVal()
-                tots[chan] += val
-                print ("%d" % val).rjust(length / 3),
-            print
-        print '-' * (3 + length)
-        print ' '.join(["tot".ljust(length / 3)] +
-                       [("%d" % t).rjust(length / 3) for chan, t in tots.items()])
-        print
 
+        chans = ['el','mu']
+        cross = ['tt', 'wj', 'mj', 'st', 'dy']
+        print '\t','&','\t&\t'.join(r'\multicolumn{2}{c}{N_{%s}}'%xs for xs in cross), 'Total', 'Observed'
+        for chan in chans:
+            tot = 0
+            tote2 = 0
+            print chan,'&',
+            for xs in cross:
+                val = w.arg('expect_%s_%s' % (chan, xs)).getVal()
+                delta = w.arg('d_xs_%s'%xs)
+                factor= w.arg('factor_%sqcd'%chan)
+                relerr = max(0.0000001,
+                             delta.getError() / (1+delta.getVal()) if delta else
+                             factor.getError() / factor.getVal() if xs=='mj' else 0)
+                tot += val
+                tote2 += (val*relerr)**2
+                print utils.roundString(val/scale,relerr*val/scale).rjust(length / 3), '&',
+            print utils.roundString(tot/scale,math.sqrt(tote2)/scale).rjust(length / 3), '&',
+            print self.channels[chan].samples['data'].datas[0].Integral()/scale, r'\\'
+        print
+        
 
     @roo.quiet
     def visualize1D(self, canvas=None):
@@ -372,7 +380,7 @@ class topModel(object):
 
 
 
-    def PrintTTbarComponents(self):
+    def TTbarComponentsStr(self):
         '''Print a table with fractions and asymmetries.'''
 
         format = r'''
@@ -411,4 +419,4 @@ class topModel(object):
                                     form(self.w.arg('Ac_y_tt%s'%comp).getVal(),self.w.arg('err_Ac_y_tt%s'%comp).getVal())
                                     ])) for label,comp in zip(labels,self.ttcomps+('',)))
         
-        print format%tuple([r'\%']+[rows[i] for i in ['gg','qq','qg','ag','']])
+        return format%tuple([r'\%']+[rows[i] for i in ['gg','qq','qg','ag','']])

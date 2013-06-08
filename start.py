@@ -136,6 +136,7 @@ class fit(object):
         if self.doAsymm: 
             self.scales = np.array([w.arg(a).getVal() for a in ['Ac_y_ttqq', 'Ac_y_ttqg']])
             self.scalesPhi= [w.arg('Ac_phi_%s'%n) for n in ['ttqq','ttgg','ttag','ttqg','tt']]
+            self.correction = w.arg('Ac_y_ttgg').getVal() * w.arg('f_gg').getVal()
         self.fractionHats = [w.arg('f_%s_hat' % a).getVal() for a in ['gg','qg','qq','ag']]
 
         self.parb = parb
@@ -163,7 +164,7 @@ class fit(object):
             return ('#label d_qq error' +
                     'fhat_gg fhat_qg fhat_qq fhat_ag status')
         return ('#label fqq.Ac_y_qq  fqg.Ac_y_qg  XX  XY  YY fhat_gg ' +
-                'fhat_qg fhat_qq fhat_ag Ac_y_qq_hat Ac_y_qg_hat fitstatus')
+                'fhat_qg fhat_qq fhat_ag Ac_y_qq_hat Ac_y_qg_hat f_gg.Ac_y_gg fitstatus')
 
     def __str__(self):
         if not self.doAsymm:
@@ -176,12 +177,14 @@ class fit(object):
                           self.profErr[0,1]*self.scales[0]*self.scales[1],
                           self.profErr[1,1]*self.scales[1]**2] +
                          self.fractionHats+
-                         list(self.scales) + [self.status]
+                         list(self.scales) +
+                         [self.correction,
+                          self.status]
                          )
 
 class measurement(object):
-    def __init__(self, label, signal, profile, R0_, hackZeroBins=False):
-        outNameBase = 'data/' + '_'.join(label.split(','))
+    def __init__(self, label, signal, profile, R0_, hackZeroBins=False, doVis=False, doSys=False):
+        outNameBase = 'data/' + '_'.join(label.split(',')) + ['_nosys',''][int(doSys)]
         write = open(outNameBase + '.txt', 'w')
         log = open(outNameBase + '.log', 'w')
         print >> write, fit.fields('QueuedBin' in signal)
@@ -189,20 +192,18 @@ class measurement(object):
 
         self.SM = fit(signal=signal, profileVars=profile, R0_=R0_, log=log,
                       hackZeroBins=hackZeroBins, fixSM=True, **systematics.central())
+        print >> log, self.SM.model.TTbarComponentsStr()
         #visCanvas = self.SM.model.visualize2D()
-
-        self.SM.model.PrintTTbarComponents()
-
         #utils.tCanvasPrintPdf(visCanvas, outNameBase, verbose=False, title='SM', option='(')
+
 
         self.central = fit(signal=signal, profileVars=profile, R0_=R0_, log=log,
                            hackZeroBins=hackZeroBins, **systematics.central())
-        self.central.model.visualize2D(printName=outNameBase+'.pdf')
+        if doVis: self.central.model.visualize2D(printName=outNameBase+'.pdf')
         #utils.tCanvasPrintPdf(visCanvas, outNameBase, verbose=False, title='central')
 
         print >> write, str(self.central)
-        print
-        print str(self.central)
+        self.central.model.print_n()
 
         if 'QueuedBin' in signal:
             para = self.central.parb.parametricEllipse(0.5)
@@ -223,7 +224,7 @@ class measurement(object):
         print>>log, '\n'.join(str(kv) for kv in defaults.items())
 
         syss = []
-        for sys in systematics.systematics():
+        for sys in [[],systematics.systematics()][int(doSys)]:
             pars = systematics.central()
             pars.update(sys)
             f = fit(signal=signal, profileVars=profile, R0_=R0_, quiet=False,
