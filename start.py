@@ -19,7 +19,7 @@ class fit(object):
     def __init__(self, label, signal, profileVars, R0_,
                  d_lumi, d_xs_dy, d_xs_st, tag, genPre, sigPre, dirIncrement, genDirPre, 
                  quiet = False, hackZeroBins=False, defaults = {}, pllPoints=[],
-                 log=None, fixSM=False):
+                 log=None, fixSM=False,altData=None):
 
         self.label = label
         self.quiet = quiet
@@ -60,9 +60,9 @@ class fit(object):
         for k,v in defaults.items(): self.model.w.arg(k).setVal(v)
         for item in ['d_lumi', 'd_xs_dy', 'd_xs_st']: self.model.w.arg(item).setVal(eval(item))
 
-        self.model.import_data()
         self.fitArgs = [r.RooFit.Extended(True), r.RooFit.NumCPU(1),
                         r.RooFit.PrintLevel(-1)]
+        self.model.import_data(altData)
 
         if fixSM:
             fixVars = (['R_ag','slosh','falphaL','falphaT'] if self.doAsymm else
@@ -98,7 +98,9 @@ class fit(object):
         print>>self.log
         if not self.pllPoints:
             print>>self.log, minu.minos(w.argSet(','.join(self.profileVars)))
+        self.NLL = nll.getVal()
         pll = nll.createProfile(w.argSet(','.join(self.profileVars)))
+        print>>self.log, roo.str(nll)
         print>>self.log, roo.str(pll)
         pll.minuit().setStrategy(2)
 
@@ -183,7 +185,7 @@ class fit(object):
                          )
 
 class measurement(object):
-    def __init__(self, label, signal, profile, R0_, hackZeroBins=False, doVis=False, doSys=False):
+    def __init__(self, label, signal, profile, R0_, hackZeroBins=False, doVis=False, doSys=False, doEnsembles=True):
         outNameBase = 'data/' + '_'.join(label.split(',')) + ['_nosys',''][int(doSys)]
         write = open(outNameBase + '.txt', 'w')
         log = open(outNameBase + '.log', 'w')
@@ -199,8 +201,6 @@ class measurement(object):
 
         self.central = fit(signal=signal, profileVars=profile, R0_=R0_, log=log,
                            hackZeroBins=hackZeroBins, **systematics.central())
-        if doVis: self.central.model.visualize2D(printName=outNameBase+'.pdf')
-        #utils.tCanvasPrintPdf(visCanvas, outNameBase, verbose=False, title='central')
 
         print >> write, str(self.central)
         self.central.model.print_n()
@@ -222,6 +222,33 @@ class measurement(object):
 
         defaults = dict([(v,self.central.model.w.arg(v).getVal()) for v in vars_])
         print>>log, '\n'.join(str(kv) for kv in defaults.items())
+
+        if doVis: self.central.model.visualize2D(printName=outNameBase+'.pdf')
+        #utils.tCanvasPrintPdf(visCanvas, outNameBase, verbose=False, title='central')
+
+        @roo.quiet
+        def ensembles():
+            mcstudy = r.RooMCStudy(self.central.model.w.pdf('model'),
+                                   self.central.model.w.argSet(','.join(self.central.model.observables+['channel'])),
+                                   r.RooFit.Binned(True),
+                                   r.RooFit.Extended(True)
+                               )
+            Nens = 100
+            mcstudy.generate(Nens,0,True)
+            with open('ensemble.txt','w') as ensfile:
+                fAqq = self.central.model.w.arg('falphaL').getVal() * self.central.model.w.arg('Ac_y_ttqq').getVal()
+                fAqg = self.central.model.w.arg('falphaT').getVal() * self.central.model.w.arg('Ac_y_ttqg').getVal()
+                print >> ensfile, '\t'.join(["#truth", '%f'%fAqq, '%f'%fAqg])
+                print >> ensfile, fit.fields('QueuedBin' in signal), 'NLL'
+                for i in range(Nens):
+                    alt = mcstudy.genData(i)
+                    pars = systematics.central()
+                    pars['label'] = 'ens%d'%i
+                    f = fit(signal=signal, profileVars=profile, R0_=R0_, log=log,
+                            hackZeroBins=hackZeroBins, altData=alt, **pars)
+                    print >> ensfile, f, f.NLL
+                    ensfile.flush()
+        if doEnsembles: ensembles()
 
         syss = []
         for sys in [[],systematics.systematics()][int(doSys)]:
