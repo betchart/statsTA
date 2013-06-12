@@ -233,14 +233,15 @@ class measurement(object):
                                    r.RooFit.Binned(True),
                                    r.RooFit.Extended(True)
                                )
-            Nens = 100
+            skip=100
+            Nens = 1000
             mcstudy.generate(Nens,0,True)
             with open('ensemble.txt','w') as ensfile:
                 fAqq = self.central.model.w.arg('falphaL').getVal() * self.central.model.w.arg('Ac_y_ttqq').getVal()
                 fAqg = self.central.model.w.arg('falphaT').getVal() * self.central.model.w.arg('Ac_y_ttqg').getVal()
                 print >> ensfile, '\t'.join(["#truth", '%f'%fAqq, '%f'%fAqg])
                 print >> ensfile, fit.fields('QueuedBin' in signal), 'NLL'
-                for i in range(Nens):
+                for i in range(skip,Nens):
                     alt = mcstudy.genData(i)
                     pars = systematics.central()
                     pars['label'] = 'ens%d'%i

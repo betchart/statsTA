@@ -21,7 +21,7 @@ if __name__ == '__main__':
     with open(sys.argv[1]) as mFile:
         fA = [eval(i) for i in mFile.readline().split()[1:]]
 
-    def deltas(k): return [fA[i] - M[k][i] for i in [0,1]]
+    def deltas(k): return [ M[k][i] - fA[i] for i in [0,1]]
     def pulls(k): return [d/math.sqrt(M[k][i]) for d,i in zip(deltas(k),[2,4])]
 
     book = autoBook('book')
@@ -31,7 +31,7 @@ if __name__ == '__main__':
         values = [abs(f) for f in deltas(k)] + pulls(k) 
         print '\t'.join(['%+.5f'%i for i in values])
         for n,v,lim in zip(names,values,limits):
-            book.fill(v,n,40,*lim)
+            book.fill(v,n,30,*lim)
     
     c = r.TCanvas()
     c.Divide(2,2)
