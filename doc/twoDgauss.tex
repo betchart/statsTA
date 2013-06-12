@@ -1,8 +1,14 @@
-\documentclass[11pt]{article}
+\documentclass[12pt]{article}
+\pdfoutput=1
 
 \newcommand{\dee}{\mathrm{d}}
+\newcommand{\abs}[1]{\left|#1\right|}
+
+\usepackage[margin=2cm]{geometry}
 
 \begin{document}
+
+\section{2D contours}
 
 \[A(\chi) = N\int_0^\chi e^{-\frac{r^2}{2\sigma^2}} r\dee r\dee\theta\]
 \[A(\chi) = N'\int_0^\chi e^{-\frac{r^2}{2\sigma^2}} r\dee r\]
@@ -17,5 +23,42 @@ negative log likelihood, assuming the likelihood is gaussian.
 \[L = e^{-\frac{\chi^2}{2\sigma^2}}\]
 \[-\log L = \frac{1}{2}\left(\frac{\chi}{\sigma}\right)^2\]
 \[-\log L = -\log( 1-x )\]
+
+A countour at some level $L$ gives an error matrix $\Sigma^2_L$.  A
+different level $L'$ then has the error matrix
+\[\Sigma^2_{L'} = \frac{L'}{L}\Sigma^2_L\]
+
+\section{Projection to 1D}
+
+We will use the following results:
+\begin{equation}
+  \int_{-\infty}^{\infty}\dee x \exp\left(-ax^2+bx+c\right) = \sqrt{\frac{\pi}{a}}\exp\left(b^2/4a + c\right),
+\end{equation}
+and
+\begin{equation}
+  \int_{-\infty}^\infty \dee^nr\exp\left(-0.5 \vec{r}^TA\vec{r}\right) = \sqrt{\frac{(2\pi)^n}{\abs{A}}}.
+\end{equation}
+
+Given a normalized 2D gaussian probability density
+\[
+\rho(\vec{r}) = N \exp(-0.5 \vec{r}^TA\vec{r}), \qquad N = \frac{\sqrt{\abs{A}}}{2\pi}
+\]
+calculate $q$ such that the central $C$ confidence interval $[-q,q]$
+for the single dimension $x$ is
+
+\begin{eqnarray*}
+  C 
+  &=& \int_{-\infty}^{\infty}\dee y\int_{-q}^q \dee x \rho(\vec{r})\\
+  &=& \frac{\sqrt{\abs{A}}}{2\pi} \int_{-q}^q \dee x \exp\left(-0.5 A_{11}x^2\right) \int_{-\infty}^{\infty}\dee y \exp\left(-A_{21}xy + -0.5A_{22}y^2 \right)\\
+  &=& \frac{\sqrt{\abs{A}}}{2\pi} \sqrt{\frac{\pi}{A_{22}}}\int_{-q}^q \dee x \exp\left(-0.5 A_{11}x^2\right) \exp\left(\frac{A_{21}^2x^2}{4A_{22}}\right)\\
+  &=& \sqrt{\frac{\abs{A}}{4\pi A_{22}}}\int_{-q}^q \dee x \exp\left[-0.5 x^2\left( A_{11} - \frac{A_{21}^2}{2A_{22}}\right)\right]\\
+  &=& \sqrt{\frac{\abs{A}}{4 A_{22}}}\frac{2}{\sqrt{\pi}}\int_0^q \dee x \exp\left[- g^2x^2\right],\qquad g^2=\left( A_{11}/2 - \frac{A_{21}^2}{4A_{22}}\right)\\
+  &=& \sqrt{\frac{\abs{A}}{4 A_{22}g^2}}\frac{2}{\sqrt{\pi}}\int_0^{gq} \dee t \exp\left[- t^2\right]\\
+  &=& \sqrt{\frac{\abs{A}}{4 A_{22}g^2}} \mathrm{ERF}(gq)
+\end{eqnarray*}
+\begin{equation}
+  q = \mathrm{ERF}^{-1}\left(2Cg\sqrt{\frac{A_{22}}{\abs{A}}}\right)/g
+\end{equation}
+
 
 \end{document}
