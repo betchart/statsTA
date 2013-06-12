@@ -50,15 +50,20 @@ for the single dimension $x$ is
   C 
   &=& \int_{-\infty}^{\infty}\dee y\int_{-q}^q \dee x \rho(\vec{r})\\
   &=& \frac{\sqrt{\abs{A}}}{2\pi} \int_{-q}^q \dee x \exp\left(-0.5 A_{11}x^2\right) \int_{-\infty}^{\infty}\dee y \exp\left(-A_{21}xy + -0.5A_{22}y^2 \right)\\
-  &=& \frac{\sqrt{\abs{A}}}{2\pi} \sqrt{\frac{\pi}{A_{22}}}\int_{-q}^q \dee x \exp\left(-0.5 A_{11}x^2\right) \exp\left(\frac{A_{21}^2x^2}{4A_{22}}\right)\\
-  &=& \sqrt{\frac{\abs{A}}{4\pi A_{22}}}\int_{-q}^q \dee x \exp\left[-0.5 x^2\left( A_{11} - \frac{A_{21}^2}{2A_{22}}\right)\right]\\
-  &=& \sqrt{\frac{\abs{A}}{4 A_{22}}}\frac{2}{\sqrt{\pi}}\int_0^q \dee x \exp\left[- g^2x^2\right],\qquad g^2=\left( A_{11}/2 - \frac{A_{21}^2}{4A_{22}}\right)\\
+  &=& \frac{\sqrt{\abs{A}}}{2\pi} \sqrt{\frac{\pi}{A_{22}}}\int_{-q}^q \dee x \exp\left(-0.5 A_{11}x^2\right) \exp\left(\frac{A_{21}^2x^2}{2A_{22}}\right)\\
+  &=& \sqrt{\frac{\abs{A}}{4\pi A_{22}}}\int_{-q}^q \dee x \exp\left[-0.5 x^2\left( A_{11} - \frac{A_{21}^2}{A_{22}}\right)\right]\\
+  &=& \sqrt{\frac{\abs{A}}{4 A_{22}}}\frac{2}{\sqrt{\pi}}\int_0^q \dee x \exp\left[- g^2x^2\right],\qquad g^2=\abs{A}/2A_{22} \\
   &=& \sqrt{\frac{\abs{A}}{4 A_{22}g^2}}\frac{2}{\sqrt{\pi}}\int_0^{gq} \dee t \exp\left[- t^2\right]\\
-  &=& \sqrt{\frac{\abs{A}}{4 A_{22}g^2}} \mathrm{ERF}(gq)
+  &=& \frac{1}{\sqrt{2}} \mathrm{ERF}(gq)
 \end{eqnarray*}
 \begin{equation}
-  q = \mathrm{ERF}^{-1}\left(2Cg\sqrt{\frac{A_{22}}{\abs{A}}}\right)/g
+  q = \mathrm{ERF}^{-1}\left(C\sqrt{2}\right)\sqrt{\frac{2A_{22}}{\abs{A}}}
 \end{equation}
+A 1-sigma confidence interval contains probability equal to
+$C=\mathrm{ERF}\left(\frac{1}{\sqrt{2}}\right)\approx 68\%$, and
+\[
+\mathrm{ERF}^{-1}\left(\sqrt{2}\mathrm{ERF}\left(\frac{1}{\sqrt{2}}\right)\right) \approx \frac{3}{2}
+\]
 
 
 \end{document}
