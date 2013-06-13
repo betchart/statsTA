@@ -228,12 +228,18 @@ class measurement(object):
 
         @roo.quiet
         def ensembles():
+            if True:
+                self.central.model.w.arg('falphaL').setVal(0)
+                self.central.model.w.arg('falphaT').setVal(0)
+                self.central.model.w.arg('slosh').setVal(self.SM.model.w.arg('slosh').getVal())
+                self.central.model.w.arg('R_ag').setVal(self.SM.model.w.arg('R_ag').getVal())
+
             mcstudy = r.RooMCStudy(self.central.model.w.pdf('model'),
                                    self.central.model.w.argSet(','.join(self.central.model.observables+['channel'])),
                                    r.RooFit.Binned(True),
                                    r.RooFit.Extended(True)
                                )
-            skip=100
+            skip=0
             Nens = 1000
             mcstudy.generate(Nens,0,True)
             with open('ensemble.txt','w') as ensfile:
