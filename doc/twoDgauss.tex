@@ -43,26 +43,26 @@ Given a normalized 2D gaussian probability density
 \[
 \rho(\vec{r}) = N \exp(-0.5 \vec{r}^TA\vec{r}), \qquad N = \frac{\sqrt{\abs{A}}}{2\pi}
 \]
-calculate $q$ such that the central $C$ confidence interval $[-q,q]$
-for the single dimension $x$ is
+calculate $q$ such that the probability $C$ of the interval
+$x\in[-q,q]$ is
 
 \begin{eqnarray*}
   C 
   &=& \int_{-\infty}^{\infty}\dee y\int_{-q}^q \dee x \rho(\vec{r})\\
-  &=& \frac{\sqrt{\abs{A}}}{2\pi} \int_{-q}^q \dee x \exp\left(-0.5 A_{11}x^2\right) \int_{-\infty}^{\infty}\dee y \exp\left(-A_{21}xy + -0.5A_{22}y^2 \right)\\
-  &=& \frac{\sqrt{\abs{A}}}{2\pi} \sqrt{\frac{\pi}{A_{22}}}\int_{-q}^q \dee x \exp\left(-0.5 A_{11}x^2\right) \exp\left(\frac{A_{21}^2x^2}{2A_{22}}\right)\\
-  &=& \sqrt{\frac{\abs{A}}{4\pi A_{22}}}\int_{-q}^q \dee x \exp\left[-0.5 x^2\left( A_{11} - \frac{A_{21}^2}{A_{22}}\right)\right]\\
-  &=& \sqrt{\frac{\abs{A}}{4 A_{22}}}\frac{2}{\sqrt{\pi}}\int_0^q \dee x \exp\left[- g^2x^2\right],\qquad g^2=\abs{A}/2A_{22} \\
-  &=& \sqrt{\frac{\abs{A}}{4 A_{22}g^2}}\frac{2}{\sqrt{\pi}}\int_0^{gq} \dee t \exp\left[- t^2\right]\\
-  &=& \frac{1}{\sqrt{2}} \mathrm{ERF}(gq)
+  &=& \frac{\sqrt{\abs{A}}}{2\pi} \int_{-q}^q \dee x \exp\left(-0.5 A_{11}x^2\right) \int_{-\infty}^{\infty}\dee y \exp\left(-A_{21}xy  -0.5A_{22}y^2 \right)\\
+  &=& \frac{\sqrt{\abs{A}}}{2\pi} \sqrt{\frac{2\pi}{A_{22}}}\int_{-q}^q \dee x \exp\left(-0.5 A_{11}x^2\right) \exp\left(\frac{A_{21}^2x^2}{2A_{22}}\right)\\
+  &=& \sqrt{\frac{\abs{A}}{2\pi A_{22}}}\int_{-q}^q \dee x \exp\left[-0.5 x^2\left( A_{11} - \frac{A_{21}^2}{A_{22}}\right)\right]\\
+  &=& \sqrt{\frac{\abs{A}}{2 A_{22}}}\frac{2}{\sqrt{\pi}}\int_0^q \dee x \exp\left[- g^2x^2\right],\qquad g^2=\abs{A}/2A_{22} \\
+  &=& \sqrt{\frac{\abs{A}}{2 A_{22}g^2}}\frac{2}{\sqrt{\pi}}\int_0^{gq} \dee t \exp\left[- t^2\right]\\
+  &=& \mathrm{ERF}(gq)
 \end{eqnarray*}
 \begin{equation}
-  q = \mathrm{ERF}^{-1}\left(C\sqrt{2}\right)\sqrt{\frac{2A_{22}}{\abs{A}}}
+  q = \mathrm{ERF}^{-1}\left(C\right)\sqrt{\frac{2A_{22}}{\abs{A}}}
 \end{equation}
 A 1-sigma confidence interval contains probability equal to
-$C=\mathrm{ERF}\left(\frac{1}{\sqrt{2}}\right)\approx 68\%$, and
+$C=\mathrm{ERF}\left(\frac{1}{\sqrt{2}}\right)\approx 68\%$, for which
 \[
-\mathrm{ERF}^{-1}\left(\sqrt{2}\mathrm{ERF}\left(\frac{1}{\sqrt{2}}\right)\right) \approx \frac{3}{2}
+q = \sqrt{\frac{A_{22}}{\abs{A}}}
 \]
 
 
