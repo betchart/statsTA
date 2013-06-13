@@ -3,6 +3,7 @@
 import sys
 import math
 from ellipse import ellipse
+from CLprojection import oneSigmaCLprojection
 import numpy as np
 from __autoBook__ import autoBook
 import ROOT as r
@@ -22,17 +23,22 @@ if __name__ == '__main__':
         fA = [eval(i) for i in mFile.readline().split()[1:]]
 
     def deltas(k): return [ M[k][i] - fA[i] for i in [0,1]]
-    def pulls(k): return [d/math.sqrt(M[k][i]) for d,i in zip(deltas(k),[2,4])]
+    def errors(k):
+        sigmas2 = np.array([[M[k][2],M[k][3]],
+                            [M[k][3],M[k][4]]])
+        return [oneSigmaCLprojection(sigmas2),
+                oneSigmaCLprojection(sigmas2[(1,0),][:,(1,0)])]
+    def pulls(k): return [d/e for d,e in zip(deltas(k),errors(k))]
 
     book = autoBook('book')
-    names = ['efAqq','efAqg','pullqq','pullqg']
-    limits = [(0,0.01),(0,0.003),(-3,3),(-3,3)]
+    names = ['delta_Aqq','delta_Aqg','error_Aqq','error_Aqg','pullqq','pullqg']
+    limits = [(-0.01,0.01),(-0.003,0.003),(0.0034,0.004),(0.0009,0.0013),(-4,4),(-4,4)]
     truth = tuple(fA + [1.])
     count=0
     for k in M:
-        values = [abs(f) for f in deltas(k)] + pulls(k) 
+        values = deltas(k) + errors(k) + pulls(k)
         for n,v,lim in zip(names,values,limits):
-            book.fill(v,n,30,*lim)
+            book.fill(v,n,40,*lim)
         mean = M[k][:2]
         sigmas2 = [[M[k][2], M[k][3]],
                    [M[k][3], M[k][4]]]
@@ -43,7 +49,7 @@ if __name__ == '__main__':
     print count
 
     c = r.TCanvas()
-    c.Divide(2,2)
+    c.Divide(2,3)
     for i,k in enumerate(names):
         c.cd(i+1)
         book[k].Fit('gaus')

@@ -4,6 +4,7 @@ import sys
 import math
 from ellipse import ellipse
 import numpy as np
+from CLprojection import oneSigmaCLprojection
 
 if __name__ == '__main__':
     if len(sys.argv) < 2:
@@ -49,7 +50,7 @@ if __name__ == '__main__':
     sys_sigmas2 = np.sum(sigmas(k) for k in M) / 2
     sim_sigmas2 = np.sum(sigmasHat(h) for h in hats) / 2
     tot_sigmas2 = stat_sigmas2 + sys_sigmas2
-    
+
     stat = ellipse(mean=mean, sigmas2=stat_sigmas2)
     syst = ellipse(mean=mean, sigmas2=sys_sigmas2)
     totl = ellipse(mean=mean, sigmas2=tot_sigmas2)
@@ -60,9 +61,9 @@ if __name__ == '__main__':
     correction = hats['central']['f_gg.Ac_y_gg']
     R = np.array([[1,1],[0,0]])
     print Ac
-    print 'xsig', math.sqrt(stat_sigmas2[0][0])
-    print 'ysig', math.sqrt(stat_sigmas2[1][1])
-    d_Ac = math.sqrt(R.dot(tot_sigmas2).dot(R.T)[0,0])
+    print 'xsig', math.sqrt(stat_sigmas2[0][0]), oneSigmaCLprojection(np.array(stat_sigmas2))
+    print 'ysig', math.sqrt(stat_sigmas2[1][1]), oneSigmaCLprojection((np.array(stat_sigmas2))[(1,0),][:,(1,0)])
+    d_Ac = math.sqrt(R.dot(tot_sigmas2).dot(R.T)[0,0])#, oneSigmaCLprojection(R.dot(tot_sigmas2.dot(R.T)))
     print d_Ac
     print correction
 
