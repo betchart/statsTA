@@ -29,8 +29,7 @@ class paraboloid(object):
     def dxy(self,dz):
         A,B,C,_,_,_ = self.ABCDEF
         ellipse = np.array([[A,C],[C,B]]) / dz
-        E,R = np.linalg.eig(ellipse)
-        return R.dot(np.diag([1/e for e in E]).dot(R.T))
+        return np.linalg.inv(ellipse)
 
     def ellipse(self,dz):
         A,B,C,D,E,F = self.ABCDEF
