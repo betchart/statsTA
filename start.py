@@ -156,7 +156,9 @@ class fit(object):
             print>>self.log, self.profVal, self.profPLL
             print>>self.log, self.profErr
             for item in ['d_qq','d_xs_tt','d_xs_wj',
-                         'factor_elqcd','factor_muqcd','alphaL'][:-1 if N==1 else None]:
+                         'factor_elqcd','factor_muqcd',
+                         'f_gg','f_qq','f_qg','f_ag',
+                         'R_ag','slosh','alphaL'][:-3 if N==1 else None]:
                 print>>self.log, '\t', roo.str(w.arg(item))
         return
 
@@ -185,7 +187,7 @@ class fit(object):
                          )
 
 class measurement(object):
-    def __init__(self, label, signal, profile, R0_, hackZeroBins=False, doVis=False, doSys=False, doEnsembles=True):
+    def __init__(self, label, signal, profile, R0_, hackZeroBins=False, doVis=False, doSys=False, doEnsembles=False):
         outNameBase = 'data/' + '_'.join(label.split(',')) + ['_nosys',''][int(doSys)]
         write = open(outNameBase + '.txt', 'w')
         log = open(outNameBase + '.log', 'w')
