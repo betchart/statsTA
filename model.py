@@ -187,8 +187,12 @@ class topModel(object):
                      {'n': L}) for L in self.channels]
 
     @roo.quiet
-    def import_data(self):
+    def import_data(self, altData=None):
         w = self.w
+        if altData:
+            altData.SetName('data')
+            roo.wimport(w, altData)
+            return
         obs_ = w.argSet(','.join(self.observables))
         obs = r.RooArgList(obs_)
 

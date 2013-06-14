@@ -129,7 +129,7 @@ class channel_data(object):
 
 
 if __name__ == '__main__':
-    channels = dict([(lep, channel_data(lep, 'top')) for lep in ['el', 'mu']])
+    channels = dict([(lep, channel_data(lep, 'top', signal='fitTopQueuedBin7TridiscriminantWTopQCD')) for lep in ['el', 'mu']])
     print
     print channels['el']
     print

@@ -4,6 +4,7 @@ import sys
 import math
 from ellipse import ellipse
 import numpy as np
+from CLprojection import oneSigmaCLprojection
 
 if __name__ == '__main__':
     if len(sys.argv) < 2:
@@ -49,7 +50,7 @@ if __name__ == '__main__':
     sys_sigmas2 = np.sum(sigmas(k) for k in M) / 2
     sim_sigmas2 = np.sum(sigmasHat(h) for h in hats) / 2
     tot_sigmas2 = stat_sigmas2 + sys_sigmas2
-    
+
     stat = ellipse(mean=mean, sigmas2=stat_sigmas2)
     syst = ellipse(mean=mean, sigmas2=sys_sigmas2)
     totl = ellipse(mean=mean, sigmas2=tot_sigmas2)
@@ -58,12 +59,19 @@ if __name__ == '__main__':
 
     Ac = sum(mean)
     correction = hats['central']['f_gg.Ac_y_gg']
-    R = np.array([[1,1],[0,0]])
-    print Ac
-    print 'xsig', math.sqrt(stat_sigmas2[0][0])
-    print 'ysig', math.sqrt(stat_sigmas2[1][1])
-    d_Ac = math.sqrt(R.dot(tot_sigmas2).dot(R.T)[0,0])
-    print d_Ac
+    R = np.array([[1,1],[-1,1]]) # rotate pi/4, except also scale by sqrt(2)
+    d_Aqq = oneSigmaCLprojection(tot_sigmas2)
+    d_Aqg = oneSigmaCLprojection(tot_sigmas2[(1,0),][:,(1,0)])
+    d_Ac = oneSigmaCLprojection(R.dot(tot_sigmas2.dot(R.T)))
+    sim_d_Aqq = oneSigmaCLprojection(sim_sigmas2)
+    sim_d_Aqg = oneSigmaCLprojection(sim_sigmas2[(1,0),][:,(1,0)])
+    sim_d_Ac = oneSigmaCLprojection(R.dot(sim_sigmas2.dot(R.T)))
+
+    print 'xstat', oneSigmaCLprojection(stat_sigmas2)
+    print 'ystat', oneSigmaCLprojection(np.array(stat_sigmas2)[(1,0),][:,(1,0)])
+    print Ac, d_Ac
+    print 'xsig', d_Aqq
+    print 'ysig', d_Aqg
     print correction
 
     temp = r'''
@@ -86,13 +94,14 @@ if __name__ == '__main__':
         
         return (("%s%d&%0"+str(-err_digit)+"d(%d)")%('-' if n<0 else ' ',p,d*scale,round(e*scale))).ljust(8)
 
+
     print temp%(r'\%',
-                form(simmean[0], math.sqrt(sim_sigmas2[0,0])),
-                form(simmean[1], math.sqrt(sim_sigmas2[1,1])),
-                form(sum(simmean)+correction, math.sqrt(R.dot(sim_sigmas2).dot(R.T)[0,0])),
-                form(mean[0], math.sqrt(tot_sigmas2[0,0])),
-                form(mean[1], math.sqrt(tot_sigmas2[1,1])),
-                form(sum(mean)+correction, math.sqrt(R.dot(tot_sigmas2).dot(R.T)[0,0])),
+                form(simmean[0], sim_d_Aqq),
+                form(simmean[1], sim_d_Aqg),
+                form(sum(simmean)+correction, sim_d_Ac),
+                form(mean[0], d_Aqq),
+                form(mean[1], d_Aqg),
+                form(sum(mean)+correction, d_Ac),
                 )
 
 
@@ -123,4 +132,10 @@ if __name__ == '__main__':
                                       sum((getattr(item,'eval')(T)
                                            for item in filter(None, [stat,syst,totl,
                                                                      simu,
+                                                                     lineUD(mean[0],d_Aqq),
+                                                                     lineUD(mean[1],d_Aqg),
+                                                                     lineUD(Ac,d_Ac),
+                                                                     lineUD(simmean[0], sim_d_Aqq),
+                                                                     lineUD(simmean[1], sim_d_Aqg),
+                                                                     lineUD(sum(simmean), sim_d_Ac)
                                                                      ])), ()))
