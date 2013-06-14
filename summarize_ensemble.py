@@ -11,6 +11,7 @@ r.gROOT.SetBatch(1)
 r.gStyle.SetOptFit(1)
 
 if __name__ == '__main__':
+    scale = 100
     if len(sys.argv) < 2:
         print 'Usage: summarize_ensemble.py <ensemblefile>'
         exit()
@@ -22,40 +23,41 @@ if __name__ == '__main__':
     with open(sys.argv[1]) as mFile:
         fA = [eval(i) for i in mFile.readline().split()[1:]]
 
-    def deltas(k): return [ M[k][i] - fA[i] for i in [0,1]]
+    def deltas(k): return [ scale*(M[k][i] - fA[i]) for i in [0,1]]
     def errors(k):
         sigmas2 = np.array([[M[k][2],M[k][3]],
                             [M[k][3],M[k][4]]])
-        return [oneSigmaCLprojection(sigmas2),
-                oneSigmaCLprojection(sigmas2[(1,0),][:,(1,0)])]
+        return [scale * oneSigmaCLprojection(sigmas2),
+                scale * oneSigmaCLprojection(sigmas2[(1,0),][:,(1,0)])]
     def pulls(k): return [d/e for d,e in zip(deltas(k),errors(k))]
 
-    book = autoBook('book')
+    tfile = r.TFile.Open('.'.join(sys.argv[1].split('.')[:-1]+['root']), 'RECREATE')
+    book = autoBook(tfile)
     names = ['delta_Aqq','delta_Aqg','error_Aqq','error_Aqg','pullqq','pullqg']
-    limits = [(-0.013,0.013),(-0.004,0.004),(0.0034,0.004),(0.0010,0.0014),(-4,4),(-4,4)]
+    limits = [(-1.5,1.5),(-1.5,1.5),(0.34,0.4),(0.09,0.15),(-5,5),(-5,5)]
     truth = tuple(fA + [1.])
-    count=0
+    within=0
     for k in M:
+        mean = M[k][:2]
+        sigmas2 = [[M[k][2], M[k][3]],
+                   [M[k][3], M[k][4]]]
+        el = ellipse(mean=mean,sigmas2=sigmas2)
+        if np.dot(truth, el.matrix).dot(truth) < 0: within+=1
         try:
             values = deltas(k) + errors(k) + pulls(k)
             for n,v,lim in zip(names,values,limits):
                 book.fill(v,n,40,*lim)
-            mean = M[k][:2]
-            sigmas2 = [[M[k][2], M[k][3]],
-                       [M[k][3], M[k][4]]]
-            el = ellipse(mean=mean,sigmas2=sigmas2)
-            level = np.dot(truth, el.matrix).dot(truth)
-            print '\t'.join(['%+.5f'%i for i in values+[level]])
-            if level<0: count+=1
         except:
             pass
-    print count
+    print within
 
     c = r.TCanvas()
     c.Divide(2,3)
     for i,k in enumerate(names):
         c.cd(i+1)
-        book[k].Fit('gaus')
+        book[k].Fit('gaus','Q')
         book[k].Draw()
 
     c.Print('.'.join(sys.argv[1].split('.')[:-1]+['pdf']))
+    tfile.Write()
+    tfile.Close()

@@ -66,6 +66,9 @@ if __name__ == '__main__':
     sim_d_Aqq = oneSigmaCLprojection(sim_sigmas2)
     sim_d_Aqg = oneSigmaCLprojection(sim_sigmas2[(1,0),][:,(1,0)])
     sim_d_Ac = oneSigmaCLprojection(R.dot(sim_sigmas2.dot(R.T)))
+
+    print 'xstat', oneSigmaCLprojection(stat_sigmas2)
+    print 'ystat', oneSigmaCLprojection(np.array(stat_sigmas2)[(1,0),][:,(1,0)])
     print Ac, d_Ac
     print 'xsig', d_Aqq
     print 'ysig', d_Aqg
