@@ -160,6 +160,7 @@ class fit(object):
                          'f_gg','f_qq','f_qg','f_ag',
                          'R_ag','slosh','alphaL'][:-3 if N==1 else None]:
                 print>>self.log, '\t', roo.str(w.arg(item))
+        self.pll = pll
         return
 
     @classmethod
@@ -272,6 +273,23 @@ class measurement(object):
             syss.append(f)
             print >> write, str(f)
             write.flush()
+
+        if False:
+            items = 'f_qq,f_gg,f_qg,f_ag'.split(',')
+            pars = dict([(p,(self.central.model.w.arg(p))) for p in 'R_ag,slosh'.split(',')])
+            values = dict([(i,[]) for i in items])
+            for name,p in pars.items():
+                p.Print()
+                mean = p.getVal()
+                err = p.getError()
+                probes = [mean+err,mean-err,mean]
+                for pro in probes:
+                    p.setVal(pro)
+                    for i,v in values.items():
+                        v.append(self.central.model.w.arg(i).getVal())
+            for i,v in values.items():
+                print i, '%.4f(%+.4f,%+.4f)'%(v[-1],min(v)-v[-1], max(v)-v[-1])
+
 
         #visCanvas.Clear()
         #utils.tCanvasPrintPdf(visCanvas, outNameBase, verbose=True, option=')')

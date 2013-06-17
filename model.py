@@ -30,6 +30,11 @@ class topModel(object):
                      'model', 'expressions']: getattr(self, 'import_' + item)(w)
 
         for item in ['d_lumi', 'd_xs_dy', 'd_xs_st']: w.arg(item).setConstant()
+        if False:
+            w.arg('d_xs_tt').setVal(0.16)
+            w.arg('d_xs_tt').setConstant()
+            w.arg('d_xs_wj').setVal(0.78)
+            w.arg('d_xs_wj').setConstant()
 
         for v, X in zip(observables, 'XYZ'[:None if self.asymmetry else -1]):
             w.var(v).setBins(getattr(unqueue(self.channels['el'].samples['data'].datas[0],self.asymmetry),
