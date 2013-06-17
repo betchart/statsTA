@@ -41,9 +41,8 @@ class paraboloid(object):
         '''Matrix multiplying [cos(t),sin(t),1] to yield points on the ellipse.'''
         ellipse = self.ellipse(dz)
         E,R = np.linalg.eig(ellipse)
-        D = np.diag(np.sqrt(np.abs(E))).dot(R.T)
-        return np.linalg.inv(D)
-
+        s = np.diag(1./np.sqrt(np.abs(E)))
+        return R.dot(s)
 
     def major_angle(self):
         A,B,C,_,_,_ = self.ABCDEF
