@@ -234,7 +234,7 @@ class measurement(object):
         if doEnsembles: 
             ensPars = systematics.central()
             ensPars.update({'signal':signal, 'profileVars':profile, 'R0_':R0_, 'log':log, 'hackZeroBins':hackZeroBins})
-            self.ensembles(ensPars, lumiFactor=0.5)
+            self.ensembles(ensPars, lumiFactor=1.0)
 
         syss = []
         for sys in [[],systematics.systematics()][int(doSys)]:
