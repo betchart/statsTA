@@ -170,7 +170,7 @@ class fit(object):
             return ('#label d_qq error' +
                     'fhat_gg fhat_qg fhat_qq fhat_ag status')
         return ('#label fqq.Ac_y_qq  fqg.Ac_y_qg  XX  XY  YY fhat_gg ' +
-                'fhat_qg fhat_qq fhat_ag Ac_y_qq_hat Ac_y_qg_hat f_gg.Ac_y_gg fitstatus')
+                'fhat_qg fhat_qq fhat_ag Ac_y_qq_hat Ac_y_qg_hat f_gg.Ac_y_gg fitstatus NLL')
 
     def __str__(self):
         if not self.doAsymm:
@@ -185,11 +185,12 @@ class fit(object):
                          self.fractionHats+
                          list(self.scales) +
                          [self.correction,
-                          self.status]
+                          self.status,
+                          self.NLL]
                          )
 
 class measurement(object):
-    def __init__(self, label, signal, profile, R0_, hackZeroBins=False, doVis=False, doSys=False, doEnsembles=True):
+    def __init__(self, label, signal, profile, R0_, hackZeroBins=False, doVis=False, doSys=False, doEnsembles=False):
         self.isAsymmetry = 'QueuedBin' in signal
         outNameBase = 'data/' + '_'.join(label.split(',')) + ['_nosys',''][int(doSys)]
         write = open(outNameBase + '.txt', 'w')
@@ -294,12 +295,12 @@ class measurement(object):
             fAqq = self.central.model.w.arg('falphaL').getVal() * self.central.model.w.arg('Ac_y_ttqq').getVal()
             fAqg = self.central.model.w.arg('falphaT').getVal() * self.central.model.w.arg('Ac_y_ttqg').getVal()
             print >> ensfile, '\t'.join(["#truth", '%f'%fAqq, '%f'%fAqg])
-            print >> ensfile, fit.fields(self.isAsymmetry), 'NLL'
+            print >> ensfile, fit.fields(self.isAsymmetry)
             for i in range(skip,Nens):
                 alt = mcstudy.genData(i)
                 pars['label'] = 'ens%d'%i
                 f = fit(altData=alt, **pars)
-                print >> ensfile, f, f.NLL
+                print >> ensfile, f
                 ensfile.flush()
 
 
