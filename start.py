@@ -19,7 +19,7 @@ class fit(object):
     def __init__(self, label, signal, profileVars, R0_,
                  d_lumi, d_xs_dy, d_xs_st, tag, genPre, sigPre, dirIncrement, genDirPre, 
                  quiet = False, hackZeroBins=False, defaults = {}, pllPoints=[],
-                 log=None, fixSM=False,altData=None):
+                 log=None, fixSM=False,altData=None, lumiFactor=1.0):
 
         self.label = label
         self.quiet = quiet
@@ -57,6 +57,7 @@ class fit(object):
         print "###", label
         print>>self.log, "###", label
         self.model = model.topModel(channels, asymmetry=self.doAsymm, quiet=True)
+        self.model.w.arg('lumi_factor').setVal(lumiFactor)
         for k,v in defaults.items(): self.model.w.arg(k).setVal(v)
         for item in ['d_lumi', 'd_xs_dy', 'd_xs_st']: self.model.w.arg(item).setVal(eval(item))
 
@@ -188,7 +189,8 @@ class fit(object):
                          )
 
 class measurement(object):
-    def __init__(self, label, signal, profile, R0_, hackZeroBins=False, doVis=False, doSys=False, doEnsembles=False):
+    def __init__(self, label, signal, profile, R0_, hackZeroBins=False, doVis=False, doSys=False, doEnsembles=True):
+        self.isAsymmetry = 'QueuedBin' in signal
         outNameBase = 'data/' + '_'.join(label.split(',')) + ['_nosys',''][int(doSys)]
         write = open(outNameBase + '.txt', 'w')
         log = open(outNameBase + '.log', 'w')
@@ -208,7 +210,7 @@ class measurement(object):
         print >> write, str(self.central)
         self.central.model.print_n()
 
-        if 'QueuedBin' in signal:
+        if self.isAsymmetry:
             para = self.central.parb.parametricEllipse(0.5)
             angle = self.central.parb.major_angle()
             points = [(x/w,y/w) for x,y,w in [para.dot([math.cos(angle+f*math.pi),
@@ -229,36 +231,10 @@ class measurement(object):
         if doVis: self.central.model.visualize2D(printName=outNameBase+'.pdf')
         #utils.tCanvasPrintPdf(visCanvas, outNameBase, verbose=False, title='central')
 
-        @roo.quiet
-        def ensembles():
-            if True:
-                self.central.model.w.arg('falphaL').setVal(0)
-                self.central.model.w.arg('falphaT').setVal(0)
-                self.central.model.w.arg('slosh').setVal(self.SM.model.w.arg('slosh').getVal())
-                self.central.model.w.arg('R_ag').setVal(self.SM.model.w.arg('R_ag').getVal())
-
-            mcstudy = r.RooMCStudy(self.central.model.w.pdf('model'),
-                                   self.central.model.w.argSet(','.join(self.central.model.observables+['channel'])),
-                                   r.RooFit.Binned(True),
-                                   r.RooFit.Extended(True)
-                               )
-            skip=0
-            Nens = 1000
-            mcstudy.generate(Nens,0,True)
-            with open('ensemble.txt','w') as ensfile:
-                fAqq = self.central.model.w.arg('falphaL').getVal() * self.central.model.w.arg('Ac_y_ttqq').getVal()
-                fAqg = self.central.model.w.arg('falphaT').getVal() * self.central.model.w.arg('Ac_y_ttqg').getVal()
-                print >> ensfile, '\t'.join(["#truth", '%f'%fAqq, '%f'%fAqg])
-                print >> ensfile, fit.fields('QueuedBin' in signal), 'NLL'
-                for i in range(skip,Nens):
-                    alt = mcstudy.genData(i)
-                    pars = systematics.central()
-                    pars['label'] = 'ens%d'%i
-                    f = fit(signal=signal, profileVars=profile, R0_=R0_, log=log,
-                            hackZeroBins=hackZeroBins, altData=alt, **pars)
-                    print >> ensfile, f, f.NLL
-                    ensfile.flush()
-        if doEnsembles: ensembles()
+        if doEnsembles: 
+            ensPars = systematics.central()
+            ensPars.update({'signal':signal, 'profileVars':profile, 'R0_':R0_, 'log':log, 'hackZeroBins':hackZeroBins})
+            self.ensembles(ensPars, lumiFactor=0.5)
 
         syss = []
         for sys in [[],systematics.systematics()][int(doSys)]:
@@ -295,6 +271,37 @@ class measurement(object):
         #utils.tCanvasPrintPdf(visCanvas, outNameBase, verbose=True, option=')')
         write.close()
         log.close()
+
+    @roo.quiet
+    def ensembles(self, pars, ens='A', lumiFactor=1.0):
+        self.central.model.w.arg('lumi_factor').setVal(lumiFactor)
+        pars['lumiFactor'] = lumiFactor
+        if ens=='B':
+            self.central.model.w.arg('falphaL').setVal(0)
+            self.central.model.w.arg('falphaT').setVal(0)
+            self.central.model.w.arg('slosh').setVal(self.SM.model.w.arg('slosh').getVal())
+            self.central.model.w.arg('R_ag').setVal(self.SM.model.w.arg('R_ag').getVal())
+
+        mcstudy = r.RooMCStudy(self.central.model.w.pdf('model'),
+                               self.central.model.w.argSet(','.join(self.central.model.observables+['channel'])),
+                               r.RooFit.Binned(True),
+                               r.RooFit.Extended(True)
+                           )
+        skip=0
+        Nens = 10
+        mcstudy.generate(Nens,0,True)
+        with open('ensemble_%s_LF%d.txt'%(ens,100*lumiFactor),'w') as ensfile:
+            fAqq = self.central.model.w.arg('falphaL').getVal() * self.central.model.w.arg('Ac_y_ttqq').getVal()
+            fAqg = self.central.model.w.arg('falphaT').getVal() * self.central.model.w.arg('Ac_y_ttqg').getVal()
+            print >> ensfile, '\t'.join(["#truth", '%f'%fAqq, '%f'%fAqg])
+            print >> ensfile, fit.fields(self.isAsymmetry), 'NLL'
+            for i in range(skip,Nens):
+                alt = mcstudy.genData(i)
+                pars['label'] = 'ens%d'%i
+                f = fit(altData=alt, **pars)
+                print >> ensfile, f, f.NLL
+                ensfile.flush()
+
 
 def query(items, default = ()):
     display = '\n'.join('%d %s' % iD for iD in enumerate(items)) + '\nWhich? '
