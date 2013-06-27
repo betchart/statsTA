@@ -6,6 +6,7 @@ r.gStyle.SetOptFit(0)
 
 xstat = 0.36828715173
 ystat = 0.108619583584
+nll = -6121051.71045
 
 names = ['ensemble_atMeasured','ensemble_atZero']
 tfiles = [r.TFile.Open('data/%s.root'%name) for name in names]
@@ -14,13 +15,14 @@ c = r.TCanvas()
 outName = 'ensembles.pdf'
 c.Print(outName + '[')
 
-plots = ['delta_Aqq','delta_Aqg','error_Aqq','error_Aqg','pullqq','pullqg']
+plots = ['delta_Aqq','delta_Aqg','error_Aqq','error_Aqg','pullqq','pullqg','dNLL']
 labels = ['#delta A_{c}^{y(q#bar{q})} (%)',
           '#delta A_{c}^{y(qg)} (%)',
           '#sigma A_{c}^{y(q#bar{q})} (%)',
           '#sigma A_{c}^{y(qg)} (%)',
           '#frac{#delta}{#sigma}  A_{c}^{y(q#bar{q})} ',
           '#frac{#delta}{#sigma}  A_{c}^{y(qg)} ',
+          'NLL-#bar{NLL}',
 ]
 
 a = r.TArrow()
@@ -46,16 +48,18 @@ for item,x in zip(plots,labels):
         h_.GetYaxis().SetTitle('Pseudo-Experiments')
         h_.GetXaxis().SetTitle(x)
         h_.SetMaximum(m)
-        print par(h_,'Mean'), '&', par(h_,'Sigma')
+        if 'NLL' not in item: print par(h_,'Mean'), '&', par(h_,'Sigma')
     print
     h[1].SetLineColor(r.kRed)
     h[1].SetMarkerColor(r.kRed)
-    h[1].GetFunction('gaus').SetLineColor(r.kRed)
+    if 'NLL' not in item: h[1].GetFunction('gaus').SetLineColor(r.kRed)
+    if 'NLL' in item:
+        r.TGaxis.SetMaxDigits(3)
     h[0].Draw()
     h[1].Draw('same')
 
-    x_ = xstat if 'Aqq' in item else ystat
-    if 'error' in item: a.DrawArrow(x_,3,x_,150,0.05,"<")
+    x_ = xstat if 'Aqq' in item else ystat if 'Aqg' in item else nll-tfiles[0].Get('meanNLL').GetMean()
+    if 'error' in item or 'NLL' in item: a.DrawArrow(x_,3,x_,0.4*h[0].GetMaximum(),0.05,"<")
     c.Update()
     c.Print(outName)
 
