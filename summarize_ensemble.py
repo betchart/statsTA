@@ -17,7 +17,7 @@ if __name__ == '__main__':
         exit()
     
     with open(sys.argv[1]) as mFile:
-        M = dict([(line.split()[0], tuple(eval(f) for f in line.split()[1:6]))
+        M = dict([(line.split()[0], tuple(eval(f) for f in line.split()[1:6] + line.split()[-1:]))
                   for line in mFile.readlines() if '#' not in line])
 
     with open(sys.argv[1]) as mFile:
@@ -31,8 +31,13 @@ if __name__ == '__main__':
                 scale * oneSigmaCLprojection(sigmas2[(1,0),][:,(1,0)])]
     def pulls(k): return [d/e for d,e in zip(deltas(k),errors(k))]
 
+    def nll(k): return M[k][5]
+
     eAqq,eAqg = sum(np.array(errors(k)) for k in M) / len(M)
     ew = 0.03
+    meanNLL = sum(nll(k) for k in M) / len(M)
+    rmsNLL = math.sqrt(sum((nll(k) - meanNLL)**2 for k in M) / len(M))
+    print "%d\t%d"%(meanNLL, rmsNLL)
 
     tfile = r.TFile.Open('.'.join(sys.argv[1].split('.')[:-1]+['root']), 'RECREATE')
     book = autoBook(tfile)
@@ -48,6 +53,7 @@ if __name__ == '__main__':
         if np.dot(truth, el.matrix).dot(truth) < 0: within+=1
         try:
             values = deltas(k) + errors(k) + pulls(k)
+            book.fill(nll(k), 'NLL', 40, meanNLL-3*rmsNLL, meanNLL+3*rmsNLL)
             for n,v,lim in zip(names,values,limits):
                 book.fill(v,n,40,*lim)
         except:
