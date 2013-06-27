@@ -44,8 +44,10 @@ if __name__ == '__main__':
         eAqq,eAqg = sum(np.array(errors(k)) for k in M) / len(M)
         ew = 0.03
         limits = [(-5*eAqq,5*eAqq),(-5*eAqq,5*eAqq),(eAqq-ew, eAqq+ew),(eAqg-ew, eAqg+ew),(-5,5),(-5,5)]
+        wNLL = 3*rmsNLL
     else:
         limits = fixedLimits
+        wNLL = 40000
 
     truth = tuple(fA + [1.])
     within=0
@@ -55,7 +57,8 @@ if __name__ == '__main__':
                    [M[k][3], M[k][4]]]
         el = ellipse(mean=mean,sigmas2=sigmas2)
         if np.dot(truth, el.matrix).dot(truth) < 0: within+=1
-        book.fill(nll(k), 'NLL', 40, meanNLL-3*rmsNLL, meanNLL+3*rmsNLL)
+        book.fill(meanNLL, 'meanNLL', 40, -6.2e6,-5.8e6)
+        book.fill(nll(k)-meanNLL, 'dNLL', 40, -wNLL,wNLL)
         try:
             values = deltas(k) + errors(k) + pulls(k)
             for n,v,lim in zip(names,values,limits):
