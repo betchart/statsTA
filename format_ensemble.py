@@ -12,6 +12,7 @@ names = ['ensemble_atMeasured','ensemble_atZero']
 tfiles = [r.TFile.Open('data/%s.root'%name) for name in names]
 
 c = r.TCanvas()
+c.SetRightMargin(0.06)
 outName = 'ensembles.pdf'
 c.Print(outName + '[')
 
@@ -43,6 +44,9 @@ for item,x in zip(plots,labels):
     print item
     h = [tfile.Get(item) for tfile in tfiles]
     m = max([1.2 * h_.GetMaximum() for h_ in h])
+    if 'NLL' in item:
+        r.TGaxis.SetMaxDigits(3)
+        c.SetRightMargin(0.1)
     for h_,n in zip(h,names): 
         h_.UseCurrentStyle()
         h_.GetYaxis().SetTitle('Pseudo-Experiments')
@@ -53,8 +57,6 @@ for item,x in zip(plots,labels):
     h[1].SetLineColor(r.kRed)
     h[1].SetMarkerColor(r.kRed)
     if 'NLL' not in item: h[1].GetFunction('gaus').SetLineColor(r.kRed)
-    if 'NLL' in item:
-        r.TGaxis.SetMaxDigits(3)
     h[0].Draw()
     h[1].Draw('same')
 
