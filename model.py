@@ -66,7 +66,8 @@ class topModel(object):
 
     def import_xs_lumi(self, w):
         roo.factory(w, "d_lumi[0,-0.2,0.2]")
-        roo.wimport_const(w, 'lumi_factor', 1.0)
+        roo.factory(w, 'lumi_factor[1.0]')
+        w.arg('lumi_factor').setConstant()
         for L, channel in self.channels.items() + self.channels_qcd.items():
             roo.wimport_const(w, 'lumi_%s_hat' % L, channel.lumi)
             if 'qcd' in L: roo.factory(w, "expr::lumi_%s('(1+@0)*@1', {d_lumi, lumi_%s_hat})" % (L, L))
