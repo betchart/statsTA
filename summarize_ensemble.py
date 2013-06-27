@@ -31,10 +31,13 @@ if __name__ == '__main__':
                 scale * oneSigmaCLprojection(sigmas2[(1,0),][:,(1,0)])]
     def pulls(k): return [d/e for d,e in zip(deltas(k),errors(k))]
 
+    eAqq,eAqg = sum(np.array(errors(k)) for k in M) / len(M)
+    ew = 0.03
+
     tfile = r.TFile.Open('.'.join(sys.argv[1].split('.')[:-1]+['root']), 'RECREATE')
     book = autoBook(tfile)
     names = ['delta_Aqq','delta_Aqg','error_Aqq','error_Aqg','pullqq','pullqg']
-    limits = [(-1.5,1.5),(-1.5,1.5),(0.34,0.4),(0.09,0.15),(-5,5),(-5,5)]
+    limits = [(-5*eAqq,5*eAqq),(-5*eAqq,5*eAqq),(eAqq-ew, eAqq+ew),(eAqg-ew, eAqg+ew),(-5,5),(-5,5)]
     truth = tuple(fA + [1.])
     within=0
     for k in M:
