@@ -190,7 +190,7 @@ class fit(object):
                          )
 
 class measurement(object):
-    def __init__(self, label, signal, profile, R0_, hackZeroBins=False, doVis=False, doSys=False, doEnsembles=False):
+    def __init__(self, label, signal, profile, R0_, hackZeroBins=False, doVis=False, doSys=False, doEnsembles=True):
         self.isAsymmetry = 'QueuedBin' in signal
         outNameBase = 'data/' + '_'.join(label.split(',')) + ['_nosys',''][int(doSys)]
         write = open(outNameBase + '.txt', 'w')
@@ -235,7 +235,7 @@ class measurement(object):
         if doEnsembles: 
             ensPars = systematics.central()
             ensPars.update({'signal':signal, 'profileVars':profile, 'R0_':R0_, 'log':log, 'hackZeroBins':hackZeroBins})
-            self.ensembles(ensPars, lumiFactor=1.0)
+            self.ensembles(ensPars, lumiFactor=1.0, ens='C')
 
         syss = []
         for sys in [[],systematics.systematics()][int(doSys)]:
@@ -282,6 +282,12 @@ class measurement(object):
             self.central.model.w.arg('falphaT').setVal(0)
             self.central.model.w.arg('slosh').setVal(self.SM.model.w.arg('slosh').getVal())
             self.central.model.w.arg('R_ag').setVal(self.SM.model.w.arg('R_ag').getVal())
+        if ens=='C':
+            for item in ['falphaL','falphaT','slosh','R_ag']:
+                self.central.model.w.arg(item).setVal(self.SM.model.w.arg(item).getVal())
+        if ens=='D':
+            for item in ['falphaL','falphaT']:
+                self.central.model.w.arg(item).setVal(-self.central.model.w.arg(item).getVal())
 
         mcstudy = r.RooMCStudy(self.central.model.w.pdf('model'),
                                self.central.model.w.argSet(','.join(self.central.model.observables+['channel'])),
