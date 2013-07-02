@@ -190,7 +190,7 @@ class fit(object):
                          )
 
 class measurement(object):
-    def __init__(self, label, signal, profile, R0_, hackZeroBins=False, doVis=False, doSys=False, doEnsembles=True):
+    def __init__(self, label, signal, profile, R0_, hackZeroBins=False, doVis=False, doSys=False, doEnsembles=False):
         self.isAsymmetry = 'QueuedBin' in signal
         outNameBase = 'data/' + '_'.join(label.split(',')) + ['_nosys',''][int(doSys)]
         write = open(outNameBase + '.txt', 'w')
@@ -295,7 +295,7 @@ class measurement(object):
                                r.RooFit.Extended(True)
                            )
         skip=0
-        Nens = 10
+        Nens = 1000
         mcstudy.generate(Nens,0,True)
         with open('ensemble_%s_LF%d.txt'%(ens,100*lumiFactor),'w') as ensfile:
             fAqq = self.central.model.w.arg('falphaL').getVal() * self.central.model.w.arg('Ac_y_ttqq').getVal()
