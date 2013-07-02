@@ -70,7 +70,7 @@ def systematics():
               'genPre': '%03d_' % i,
               'sigPre': '%03d_' % i} for i in range(1, 53)]
 
-            #[{'label': 'thr30', 'tag': 'ph_sn_jn_30'}]
+            #+[{'label': 'thr30', 'tag': 'ph_sn_jn_30'}]
             )
     #return [s for s in sys if 'thr30' in s['label']]
     return sys
