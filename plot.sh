@@ -200,3 +200,42 @@ plot [-hor:hor] [-ver:ver] \
     '' u 9:(ver-1*ep) w lines lt 1 lc 4 lw lwidth notitle, \
     '' u (-hor+1*ep*hor/ver):10 w lines lt 1 lc 4 lw lwidth notitle, \
     '' u (altox($11,off-10*ep)):(altoy($11,off-10*ep)) w lines lt 1 lc 4 lw lwidth notitle
+
+
+above(x,y)= y>aplot(x)?y:1/0
+
+plot [-hor:hor] [-ver:ver] \
+    aplot(x) w filledcurves x1 lc rgb "white" notitle, \
+    aplot(x) lt 1 lc 7 lw 3 notitle, \
+    tic(x,-0.03) notitle lt 4 lc 7, \
+    tic(x,-0.02) notitle lt 4 lc 7, \
+    tic(x,-0.01) notitle lt 4 lc 7, \
+    tic(x,0) notitle lt 4 lc 7, \
+    tic(x,0.01) notitle lt 4 lc 7, \
+    tic(x,0.02) notitle lt 4 lc 7, \
+    tic(x,0.03) notitle lt 4 lc 7, \
+    'data/asymmetry_full_thr30.txt' u ($0==0?$9*$11:1/0):($8*$12) pt 7 ps 0.6 lc 2 title '{}_{POWHEG-CT10}', \
+    '' u ($0==1?$9*$11:1/0):($8*$12) pt 6 ps 0.6 lc 2 notitle, \
+    above(x,-x+0.181988641018*0.0116658564583+0.13387790945*0.0295313129862) lc 2 lt 1 notitle, \
+    above(x,-x+0.158720638333*0.0107352062128+0.144493371919*0.0301769084344) lc 2 lt 3 notitle, \
+    '' u ($0==0?$2:1/0):3 pt 7 ps 0.6 lc 0 title 'Full Selection', \
+    '' u ($0==1?$2:1/0):3 pt 6 ps 0.6 lc 0 notitle , \
+    above(x,-x+0.00392834766936+0.00371431842306) lc 0 lt 1 notitle, \
+    above(x,-x+0.00470930384515+0.0030793670305) lc 0 lt 3 notitle, \
+    'data/asymmetry_hiM_thr30.txt' u ($0==0?$2:1/0):3 pt 7 ps 0.6 lc 5 title 'm_{tt} > 450 GeV', \
+    '' u ($0==1?$2:1/0):3 pt 6 ps 0.6 lc 5 notitle , \
+    above(x,-x+0.00441966295901+0.00461882402026) lc 5 lt 1 notitle, \
+    above(x,-x+0.0045882695171+0.00394332174142) lc 5 lt 3 notitle, \
+    'data/asymmetry_loM_thr30.txt' u ($0==0?$2:1/0):3 pt 7 ps 0.6 lc 3 title 'm_{tt} < 450 GeV', \
+    '' u ($0==1?$2:1/0):3 pt 6 ps 0.6 lc 3 notitle , \
+    above(x,-x-0.00258507695697+0.00329948404313) lc 3 lt 1 notitle, \
+    above(x,-x-0.00302884613032+0.00294388451244) lc 3 lt 3 notitle, \
+    'data/asymmetry_hiY_thr30.txt' u ($0==0?$2:1/0):3 pt 7 ps 0.6 lc 1 title 'tanh|y_{tt}| > 0.5', \
+    '' u ($0==1?$2:1/0):3 pt 6 ps 0.6 lc 1 notitle , \
+    above(x,-x+-0.000555240911894+0.00225455451716) lc 1 lt 1 notitle, \
+    above(x,-x+-0.000108439852522+0.00198727490563) lc 1 lt 3 notitle, \
+    'data/asymmetry_loY_thr30.txt' u ($0==0?$2:1/0):3 pt 7 ps 0.6 lc 4 title 'tanh|y_{tt}| < 0.5', \
+    '' u ($0==1?$2:1/0):3 pt 6 ps 0.6 lc 4 notitle , \
+    above(x,-x+0.0188165322137+0.0044505868299) lc 4 lt 1 notitle, \
+    above(x,-x+0.0228061761161+0.00332675255366) lc 4 lt 3 notitle
+
