@@ -237,5 +237,14 @@ plot [-hor:hor] [-ver:ver] \
     'data/asymmetry_loY_thr30.txt' u ($0==0?$2:1/0):3 pt 7 ps 0.6 lc 4 title 'tanh|y_{tt}| < 0.5', \
     '' u ($0==1?$2:1/0):3 pt 6 ps 0.6 lc 4 notitle , \
     above(x,-x+0.0188165322137+0.0044505868299) lc 4 lt 1 notitle, \
-    above(x,-x+0.0228061761161+0.00332675255366) lc 4 lt 3 notitle
+    above(x,-x+0.0228061761161+0.00332675255366) lc 4 lt 3 notitle, \
+    'data/asymmetry_full_points.txt' u (altox($14,off-10*ep)):(altoy($14,off-10*ep)) w lines lt 1 lw 10 lc 2 notitle, \
+    '' u (altox($14,off+20*ep)):(altoy($14,off+20*ep)) w lines lt 1 lw 10 lc 2 notitle, \
+    '' u (altox($14,off+50*ep)):(altoy($14,off+50*ep)) w lines lt 1 lw 10 lc 2 notitle, \
+    '' u (altox($14,off+80*ep)):(altoy($14,off+80*ep)) w lines lt 1 lw 10 lc 2 notitle, \
+    '' u (altox($11,off+80*ep)):(altoy($11,off+80*ep)) w lines lt 1 lc 7 lw lwidth notitle, \
+    'data/asymmetry_hiM_points.txt' u (altox($11,off+50*ep)):(altoy($11,off+50*ep)) w lines lt 1 lc 5 lw lwidth notitle, \
+    'data/asymmetry_loM_points.txt' u (altox($11,off+20*ep)):(altoy($11,off+20*ep)) w lines lt 1 lc 3 lw lwidth notitle, \
+    'data/asymmetry_hiY_points.txt' u (altox($11,off-10*ep)):(altoy($11,off-10*ep)) w lines lt 1 lc 1 lw lwidth notitle, \
+    'data/asymmetry_loY_points.txt' u (altox($11,off-10*ep)):(altoy($11,off-10*ep)) w lines lt 1 lc 4 lw lwidth notitle
 
