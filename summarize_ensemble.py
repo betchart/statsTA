@@ -63,6 +63,7 @@ if __name__ == '__main__':
             values = deltas(k) + errors(k) + pulls(k)
             for n,v,lim in zip(names,values,limits):
                 book.fill(v,n,40,*lim)
+            book.fill(tuple(values[2:4]), 'errors2D', (40,40), (limits[2][0],limits[3][0]), (limits[2][1],limits[3][1]))
         except:
             pass
     print within
