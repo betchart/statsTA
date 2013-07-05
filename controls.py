@@ -6,6 +6,8 @@ r.gROOT.ProcessLine(".L tdrstyle.C")
 r.setTDRStyle()
 r.tdrStyle.SetErrorX(r.TStyle().GetErrorX())
 r.tdrStyle.SetPadTopMargin(0.065)
+r.TGaxis.SetMaxDigits(3)
+#r.tdrStyle.SetPadRightMargin(0.06)
 from inputs import channel_data
 
 d_xs_wj = 0.7822232858137581
@@ -35,11 +37,34 @@ tfile = {'mu_QCD':r.TFile.Open('data/control_QCD_mu_ph_sn_jn_20.root'),
 names = set(k.GetName().replace('el','%(lep)s').replace('mu','%(lep)s') for f in tfile.values() for k in f.GetListOfKeys() if 'Moment' not in k.GetName())
 rebins = dict([(n,1) for n in names])
 rebins['LiCSV']=4
+rebins['fitTopTanhRapiditySum']=2
 
 colors = {'tt':r.kBlue, 'wj':r.kGreen, 'mj':r.kRed, 'st':r.kGray, 'dy':r.kGray}
 
 zero = r.TF1('zero','0',0,10000)
 
+labels = {'chia':'#chi_{a}', 
+          'lepMetMt':'M_{T} (GeV)',
+          'ProbabilityHTopMasses':'P_{MSD}', 
+          'MSD':'MSD',
+          'TopRatherThanWProbability':'P_{CSV}', 
+          'LiCSV':'L_{i}^{CSV} / max(L^{CSV})',
+          'fitTopTanhRapiditySum':'tanh|y_{t#bar{t}}|',
+          'fitTopSumP4.mass':'m_{t#bar{t}}',
+          'rawHadTopMass':'m_{bpq} (GeV)',
+          'rawHadWMass':'m_{pq} (GeV)', 
+          'jetPti0':'jet0 p_{T} (GeV)',
+          'jetPti1':'jet1 p_{T} (GeV)',
+          'jetPti2':'jet2 p_{T} (GeV)',
+          'jetPti3':'jet3 p_{T} (GeV)',
+          'jetAdjustedP4.absEtai0': '#eta jet0', 
+          'jetAdjustedP4.absEtai1': '#eta jet1', 
+          'jetAdjustedP4.absEtai2': '#eta jet2', 
+          'jetAdjustedP4.absEtai3': '#eta jet3',
+          'metAdjustedP4.pt':'#slash{E}_{T} (GeV)', 
+          'lepP4.pti0':'%(lep)s p_{T} (GeV)',
+          'lepP4.absEtai0':'%(lep)s #eta',
+}
 
 def flows(h):
     bins = h.GetNbinsX()
@@ -117,7 +142,10 @@ def cprep(c,ratio=False):
     
 
 def make(gname):
-    fname = 'graphics/'+ (gname%{'lep':'lep'}).replace('[','').replace(']','') + '.pdf'
+    r.tdrStyle.SetPadRightMargin(0.11 if 'mass' in gname else 0.06)
+    r.tdrStyle.SetPadLeftMargin(0.14 if 'mass' in gname else 0.15)
+    ggname = (gname%{'lep':'lep'}).replace('[','').replace(']','')
+    fname = 'graphics/'+ ggname + '.pdf'
     c = r.TCanvas()
 
     c.Print(fname+'[')
@@ -149,18 +177,19 @@ def make(gname):
             doRatio = all(hists.values())
             cprep(c,doRatio)
             data.UseCurrentStyle()
+            data.GetXaxis().SetTitle(labels[ggname%{'lep':'lep'}]%{'lep':{'el':'electron','mu':'muon'}[lep]})
             if doRatio:
                 c.cd(2)
                 ratio = getRatio(data,hists)
                 logr = logH(ratio)
                 logr.Draw()
                 zero.Draw('same')
+                logr.Draw('same')
                 data.SetLabelSize(0)
                 data.GetXaxis().SetTitleSize(0)
                 data.GetYaxis().SetTitleSize(0.079)
                 data.GetYaxis().SetTitleOffset(0.95)
                 data.GetYaxis().SetLabelSize(0.065)
-                r.TGaxis.SetMaxDigits(3)
             stack = r.THStack('stack','')
             for item in ['dy','st','mj','wj','tt']:
                 if item in hists and hists[item]: stack.Add(hists[item])
