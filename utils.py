@@ -1,5 +1,6 @@
 from multiprocessing import Process,JoinableQueue
 import math,traceback,sys,itertools, ROOT as r
+import array
 try: import numpy as np
 except: pass
 
@@ -168,3 +169,48 @@ def roundString(val, err, width=None, noSci = False, noErr = False) :
             precision-=1
     return returnVal
 #####################################
+
+def combineBinContentAndError(histo, binToContainCombo, binToBeKilled) :
+    xflows     = histo.GetBinContent(binToBeKilled)
+    xflowError = histo.GetBinError(binToBeKilled)
+
+    if xflows==0.0 : return #ugly
+
+    currentContent = histo.GetBinContent(binToContainCombo)
+    currentError   = histo.GetBinError(binToContainCombo)
+    
+    histo.SetBinContent(binToBeKilled, 0.0)
+    histo.SetBinContent(binToContainCombo, currentContent+xflows)
+    
+    histo.SetBinError(binToBeKilled, 0.0)
+    histo.SetBinError(binToContainCombo, math.sqrt(xflowError**2+currentError**2))
+
+
+def ratioHistogram( num, den, relErrMax=0.25) :
+
+    def groupR(group) :
+        N,D = [float(sum(hist.GetBinContent(i) for i in group)) for hist in [num,den]]
+        return N/D if D else 0
+
+    def groupErr(group) :
+        N,D = [float(sum(hist.GetBinContent(i) for i in group)) for hist in [num,den]]
+        ne2,de2 = [sum(hist.GetBinError(i)**2 for i in group) for hist in [num,den]]
+        return math.sqrt( ne2/N**2 + de2/D**2 ) * N/D if N and D else 0
+
+    def regroup(groups) :
+        err,iG = max( (groupErr(g),groups.index(g)) for g in groups )
+        if err < relErrMax or len(groups)<3 : return groups
+        iH = max( [iG-1,iG+1], key = lambda i: groupErr(groups[i]) if 0<=i<len(groups) else -1 )
+        iLo,iHi = sorted([iG,iH])
+        return regroup(groups[:iLo] + [groups[iLo]+groups[iHi]] + groups[iHi+1:])
+
+    try :
+        groups = regroup( [(i,) for i in range(1,1+num.GetNbinsX())] )
+    except :
+        print 'Ratio failed:', num.GetName()
+        groups = [(i,) for i in range(1,1+num.GetNbinsX()) ]
+    ratio = r.TH1D("ratio"+num.GetName()+den.GetName(),"",len(groups), array.array('d', [num.GetBinLowEdge(min(g)) for g in groups ] + [num.GetXaxis().GetBinUpEdge(num.GetNbinsX())]) )
+    for i,g in enumerate(groups) :
+        ratio.SetBinContent(i+1,groupR(g))
+        ratio.SetBinError(i+1,groupErr(g))
+    return ratio
