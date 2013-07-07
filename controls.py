@@ -41,7 +41,7 @@ rebins['fitTopTanhRapiditySum']=2
 
 colors = {'tt':r.kBlue, 'wj':r.kGreen, 'mj':r.kRed, 'st':r.kGray, 'dy':r.kGray}
 
-zero = r.TF1('zero','0',0,10000)
+zero = r.TF1('zero','0',-10000,10000)
 
 labels = {'chia':'#chi_{a}', 
           'lepMetMt':'M_{T} (GeV)',
@@ -64,6 +64,7 @@ labels = {'chia':'#chi_{a}',
           'metAdjustedP4.pt':'#slash{E}_{T} (GeV)', 
           'lepP4.pti0':'%(lep)s p_{T} (GeV)',
           'lepP4.absEtai0':'%(lep)s #eta',
+          'TridiscriminantWTopQCD':'#Delta',
 }
 
 def flows(h):
