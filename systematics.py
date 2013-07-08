@@ -72,7 +72,7 @@ def systematics():
 
             #+[{'label': 'thr30', 'tag': 'ph_sn_jn_30'}]
             )
-    #return [s for s in sys if 'thr30' in s['label']]
+    #return [s for s in sys if s['label'] in ['ST_up','ST_dn','DY_up','DY_dn']]
     return sys
 
 

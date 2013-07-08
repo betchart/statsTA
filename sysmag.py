@@ -6,6 +6,15 @@ from ellipse import ellipse
 import numpy as np
 from functools import partial
 
+summarize = True
+
+pairs = dict([(item,(item+'_dn',item+'_up')) for item in ['RF','JER','JES','PU','lumi','DY','ST','DY2','ST2'][:-4]])
+pairs.update(dict([('PD:%02d-%02d'%(i,i+1),('PD_%02d'%i,'PD_%02d'%(i+1))) for i in range(1,53,2)]))
+pairs.update(dict([('muid',('mu2','mu3')),
+                   ('mutrig',('mu0','mu1')),
+                   ('elid',('el2','el3')),
+                   ('eltrig',('el0','el1'))]))
+
 if __name__ == '__main__':
 
     partitions = ['full','hiM','loM','hiY','loY']
@@ -23,21 +32,18 @@ if __name__ == '__main__':
     def deltas(M,k): return [M['central'][i] - M[k][i] for i in [0,1]]
     
     def distance(M,k): return math.sqrt( np.dot(*(2*[deltas(M,k)])) )
+    def diff(M,k): return sum(M['central']) - sum(M[k])
+    def pairsig(M,p): return math.sqrt( 0.5* (diff(M,pairs[p][0])**2 + diff(M,pairs[p][1])**2) )
 
-    def angle(M,k): return math.atan2(*reversed(deltas(M,k)))
-
-    maxd = [max(distance(M,k) for k in M) for M in Ms]
-    def order(k):
-        return sum(distance(M,k)/m for M,m in zip(Ms,maxd))
-
-    keys = sorted( set(sum([sorted(M, key=partial(distance,M)) for M in Ms],[])),
-                   key=partial(distance,Ms[0]), reverse=True)
+    keys = sorted( pairs if summarize else Ms[0], 
+                   key=partial(pairsig if summarize else distance,Ms[0]), reverse=True)
 
     def form(M,key):
-        top = sorted(M, key=partial(distance,M))[-5:]
-        form = (r"\textbf{%.3f}" if key in top else "%.3f ").rjust(20)
-        d = distance(M,key)*100
-        return form%d
+        func = pairsig if summarize else distance
+        top = sorted(pairs if summarize else M, key=partial(func,M))[-5:]
+        form = (r"\textbf{% .3f}" if key in top else "% .3f ").rjust(20)
+        d = func(M,key)*100
+        return (form%d).ljust(20)
 
     headers = {'full':'Full Selection',
                'hiM':r'$m_{\ttbar}>450\GeV$',
@@ -61,7 +67,12 @@ if __name__ == '__main__':
                  ('PU','pileup'),
                  ('RF','RFS'),
                  ('lumi','\lumi'),
-                 ('ST','single')
+                 ('ST','single'),
+                 ('mutrig','$\mu$ trig'),
+                 ('muid', '$\mu$ id'),
+                 ('eltrig','$e$ trig'),
+                 ('elid', '$e$ id'),
+                 ('PD:','pdf ')
                  ]
         def rep(key,ps):
             if not ps: return key
@@ -96,6 +107,6 @@ The five greatest sources of systematic uncertainty in each selection are in bol
     print r'\caption[](continued)'
     print r'\endlastfoot'
     print '\n'.join(
-        formkey(key).ljust(15) +' & '+ ' & '.join(form(M,key) for M in Ms) + r'  \\' + (vspace if i%5==4 else '')
+        formkey(key).ljust(28) +' & '+ ' & '.join(form(M,key) for M in Ms) + r'  \\' + (vspace if i%5==4 else '')
         for i,key in enumerate(keys))
     print r'\end{longtable}'
