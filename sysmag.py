@@ -85,12 +85,13 @@ if __name__ == '__main__':
 
 '''
     caption = r'''
-\caption{\label{list_systematics} Magnitude of the measurement
-         displacement in the plane $(A_c^{y(\QQ)},A_c^{y(\QG)})$ due to
-         systematic variations, ordered by decreasing magnitude in the full selection.
-%
+\caption{\label{list_systematics} %s 
+due to sources of systematic variations, ordered by decreasing
+magnitude in the full selection.
+%s
 The five greatest sources of systematic uncertainty in each selection are in bold.}
-'''
+'''%('Uncertainty on $A_c^y$' if summarize else 'Magnitude of the measurement displacement in the plane $(A_c^{y(\QQ)},A_c^{y(\QG)})$',
+     '%')
 
 
     print r'\begin{longtable}{lccccc}'
