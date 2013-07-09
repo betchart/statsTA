@@ -34,9 +34,9 @@ def par(h,name):
     p = h.GetFunction('gaus').GetParameter(name)
     e = h.GetFunction('gaus').GetParError(h.GetFunction('gaus').GetParNumber(name))
     p1,p2 = divmod(abs(p),1)
-    sign = -1 if p<0 else 1
+    sign = '-' if p<0 else ''
     s = 100000
-    return "%d&%05d(%05d)"%(sign*p1,s*p2,s*e)
+    return "%s%d&%05d(%05d)"%(sign,p1,s*p2,s*e)
         
 print names
 print
