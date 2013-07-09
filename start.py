@@ -277,7 +277,7 @@ class measurement(object):
     def ensembles(self, pars, ens='A', lumiFactor=1.0):
         self.central.model.w.arg('lumi_factor').setVal(lumiFactor)
         pars['lumiFactor'] = lumiFactor
-        if ens=='B':
+        if ens=='D':
             self.central.model.w.arg('falphaL').setVal(0)
             self.central.model.w.arg('falphaT').setVal(0)
             self.central.model.w.arg('slosh').setVal(self.SM.model.w.arg('slosh').getVal())
@@ -285,7 +285,7 @@ class measurement(object):
         if ens=='C':
             for item in ['falphaL','falphaT','slosh','R_ag']:
                 self.central.model.w.arg(item).setVal(self.SM.model.w.arg(item).getVal())
-        if ens=='D':
+        if ens=='B':
             for item in ['falphaL','falphaT']:
                 self.central.model.w.arg(item).setVal(-self.central.model.w.arg(item).getVal())
 

@@ -8,7 +8,7 @@ xstat = 0.36828715173
 ystat = 0.108619583584
 nll = -6121051.71045
 
-names = ['ensemble_atMeasured','ensemble_atZero']
+names = ['ensemble_atMeasured','ensemble_B_LF100','ensemble_C_LF100','ensemble_atZero']
 tfiles = [r.TFile.Open('data/%s.root'%name) for name in names]
 
 c = r.TCanvas()
@@ -54,11 +54,16 @@ for item,x in zip(plots,labels):
         h_.SetMaximum(m)
         if 'NLL' not in item: print par(h_,'Mean'), '&', par(h_,'Sigma')
     print
-    h[1].SetLineColor(r.kRed)
-    h[1].SetMarkerColor(r.kRed)
-    if 'NLL' not in item: h[1].GetFunction('gaus').SetLineColor(r.kRed)
     h[0].Draw()
-    h[1].Draw('same')
+    for i,(color,style) in enumerate(zip([r.kRed,r.kRed,r.kBlack],[False,True,True])):
+        h[i+1].SetLineColor(color)
+        h[i+1].SetMarkerColor(color)
+        h[i+1].SetMarkerSize(1.1)
+        if style: h[i+1].SetMarkerStyle(4)
+        if 'NLL' not in item: 
+            h[i+1].GetFunction('gaus').SetLineColor(color)
+            if style: h[i+1].GetFunction('gaus').SetLineStyle(2)
+        h[i+1].Draw('same')
 
     x_ = xstat if 'Aqq' in item else ystat if 'Aqg' in item else nll-tfiles[0].Get('meanNLL').GetMean()
     if 'error' in item or 'NLL' in item: a.DrawArrow(x_,3,x_,0.4*h[0].GetMaximum(),0.05,"<")
