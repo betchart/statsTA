@@ -96,7 +96,7 @@ The five greatest sources of systematic uncertainty in each selection are in bol
 
     print r'\begin{longtable}{lccccc}'
     print r'\hline'
-    print r'&\multicolumn{5}{c}{(\%)}'
+    print r'&\multicolumn{5}{c}{(\%)}\\'
     print '  &  '.join(headers[p] for p in partitions).join(['  &  ',r'  \\'])
     print r'\hline'
     print r'\hline'
