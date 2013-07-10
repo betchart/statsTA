@@ -22,7 +22,7 @@ for hs in [tt,gg,qq,qg]:
         h.UseCurrentStyle()
         h.SetLineWidth(3)
         h.GetXaxis().SetTitle('recoiling quark p_{T} (GeV)')
-        h.GetYaxis().SetTitle('events / bin / pb')
+        h.GetYaxis().SetTitle('events / bin / pb^{-1}')
         flows(h)
 
 for color,(h1,h2) in zip([r.kGray,r.kRed,r.kBlue,r.kGreen],[tt,qq,gg,qg]) :
