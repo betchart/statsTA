@@ -34,13 +34,26 @@ class sample_data(object):
             for d,od in zip(getattr(self,group),getattr(other,group)):
                 d.Add(od,-1)
 
+    def asymmStr(self):
+        unqueued = utils.unQueuedBins(self.datas[0],7,[-1,1],[-1,1])
+        unqx = unqueued.ProjectionX()
+        unqy = unqueued.ProjectionY()
+        ay = tuple([100*f for f in utils.asymmetry(unqx)])
+        ap = tuple([100*f for f in utils.asymmetry(unqy)])
+        del unqueued, unqx, unqy
+        return ';  '.join([ ('ay: % .2f(%.2f)'%ay).rjust(8),
+                            ('ap: % .2f(%.2f)'%ap).rjust(8)
+                        ])
+
+
     def __str__(self):
         return ('data' if not self.xs else
                 ';  '.join([('xs: % 8.2f' % self.xs),
                             ('eff: % .5f' % self.eff).rjust(7),
                             ('f: %.4f' % self.frac).rjust(8),
                             ('d: %.4f' % self.xs_sigma if self.xs_sigma else
-                             'd: None   ').rjust(8)]))
+                             'd: None   ').rjust(8),
+                        ]))
 
     @property
     def key(self): return (self.xs, self.frac)
@@ -118,6 +131,12 @@ class channel_data(object):
     def subtract(self, other):
         for s,samp in self.samples.items():
             samp.subtract(other.samples[s])
+
+    def asymmStr(self):
+        return '\n'.join('%s:: %s' % (s.rjust(5), data.asymmStr())
+                         for s, data in sorted(self.samples.items(),
+                                               key=lambda (s, d): d.key,
+                                               reverse=True))
 
     def __str__(self):
         return ('%s : %.2f/pb  (%.2f)\n' % (self.lepton, self.lumi, self.lumi_sigma) +

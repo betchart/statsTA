@@ -46,6 +46,12 @@ class fit(object):
                                               dirPrefix=genDirPre, genDirPre=genDirPre, 
                                               getTT=True, prePre = prePre)
 
+        for n,c in channels.items() :
+            if n == 'gen': continue
+            print n
+            print c.asymmStr()
+            print
+
         if diffR0_ :
             for lepPart,chan in channels.items():
                 if type(lepPart) != tuple: continue
@@ -138,7 +144,7 @@ class fit(object):
 
         if self.doAsymm: 
             self.scales = np.array([w.arg(a).getVal() for a in ['Ac_y_ttqq', 'Ac_y_ttqg']])
-            self.scalesPhi= [w.arg('Ac_phi_%s'%n) for n in ['ttqq','ttgg','ttag','ttqg','tt']]
+            self.scalesPhi= [w.arg('Ac_phi_%s'%n).getVal() for n in ['ttqq','ttgg','ttag','ttqg','tt']]
             self.correction = w.arg('Ac_y_ttgg').getVal() * w.arg('f_gg').getVal()
         self.fractionHats = [w.arg('f_%s_hat' % a).getVal() for a in ['gg','qg','qq','ag']]
 
@@ -170,7 +176,7 @@ class fit(object):
             return ('#label d_qq error' +
                     'fhat_gg fhat_qg fhat_qq fhat_ag status')
         return ('#label fqq.Ac_y_qq  fqg.Ac_y_qg  XX  XY  YY fhat_gg ' +
-                'fhat_qg fhat_qq fhat_ag Ac_y_qq_hat Ac_y_qg_hat f_gg.Ac_y_gg fitstatus NLL')
+                'fhat_qg fhat_qq fhat_ag Ac_y_qq_hat Ac_y_qg_hat f_gg.Ac_y_gg fitstatus NLL Ac_phi_qq_hat Ac_phi_gg_hat Ac_phi_ag_hat Ac_phi_qg_hat')
 
     def __str__(self):
         if not self.doAsymm:
@@ -186,7 +192,8 @@ class fit(object):
                          list(self.scales) +
                          [self.correction,
                           self.status,
-                          self.NLL]
+                          self.NLL]+
+                         self.scalesPhi[:4]
                          )
 
 class measurement(object):
