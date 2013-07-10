@@ -20,8 +20,8 @@ qg = tuple([tfile.Get('qRecoilPt/ttqg') for tfile in tfiles][::-1])
 for hs in [tt,gg,qq,qg]: 
     for h in hs:
         h.UseCurrentStyle()
-        h.SetLineWidth(2)
-        h.GetXaxis().SetTitle('recoiling quark p_{T}')
+        h.SetLineWidth(3)
+        h.GetXaxis().SetTitle('recoiling quark p_{T} (GeV)')
         h.GetYaxis().SetTitle('events / bin / pb')
         flows(h)
 
