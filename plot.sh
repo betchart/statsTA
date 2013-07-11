@@ -11,6 +11,7 @@ set ylabel 'A@_{c}^{y(qg)}  (%)' offset 1,0
 set xlabel 'A@_{c}^{y}  (%)' offset 0,0.8
 
 
+kr2012 = 0.0102
 qq = 0.003953110899140473
 qg = 0.0021230524809500123
 ep = 0.0001
@@ -36,6 +37,7 @@ altx(x) = altox(x,hor)
 alty(x) = altoy(x,hor)
 aplot(x) = (x-hor)*tan(theta)
 tic(x,o) = (o-x<aplot(x)?o-x:1/0)
+above(x,y)= y>aplot(x)?y:1/0
 
 set style fill solid 1.0 noborder
 set sample 1001
@@ -51,11 +53,12 @@ plot [-hor:hor] [-ver:ver] \
     tic(x,0.01) notitle lt 4 lc 7, \
     tic(x,0.02) notitle lt 4 lc 7, \
     tic(x,0.03) notitle lt 4 lc 7, \
+    above(x, kr2012 - x) lt 1 lc rgb "#E0E0E0" lw 11 title '{}_{KR2012}', \
+    'data/asymmetry_full_points.txt' u 7:8 w filledcu closed lc 2 title '{}_{POWHEG-CT10}', \
     'data/asymmetry_full.txt' u ($0==0?$2:1/0):3 pt 7 ps 0.6 lc col title 'Full Selection', \
     'data/asymmetry_full_points.txt' w lines lt 4 lc col title 'PLL contour: 1.14', \
     '' u 3:4 w lines lt 2 lc col title 'Systematic Unc.', \
     '' u 5:6 w lines lt 1 lw 3 lc col title '68% CI', \
-    '' u 7:8 w filledcu closed lc 2 title '{}_{POWHEG-CT10}', \
     '' u 9:(ver-5*ep) w lines lt 1 lc col lw 10 notitle, \
     '' u 12:(ver-5*ep) w lines lt 1 lc 2 lw 3 notitle, \
     '' u (-hor+5*ep*hor/ver):10 w lines lt 1 lc col lw 10 notitle, \
@@ -74,11 +77,12 @@ plot [-hor:hor] [-ver:ver] \
     tic(x,0.01) notitle lt 4 lc 7, \
     tic(x,0.02) notitle lt 4 lc 7, \
     tic(x,0.03) notitle lt 4 lc 7, \
+    above(x, kr2012 - x) lt 1 lc rgb "#E0E0E0" lw 11 title '{}_{KR2012}', \
+    'data/asymmetry_full_points.txt' u 7:8 w filledcu closed lc 2 title '{}_{POWHEG-CT10}', \
     'data/asymmetry_hiM.txt' u ($0==0?$2:1/0):3 pt 7 ps 0.6 lc col title 'm_{tt} > 450 GeV', \
     'data/asymmetry_hiM_points.txt' w lines lt 4 lc col title 'PLL contour: 1.14', \
     '' u 3:4 w lines lt 2 lc col title 'Systematic Unc.', \
     '' u 5:6 w lines lt 1 lw 3 lc col title '68% CI', \
-    '' u 7:8 w filledcu closed lc 2 title '{}_{POWHEG-CT10}', \
     '' u 9:(ver-5*ep) w lines lt 1 lc col lw 10 notitle, \
     '' u 12:(ver-5*ep) w lines lt 1 lc 2 lw 3 notitle, \
     '' u (-hor+5*ep*hor/ver):10 w lines lt 1 lc col lw 10 notitle, \
@@ -97,11 +101,12 @@ plot [-hor:hor] [-ver:ver] \
     tic(x,0.01) notitle lt 4 lc 7, \
     tic(x,0.02) notitle lt 4 lc 7, \
     tic(x,0.03) notitle lt 4 lc 7, \
+    above(x, kr2012 - x) lt 1 lc rgb "#E0E0E0" lw 11 title '{}_{KR2012}', \
+    'data/asymmetry_full_points.txt' u 7:8 w filledcu closed lc 2 title '{}_{POWHEG-CT10}', \
     'data/asymmetry_loM.txt' u ($0==0?$2:1/0):3 pt 7 ps 0.6 lc col title 'm_{tt} < 450 GeV', \
     'data/asymmetry_loM_points.txt' w lines lt 4 lc col title 'PLL contour: 1.14', \
     '' u 3:4 w lines lt 2 lc col title 'Systematic Unc.', \
     '' u 5:6 w lines lt 1 lw 3 lc col title '68% CI', \
-    '' u 7:8 w filledcu closed lc 2 title '{}_{POWHEG-CT10}', \
     '' u 9:(ver-5*ep) w lines lt 1 lc col lw 10 notitle, \
     '' u 12:(ver-5*ep) w lines lt 1 lc 2 lw 3 notitle, \
     '' u (-hor+5*ep*hor/ver):10 w lines lt 1 lc col lw 10 notitle, \
@@ -120,11 +125,12 @@ plot [-hor:hor] [-ver:ver] \
     tic(x,0.01) notitle lt 4 lc 7, \
     tic(x,0.02) notitle lt 4 lc 7, \
     tic(x,0.03) notitle lt 4 lc 7, \
+    above(x, kr2012 - x) lt 1 lc rgb "#E0E0E0" lw 11 title '{}_{KR2012}', \
+    'data/asymmetry_full_points.txt' u 7:8 w filledcu closed lc 2 title '{}_{POWHEG-CT10}', \
     'data/asymmetry_hiY.txt' u ($0==0?$2:1/0):3 pt 7 ps 0.6 lc col title 'tanh|y_{tt}| > 0.5', \
     'data/asymmetry_hiY_points.txt' w lines lt 4 lc col title 'PLL contour: 1.14', \
     '' u 3:4 w lines lt 2 lc col title 'Systematic Unc.', \
     '' u 5:6 w lines lt 1 lw 3 lc col title '68% CI', \
-    '' u 7:8 w filledcu closed lc 2 title '{}_{POWHEG-CT10}', \
     '' u 9:(ver-5*ep) w lines lt 1 lc col lw 10 notitle, \
     '' u 12:(ver-5*ep) w lines lt 1 lc 2 lw 3 notitle, \
     '' u (-hor+5*ep*hor/ver):10 w lines lt 1 lc col lw 10 notitle, \
@@ -143,11 +149,12 @@ plot [-hor:hor] [-ver:ver] \
     tic(x,0.01) notitle lt 4 lc 7, \
     tic(x,0.02) notitle lt 4 lc 7, \
     tic(x,0.03) notitle lt 4 lc 7, \
+    above(x, kr2012 - x) lt 1 lc rgb "#E0E0E0" lw 11 title '{}_{KR2012}', \
+    'data/asymmetry_full_points.txt' u 7:8 w filledcu closed lc 2 title '{}_{POWHEG-CT10}', \
     'data/asymmetry_loY.txt' u ($0==0?$2:1/0):3 pt 7 ps 0.6 lc col title 'tanh|y_{tt}| < 0.5', \
     'data/asymmetry_loY_points.txt' w lines lt 4 lc col title 'PLL contour: 1.14', \
     '' u 3:4 w lines lt 2 lc col title 'Systematic Unc.', \
     '' u 5:6 w lines lt 1 lw 3 lc col title '68% CI', \
-    '' u 7:8 w filledcu closed lc 2 title '{}_{POWHEG-CT10}', \
     '' u 9:(ver-5*ep) w lines lt 1 lc col lw 10 notitle, \
     '' u 12:(ver-5*ep) w lines lt 1 lc 2 lw 3 notitle, \
     '' u (-hor+5*ep*hor/ver):10 w lines lt 1 lc col lw 10 notitle, \
@@ -159,7 +166,7 @@ plot [-hor:hor] [-ver:ver] \
 lwidth=5
 ep = 1.5*ep
 
-set key spacing 0.85
+set key spacing 0.8
 
 
 plot [-hor:hor] [-ver:ver] \
@@ -173,6 +180,7 @@ plot [-hor:hor] [-ver:ver] \
     tic(x,0.01) notitle lt 4 lc 7, \
     tic(x,0.02) notitle lt 4 lc 7, \
     tic(x,0.03) notitle lt 4 lc 7, \
+    above(x, kr2012 - x) lt 1 lc rgb "#E0E0E0" lw 11 title '{}_{KR2012}', \
     'data/asymmetry_full_points.txt' u 7:8 w filledcu closed lc 2 title '{}_{POWHEG-CT10}', \
     '' u 12:(ver-5*ep) w lines lt 1 lc 2 lw 50 notitle, \
     '' u (-hor+5*ep*hor/ver):13 w lines lt 1 lc 2 lw 50 notitle, \
@@ -202,8 +210,6 @@ plot [-hor:hor] [-ver:ver] \
     '' u (altox($11,off-10*ep)):(altoy($11,off-10*ep)) w lines lt 1 lc 4 lw lwidth notitle
 
 
-above(x,y)= y>aplot(x)?y:1/0
-
 plot [-hor:hor] [-ver:ver] \
     aplot(x) w filledcurves x1 lc rgb "white" notitle, \
     aplot(x) lt 1 lc 7 lw 3 notitle, \
@@ -214,6 +220,7 @@ plot [-hor:hor] [-ver:ver] \
     tic(x,0.01) notitle lt 4 lc 7, \
     tic(x,0.02) notitle lt 4 lc 7, \
     tic(x,0.03) notitle lt 4 lc 7, \
+    above(x, kr2012 - x) lt 1 lc rgb "gray" lw 1 title '{}_{KR2012}', \
     'data/asymmetry_full_thr30.txt' u ($0==0?$9*$11:1/0):($8*$12) pt 7 ps 0.6 lc 2 title '{}_{POWHEG-CT10}', \
     '' u ($0==1?$9*$11:1/0):($8*$12) pt 6 ps 0.6 lc 2 notitle, \
     above(x,-x+0.181988641018*0.0116658564583+0.13387790945*0.0295313129862) lc 2 lt 1 notitle, \
