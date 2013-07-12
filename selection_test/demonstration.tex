@@ -1,0 +1,55 @@
+\documentclass[letterpaper,11pt]{article}
+\pdfoutput=1
+
+\usepackage[margin=2cm]{geometry}
+
+\title{Demonstration of technique failure}
+
+\begin{document}
+\maketitle
+
+Consider a two dimensional distribution of four bins, where one axis
+is a selection observable with bins (selected) and (unselected), and
+the other is an observable for which the asymmetry is of interest,
+with bins $(+)$ and $(-)$.  The selection contains $N_A$ events and
+has asymmetry $\alpha_A$, while the unselected events number $N_B$ and
+may have a different asymmetry $\alpha_B$.  The counts in each bin of
+the model are given by
+\[N_x^{\pm} = N_x(1\pm\alpha_x)/2,\]
+and the total asymmetry is given by
+\[\alpha = \frac{N_A\alpha_A + N_B\alpha_B}{N_A+N_B}.\]
+Note that $\alpha_A\ne\alpha_B$ implies that the selection
+efficiencies for the bins $(+)$ and $(-)$ are unequal.
+
+Suppose we want to measure the asymmetry of a second distribution
+which has an antisymmetric component proportional to that of the first
+distribution, with factor $F$,
+\[D_x^{\pm} = N_x(1\pm F\alpha_x)/2.\]
+The total asymmetry would be $F\alpha$. Following the template
+strategy we have so far employed, the weights which symmetrize and
+antisymmetrize the original distribution after integrating over the
+selection axis would be
+\[W^\pm_{\mathrm{symm}} = (1\pm\alpha)^{-1},\]
+\[W^\pm_{\mathrm{anti}} = \pm\alpha(1\pm\alpha)^{-1}.\]
+The templates for the selection would be
+\[T^{\pm}_{\mathrm{symm}} = \frac{N_A}{2}\frac{1\pm\alpha_A}{1\pm\alpha},\]
+\[T^{\pm}_{\mathrm{anti}} = \pm\alpha\frac{N_A}{2}\frac{1\pm\alpha_A}{1\pm\alpha},\]
+and the parametrized template model would be
+\[T^{\pm}(f) = T^{\pm}_{\mathrm{symm}} + f\cdot T^\pm_{\mathrm{anti}} = \frac{N_A}{2}\frac{1\pm\alpha_A}{1\pm\alpha}(1\pm f\cdot\alpha).\]
+Our expectation has been that $T^\pm(f) = D^\pm_A$ when $f=F$, but
+that is clearly only the case if $F=f=1$ or $\alpha=\alpha_A$.  The
+former condition is useless for a measurement, while the latter
+condition is generally unmet, and is particularly untrue in the cases
+of our subselections at extremes of $\mathrm{t\bar{t}}$ system
+rapidity and mass.
+
+A similar technique which would meet our former expectations for the
+template model would derive the weights and subsequent templates from
+only the selected distribution.  I am considering the possibilities
+for implementing this option.
+
+\vspace{20pt}
+
+\noindent
+Burt
+\end{document}
