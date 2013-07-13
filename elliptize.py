@@ -18,17 +18,18 @@ if __name__ == '__main__':
 
     with open(sys.argv[1]) as mFile:
         fields = mFile.readline()[1:].split()
-        hats = dict([(line.split()[0], dict((field,eval(f)) for field,f in zip(fields[6:],line.split()[6:])))
+        print fields[6:13]
+        hats = dict([(line.split()[0], dict((field,eval(f)) for field,f in zip(fields[6:13],line.split()[6:13])))
                      for line in mFile.readlines() if '#' not in line])
 
     for h,v in hats.items():
         v['f_qq.Ac_y_qq'] = v['fhat_qq'] * v['Ac_y_qq_hat']
-        v['f_qg.Ac_y_qq'] = v['fhat_qg'] * v['Ac_y_qg_hat']
+        v['f_qg.Ac_y_qg'] = v['fhat_qg'] * v['Ac_y_qg_hat']
     
     form = '\t%.8f'*5
     def deltas(k): return [M['central'][i] - M[k][i] for i in [0,1]]
     def deltasHat(h): return [hats['central'][s] - hats[h][s]
-                              for s in ['f_qq.Ac_y_qq','f_qg.Ac_y_qq']]
+                              for s in ['f_qq.Ac_y_qq','f_qg.Ac_y_qg']]
     
     def distance(k): return math.sqrt( np.dot(*(2*[deltas(k)])) )
 
@@ -44,18 +45,19 @@ if __name__ == '__main__':
     central = M['central']
     mean = (central[0],central[1])
     simmean = (hats['central']['f_qq.Ac_y_qq'],
-               hats['central']['f_qg.Ac_y_qq'])
+               hats['central']['f_qg.Ac_y_qg'])
     stat_sigmas2 = [[central[2],central[3]],
                     [central[3],central[4]]]
     sys_sigmas2 = np.sum(sigmas(k) for k in M) / 2
     sim_sigmas2 = np.sum(sigmasHat(h) for h in hats) / 2
+    if not np.all(sim_sigmas2): sim_sigmas2 = np.array([[1e-7,1e-9],[1e-9,1e-7]])
     tot_sigmas2 = stat_sigmas2 + sys_sigmas2
 
     stat = ellipse(mean=mean, sigmas2=stat_sigmas2)
     syst = ellipse(mean=mean, sigmas2=sys_sigmas2)
     totl = ellipse(mean=mean, sigmas2=tot_sigmas2)
     simu = ellipse(mean=simmean,
-                   sigmas2=sim_sigmas2) if np.all(sim_sigmas2) else None
+                   sigmas2=sim_sigmas2)
 
     Ac = sum(mean)
     correction = hats['central']['f_gg.Ac_y_gg']
@@ -69,9 +71,10 @@ if __name__ == '__main__':
 
     print 'xstat', oneSigmaCLprojection(stat_sigmas2)
     print 'ystat', oneSigmaCLprojection(np.array(stat_sigmas2)[(1,0),][:,(1,0)])
-    print Ac, d_Ac
+    print 'Ac, d_Ac:', Ac, d_Ac
     print 'xsig', d_Aqq
     print 'ysig', d_Aqg
+    print 'mean', mean
     print correction
 
     temp = r'''
