@@ -3,7 +3,7 @@
 
 \usepackage[margin=2cm]{geometry}
 
-\title{Demonstration of technique failure}
+\title{Demonstration of technique failures}
 
 \begin{document}
 \maketitle
@@ -22,13 +22,16 @@ Note that $\alpha_A\ne\alpha_B$ implies that the selection
 efficiencies for the bins $(+)$ and $(-)$ are unequal.
 
 Suppose we want to measure the asymmetry of a second distribution
-which has an antisymmetric component proportional to that of the first
-distribution, with factor $F$,
+which has an antisymmetric component proportional to that of the
+modeled distribution, with factor $F$,
 \[D_x^{\pm} = N_x(1\pm F\alpha_x)/2.\]
-The total asymmetry would be $F\alpha$. Following the template
-strategy we have so far employed, the weights which symmetrize and
-antisymmetrize the original distribution after integrating over the
-selection axis would be
+The total asymmetry would be $F\alpha$. 
+
+
+\section{Template Strategy}
+Following the template strategy we have so far employed, the weights
+which symmetrize and antisymmetrize the original distribution after
+integrating over the selection axis would be
 \[W^\pm_{\mathrm{symm}} = (1\pm\alpha)^{-1},\]
 \[W^\pm_{\mathrm{anti}} = \pm\alpha(1\pm\alpha)^{-1}.\]
 The templates for the selection would be
@@ -43,13 +46,19 @@ condition is generally unmet, and is particularly untrue in the cases
 of our subselections at extremes of $\mathrm{t\bar{t}}$ system
 rapidity and mass.
 
-A similar technique which would meet our former expectations for the
-template model would derive the weights and subsequent templates from
-only the selected distribution.  I am considering the possibilities
-for implementing this option.
+\section{Unfolding Strategy}
+The ratios $R^{\pm}=N^{\pm}_A/N^{\pm}_B$ given by the model are used
+to calculate the corresponding unselected bins
+\[U^{\pm}_B = D^{\pm}_A/R^\pm_m = D^\pm_B\left(\frac{1\pm\alpha_A}{1\pm\alpha_B}\right)\]
+The expectation that $U^\pm_B=D^\pm_B$ is not met, leading to a
+mistake in calculating a corresponding total asymmetry
+\begin{eqnarray*}
+  \alpha_{\mathrm{unfold}} &=& \frac{D^+_A+U^+_B - D^-_A - U^-_B}{D^+_A+U^+_A+D^-_A+U^-_B}\\
+  &=& F \cdot \left(\frac{N_A\alpha_A + N_B\left[\alpha_A\left(\frac{1-\alpha_A\alpha_B}{1-\alpha_A^2}\right) + \frac{1}{F}\left(\frac{\alpha_B-\alpha_A}{1-\alpha_A^2}\right)\right]}{N_A+N_B\left[\left(\frac{1-\alpha_A\alpha_B}{1-\alpha_A^2}\right)+F\alpha_A\left(\frac{\alpha_B-\alpha_A}{1-\alpha_A^2}\right)\right]}\right)
+\end{eqnarray*}
+As an example of the significant measurement errors which can be
+introduced by this flawed calculation, consider the plausible case
+$\alpha_A=0\ne\alpha_B$.  We would find
+\[\alpha_{\mathrm{unfold}} = \alpha \ne F\alpha.\]
 
-\vspace{20pt}
-
-\noindent
-Burt
 \end{document}
