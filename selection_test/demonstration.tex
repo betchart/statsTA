@@ -27,7 +27,7 @@ $\alpha_B$.  The counts in each bin of the model are given by
 \[N_x^{\pm} = N_x(1\pm\alpha_x)/2,\]
 where $N_x=N_x^-+N_x^+$, and the total asymmetry is given by
 \[\alpha = \frac{N_A\alpha_A + N_B\alpha_B}{N_A+N_B}.\]
-Note that $\alpha_A\ne\alpha_B$ implies that the selection
+Note that $\alpha_A\ne\alpha_B$ if and only if the selection
 efficiencies for the bins $(+)$ and $(-)$ are unequal.
 
 Suppose we want to measure the asymmetry of an alternative model $D$
@@ -90,5 +90,62 @@ $F=1$, when models $N$ and $D$ coincide.
     amplitude $F$ of the {\sc POWHEG} antisymmetric component.  Only
     when $F=1$ does the unfolding procedure yield the correct result.}
 \end{figure}
+
+The behavior presented here is not identified in the various analyses
+using the unfolding technique because they do not use models of the
+form $D_x^\pm$ for ensemble testing cross-checks of the technique.
+Rather than scaling the antisymmetric component of the simulation to
+construct alternative models, they reweight events with weights
+linearly dependent on the value of the observable of interest.  To
+demonstrate properties of this construction with our four-bin example,
+it is sufficient to assume uniform distribution of events within each
+bin, and a differential weight factor $k$.  The models constructed for
+ensemble testing cross-checks by analyses using the unfolding
+technique are
+\[E_x^\pm = \frac{N_x}{2}(1\pm\alpha_x)(1\pm k) = \frac{N_x}{2}(1+k\alpha_x\pm(k+\alpha_x)),\]
+which have selected and unselected asymmetries
+\[\alpha^E_x = \frac{\alpha_x+k}{1+k\alpha_x},\]
+selected and unselected event counts
+\[E_x = N_x(1+k\alpha_x),\]
+and total asymmetry
+\[\alpha^E = \frac{\alpha_A+\alpha_B+2k}{N_A(1+k\alpha_A)+N_B(1+k\alpha_B)}.\]
+Appropriately scaling model $E$ to get the correct total event counts,
+with a factor $(N_A+N_B)/(N_A(1+k\alpha_A)+N_B(1+k\alpha_B))$, is not
+a problem.  The important property of models $E$ is that the ratios of
+selected to unselected events are identical to those of model $N$,
+since the weight factor cancels in the ratio,
+\[R^\pm_N = R^\pm_E \ne R^\pm_D.\]
+Therefore, using $R^\pm_N$ in the unfolding procedure for models $E$
+yeilds the expected asymmetry $\alpha^E$, although it did not for
+models $D$.
+
+The question we must resolve, it seems, is whether models $D$ or $E$
+are more likely descriptions of nature.  The idea (model $D$) that the
+differential cross sections produced by our generators have correctly
+shaped antisymmetric components is incompatible with the idea (model
+$E$) that the generators and simulation correctly model the selection
+efficiencies.  To me, the latter is more intuitive.
+
+\section{Successful techniques}
+
+\subsection{Alternative Template Strategy}
+
+Rather than using weights to construct templates, we can use the
+symmetrized and antisymmetrized components of the selected events.
+The statistical power of the templates is reduced compared to the
+reweighting strategy, but this alternative does not require
+$\alpha_A=\alpha_B$.  The symmetric and antisymmetric components of
+the selected events are
+\[T^\pm_{\mathrm{symm}} = \frac{N_A}{2}, \qquad T^\pm_{\mathrm{anti}} = \pm\alpha_A\frac{N_A}{2}\]
+Using these as templates with a factor $f$ on the antisymmetric
+component results in
+\[T^\pm(f) = T^\pm_{\mathrm{symm}} + f\cdot T^\pm_{\mathrm{anti}} = N_A(1\pm f\alpha_A)/2\]
+As we expect, $T^\pm(f)=D^\pm_A$ when $f=F$.  This technique
+generalizes to an arbitrary number of bins in the asymmetry
+observable.
+
+\subsection{Reconstruction effects}
+
+Suppose our 
 
 \end{document}
