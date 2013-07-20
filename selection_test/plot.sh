@@ -17,4 +17,4 @@ set xlabel 'A@_c^y (%) in lepton+jets selection '
 set ylabel 'extrapolated total A@_c^y (%)'
 
 lim = 1
-plot [-lim:lim] 100*aD(x/100, aA, aB) title 'POWHEG 2-bin templates', 100*aE(x/100, aA, aB) title 'POWHEG 2-bin unfolding' lc 3, "<echo '0.32 0.56'" title 'POWHEG' lc 2, x title 'bisector'
+plot [-lim:lim] 100*aD(x/100, aA, aB) lc 3 lw 3 title 'POWHEG 2-bin templates', 100*aE(x/100, aA, aB) lc 1 lw 3 title 'POWHEG 2-bin unfolding', "<echo '0.32 0.56'" title 'POWHEG' lc 2, x lc 0 title 'bisector'

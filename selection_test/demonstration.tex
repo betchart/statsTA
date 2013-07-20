@@ -3,10 +3,12 @@
 
 \usepackage[margin=2cm]{geometry}
 \usepackage{graphicx}
+\usepackage{subfig}
 
 \newcommand{\selected}{{\ensuremath s}}
 \newcommand{\unselected}{{\ensuremath\slash\!\!\!\selected}}
-\newcommand{\tot}{{\ensuremath\mathrm{tot}}}
+%\newcommand{\tot}{{\ensuremath\mathrm{tot}}}
+\newcommand{\tot}{0}
 
 \begin{document}
 
@@ -57,7 +59,7 @@ notable features of each family of models include:
 \begin{description}
 \item[Models $T$]:
   \begin{itemize}
-  \item Constant asymmetry proportions $\alpha^{(T)}:\alpha^{(T)}_\selected:\alpha^{(T)}_\unselected$
+  \item Constant asymmetry proportions $\alpha_\tot^{(T)}:\alpha^{(T)}_\selected:\alpha^{(T)}_\unselected$
   \item Constant global selection ratio $T_\selected:T_\unselected$
   \item Variable bin selection ratios $T^\pm_\selected:T^\pm_\unselected$
   \end{itemize}
@@ -65,7 +67,7 @@ notable features of each family of models include:
   \begin{itemize}
   \item Constant bin selection ratios $U^\pm_\selected:U^\pm_\unselected$
   \item Variable global selection ratio $U_\selected:U_\unselected$
-  \item Variable asymmetry proportions $\alpha^{(U)}:\alpha^{(U)}_\selected:\alpha^{(U)}_\unselected$
+  \item Variable asymmetry proportions $\alpha_\tot^{(U)}:\alpha^{(U)}_\selected:\alpha^{(U)}_\unselected$
   \end{itemize}
 \end{description}
 
@@ -139,14 +141,14 @@ intersection.
 It is clear from simulation that asymmetry is shaped by the selection.
 A key question is whether this shaping is induced by asymmetric
 selection criteria, or rather due to modeled differential asymmetry
-between unselected and selected events.  If the former, constant bin
-selection efficiencies would be expected, and the unfolding method is
-appropriately used to extrapolate total asymmetry from observations,
-while application of the template method would be incorrect.  In the
-latter case however, extrapolations from the unfolding method would be
-misleading, while extrapolating with the template method would be
-defensible.  The possibility that asymmetry could be shaped by both
-the former and the latter is admitted.
+within the bins or between unselected and selected events.  If the
+former, constant bin selection efficiencies would be expected, and the
+unfolding method is appropriately used to extrapolate total asymmetry
+from observations, while application of the template method would be
+incorrect.  In the latter case however, extrapolations from the
+unfolding method would be misleading, while extrapolating with the
+template method would be defensible.  The possibility that asymmetry
+could be shaped by both the former and the latter is admitted.
 
 A test for asymmetric selection criteria would necessarily control for
 all modeled differential asymmetry, the easiest method of which would
@@ -161,8 +163,75 @@ reconstruction efficiencies were charge-dependent.
 
 We note that differential $\mathrm{t\bar{t}}$ charge asymmetry is
 expected along many kinematic dimensions, including system mass,
-system transverse momentum, system rapidity, and number of extra jets,
-none of which are expected to be uniform in selection efficiency.
+system transverse momentum, system rapidity, number of extra jets, and
+even the asymmetry observable itself, none of which are expected to be
+uniform in selection efficiency.  In the following section, we
+construct and investigate an additional family of models in which the
+difference between $\alpha_\selected$ and $\alpha_\unselected$ is due
+entirely to differential charge asymmetry and differential but
+\emph{symmetric} selection efficiency of the observable.
+
+\subsection{Differential Asymmetry and Selection Efficiency}
+\newcommand{\outr}{\mathrm{out}}
+\newcommand{\innr}{\mathrm{in}}
+\newcommand{\dalpha}{{\delta_{\alpha}}}
+\newcommand{\depsilon}{{\delta_{\epsilon}}}
+\begin{figure}
+  \centering
+  \includegraphics[width=0.4\linewidth]{axes2}
+  \caption{\label{axes2} Additional distinction of inner $(\pm)$ bins
+    (gray) and outer $(\pm)$ bins (white).}
+\end{figure}
+We seek to construct a model $M$ possessing the features of model $N$
+by specifying differential charge asymmetry and selection efficiency
+within the $(\pm)$ bins.  To this end, we specify inner and outer
+regions of the $(\pm)$ bins, as shown in Figure \ref{axes2}.  We
+choose the number of selected events in the inner and outer bins to be
+equal.  The asymmetry in the inner(outer) bins is
+$\alpha_{\innr(\outr)}$, independent of selection.  The efficiency in
+the inner(outer) bins is $\epsilon_{\innr(\outr)}$, independent of
+selection.  After specifying these properties and $\alpha_\selected$,
+$\alpha_\tot$, and $N_\selected/(N_\selected+N_\unselected)$, one
+degree of freedom remains, which we parameterize with $g$ as
+\[\epsilon = \frac{1}{g}\left(\frac{N_\selected}{N_\selected+N_\unselected}\right),\qquad \depsilon=\sqrt{1-g},\qquad\dalpha = \frac{1}{\depsilon}\left(\frac{\alpha_\tot}{\alpha_\selected}-1\right)\]
+\[
+\begin{array}{r@{\ =\ }l@{,\qquad}r@{\ =\ }l}
+  \epsilon_\outr & \epsilon(1 - \depsilon) & \alpha_\outr & \alpha_\selected(1 + \dalpha),\\
+  \epsilon_\innr & \epsilon(1+ \depsilon)  & \alpha_\innr & \alpha_\selected(1 - \dalpha).
+\end{array}
+\]
+Figures \ref{diff_eff} and \ref{diff_alp} show
+$(\epsilon_\outr,\epsilon_\innr)$ and $(\alpha_\outr,\alpha_\innr)$
+parametrizd by $g$ based on POWHEG $\mathrm{t\bar{t}}$. Rebinning
+$M(g)$ yields $N=T(1)=U(0)$, so a a two-bin extrapolation of the total
+asymmetry from the selection via either unfolding or templates
+correctly yields $\alpha_\tot$.  Perturbations of $M(g)$ via scaling
+either or both of $\alpha_\innr$ and $\alpha_\outr$ modify the total
+asymmetry $\alpha$.  The two-bin extrapolations are both (almost, in
+case of unfolding) linear in $\alpha$ for all three types of scalings,
+the slopes of which are shown as a function of $g$ in Figures
+\ref{diff_slope_eff} and \ref{diff_slope_alp}.  A slope of 1 indicates
+correct extrapolation.
+\begin{figure}
+  \centering
+  \subfloat[\label{diff_eff}]{\includegraphics[width=0.5\textwidth,page=1]{plot2}}%
+  \subfloat[\label{diff_alp}]{\includegraphics[width=0.5\textwidth,page=2]{plot2}}\\
+  \subfloat[\label{diff_slope_eff}]{\includegraphics[width=0.5\textwidth,page=3]{plot2}}%
+  \subfloat[\label{diff_slope_alp}]{\includegraphics[width=0.5\textwidth,page=4]{plot2}}
+  \caption{\label{differential} Figures \protect\subref{diff_eff} and
+    \protect\subref{diff_alp} show the possible values of inner and
+    outer efficiencies and asymmetries in models $M(g)$ for plausible
+    $\alpha_\selected$ (0.32\%), $\alpha_\tot$ (0.56\%), and selection
+    efficiency (10\%).  Figures \protect\subref{diff_slope_eff} and
+    \protect\subref{diff_slope_alp} show the slope of 2-bin
+    extrapolated asymmetry versus 4-bin model asymmetry for scaling
+    perturbations of inner, outer, or both inner and outer
+    asymmetries.  A slope of 1 implies correct extrapolation.  The
+    range between the arrows is more realistic because it does not
+    depend sensitively on cancelation of diverging asymmetries from
+    inner and outer bins.}
+\end{figure}
+
 
 \section{Reconstruction effects}
 
