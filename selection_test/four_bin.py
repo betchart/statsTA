@@ -22,17 +22,19 @@ class twoBinSlopes(object):
             setattr(self,item,eval(item))
 
     def As(self,fin,fout):
-        ain = fin*self.a_in
-        aout = fout*self.a_out
-        return 0.5 * (ain+aout)
+        ain = fin * self.a_in
+        aout = fout * self.a_out
+        return 0.5 * (ain + aout)
 
     def slopeUnfold(self,fin,fout):
-        return ( (self.a_tot(fin*self.a_in,fout*self.a_out) - a_t) / 
-                 (self.unfold2(self.As(fin,fout)) - a_t) )
+        num = (self.unfold2(self.As(fin,fout)) - 100*a_t)
+        den = (self.a_tot(fin*self.a_in,fout*self.a_out) - 100*a_t)
+        return num/den
 
     def slopeTemplate(self,fin,fout):
-        return ( (self.a_tot(fin*self.a_in,fout*self.a_out) - a_t) / 
-                 (self.template2(self.As(fin,fout)) - a_t) )
+        num = (self.template2(self.As(fin,fout)) - 100*a_t)
+        den = (self.a_tot(fin*self.a_in,fout*self.a_out) - 100*a_t)
+        return num/den
 
     def a_tot(self, ain, aout):
         return 100 * (ain/self.eff_in + aout/self.eff_out) / (1/self.eff_in + 1/self.eff_out)
@@ -44,28 +46,39 @@ class twoBinSlopes(object):
     
     def template2(self, As):
         return 100* As * (a_t / a_s)
+
+    def percentMistakes(self,fin,fout):
+        true = self.a_tot(fin*self.a_in,fout*self.a_out)
+        As = self.As(fin,fout)
+        unfold = self.unfold2(As)
+        template = self.template2(As)
+        return [(unfold-true)/(100*a_t), (template-true)/(100*a_t)]
         
 
 
-
 def line(g):
+    scale = 2
     slopes = twoBinSlopes(g)
-    return '\t'.join([str(i) for i in [
-        slopes.eff_out/slopes.eff_in,
-        slopes.slopeUnfold(2,1),
-        slopes.slopeTemplate(2,1),
-        slopes.slopeUnfold(1,2),
-        slopes.slopeTemplate(1,2),
-        slopes.slopeUnfold(2,2),
-        slopes.slopeTemplate(2,2),
+    return ' '.join([str(i).ljust(15) for i in [
+        100*slopes.eff_in,
+        slopes.slopeUnfold(scale,1),
+        slopes.slopeTemplate(scale,1),
+        slopes.slopeUnfold(1,scale),
+        slopes.slopeTemplate(1,scale),
+        slopes.slopeUnfold(scale,scale),
+        slopes.slopeTemplate(scale,scale),
         g,
         100*slopes.eff_in,
         100*slopes.eff_out,
         100*slopes.a_in,
         100*slopes.a_out
-    ]])
+    ]+(slopes.percentMistakes(-1,1)+
+       slopes.percentMistakes(1,-1)+
+       slopes.percentMistakes(-1,-1))
+   ])
 
 with open('slopes.txt','w') as f:
+    print>>f, ' '.join([i.ljust(15) for i in 'eff_in    sl_u_in    sl_t_in    sl_u_out    sl_t_out    sl_u_both    sl_t_both    g      eff_in    eff_out    a_in    a_out'.split()])
     for g in np.arange(0.19,0.99,0.005):
         print>>f, line(g)
 
