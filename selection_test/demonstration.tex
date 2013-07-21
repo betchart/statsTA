@@ -238,6 +238,20 @@ mistake relative to $\alpha_\tot$ of flipping the sign of asymmetry.
 
 \section{Reconstruction effects}
 
-Suppose our 
+Suppose the resolution with which we measure the observable in bins
+$(\pm)$ is less than perfect, so that the distribution we record is
+$(\pm')$, with a probability $p^{\pm\pm}$ of $(\pm)$ events falling in
+$(\pm')$, and $1-p^{\pm\pm}$ of $(\pm)$ events falling in $(\mp')$.
+The asymmetry of the observed distribution is
+\begin{eqnarray*}
+  \alpha'_\selected 
+  &=& \frac{N^{+'}_\selected-N^{-'}_\selected}{N_s}\\
+  &=& \frac{N^+_\selected p^{++}+N^-_\selected(1-p^{--}) - N^-_\selected p^{--} - N^+_\selected(1-p^{++}) }{N_\selected}\\
+  &=& \frac{N^+_\selected(2p^{++}-1) - N^-_\selected (2 p^{--} - 1) }{N_\selected}.
+\end{eqnarray*}
+Only if there is no asymmetry introduced in reconstructing the
+observable, so that $p^{++}=p^{--}=p$, is $\alpha'_\selected$
+proportional to $\alpha_\selected$,
+\[\alpha'_\selected = \alpha_\selected(2p-1).\]
 
 \end{document}
