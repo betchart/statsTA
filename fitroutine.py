@@ -64,8 +64,7 @@ class fit(object):
         self.model.import_data(altData)
 
         if fixSM: self.doSM()
-        else:
-            self.doFit()
+        else: self.doFit()
 
     @roo.quiet
     def doSM(self):
@@ -82,86 +81,14 @@ class fit(object):
     @roo.quiet
     def doFit(self):
         w = self.model.w
-        nll = w.pdf('model').createNLL(w.data('data'), *self.fitArgs[:-1])
-        minu = r.RooMinuit(nll)
-        minu.setPrintLevel(-1)
-        minu.setNoWarn()
-        for j in range(10):
-            minu.setStrategy(2)
-            for i in range(10):
-                self.status = minu.migrad()
-                print>>self.log, i + 10*j,
-                self.log.flush()
-                if not self.status: break
-            if not self.status: break
-            minu.setStrategy(1)
-            minu.migrad()
-        print>>self.log
-        errMin = 0.12
-        oneSigmaNLL = 1.14
-        p0 = [w.arg(a).getVal() for a in self.profileVars]
-        self.NLL = nll.getVal()
-        pll = nll.createProfile(w.argSet(','.join(self.profileVars)))
-        print>>self.log, roo.str(nll)
-        print>>self.log, roo.str(pll)
-        pll.minimizer().setStrategy(2)
+        contourPoints=None
+        while not contourPoints:
+            pll = self.minimize()
+            p0, contourPoints = self.contourPoints(pll)
 
-        pllCache = {}
-        def pllEval(p):
-            p = tuple(p)[:2]
-            if p not in pllCache:
-                for name,val in zip(self.profileVars,p): w.arg(name).setVal(val)
-                pllCache[p] = pll.getVal()
-            return pllCache[p]
-
-        pllPoints = None
-        while not pllPoints:
-            cands = [(p0[0]+errMin*math.cos(t),p0[1]+errMin*math.sin(t))
-                     for t in np.arange(0,2*math.pi,math.pi/8)]
-            minP = min(cands, key=pllEval)
-            if pllEval(minP) < pllEval(p0):
-                print 'new minimum'
-                p0 = minP
-                pll.clearAbsMin()
-                pll.bestFitObs()
-                pllEval(p0)
-                print p0
-            else: pllPoints = cands
-        p0 += pllEval(p0),
-        
-        targetPLL = oneSigmaNLL + p0[2]
-        def contourIntersect(guess,epsilon=0.01,xepsilon=0.001):
-            guess += pllEval(guess),
-            def point(g): return (p0[0] + g * (guess[0]-p0[0]),
-                                  p0[1] + g * (guess[1]-p0[1]))
-
-
-            def bsearch(lo,hi):
-                assert pllEval(lo) < targetPLL
-                assert pllEval(hi) > targetPLL
-                p = tuple(0.5*(lo[i]+hi[i]) for i in [0,1])
-                PLL = pllEval(p)
-                if math.sqrt(sum((lo[i]-hi[i])**2 for i in [0,1])) < xepsilon: return p
-                if PLL < targetPLL-epsilon: return bsearch(p,hi)
-                if PLL > targetPLL+epsilon: return bsearch(lo,p)
-                return p
-
-            mlo = guess if pllEval(guess) < targetPLL else None
-            mhi = guess if targetPLL < pllEval(guess) else None
-            iteration = 0
-            while True:
-                p = point( math.sqrt((targetPLL-p0[2]) / (guess[2]-p0[2])) )
-                if abs(targetPLL-pllEval(p)) < epsilon: return p
-                if pllEval(p) < targetPLL and (not mlo or pllEval(mlo) < pllEval(p)): mlo = p
-                if pllEval(p) > targetPLL and (not mhi or pllEval(p) < pllEval(mhi)): mhi = p
-                if iteration>5 and mlo and mhi: return bsearch(mlo,mhi)
-                guess = p + (pllEval(p),)
-                iteration += 1
-
-        points = [contourIntersect(p) for p in pllPoints]
-        print '\n'.join(str(a) for a in [p0] + points)
+        print '\n'.join(str(a) for a in [p0] + contourPoints)
         print
-        ell = enclosing_ellipse([p[:2] for p in points],p0[:2])
+        ell = enclosing_ellipse([p[:2] for p in contourPoints],p0[:2])
         print '\n'.join([str((x/W,y/W)) for x,y,W in [np.dot( ell.parametric, [math.cos(t),math.sin(t),1]) for t in np.arange(0,2*math.pi,math.pi/8)]])
         
         self.profVal = p0[:2]
@@ -184,6 +111,83 @@ class fit(object):
                 print>>self.log, '\t', roo.str(w.arg(item))
         self.pll = pll
         return
+
+    @roo.quiet
+    def minimize(self):
+        w = self.model.w
+        nll = w.pdf('model').createNLL(w.data('data'), *self.fitArgs[:-1])
+        minu = r.RooMinuit(nll)
+        minu.setPrintLevel(-1)
+        minu.setNoWarn()
+        for j in range(10):
+            minu.setStrategy(2)
+            for i in range(10):
+                self.status = minu.migrad()
+                print>>self.log, i + 10*j,
+                self.log.flush()
+                if not self.status: break
+            if not self.status: break
+            minu.setStrategy(1)
+            minu.migrad()
+        print>>self.log
+        self.NLL = nll.getVal()
+        pll = nll.createProfile(w.argSet(','.join(self.profileVars)))
+        print>>self.log, roo.str(nll)
+        print>>self.log, roo.str(pll)
+        pll.minimizer().setStrategy(2)
+        return pll
+
+    def contourPoints(self,pll):
+        w = self.model.w
+        p0 = [w.arg(a).getVal() for a in self.profileVars]
+        errMin = 0.12
+        oneSigmaNLL = 1.14
+        pllPoints = [(p0[0]+errMin*math.cos(t),p0[1]+errMin*math.sin(t))
+                     for t in np.arange(0,2*math.pi,math.pi/8)]
+        pllCache = {}
+        def pllEval(p):
+            p = tuple(p)[:2]
+            if p not in pllCache:
+                for name,val in zip(self.profileVars,p): w.arg(name).setVal(val)
+                pllCache[p] = pll.getVal()
+            return pllCache[p]
+
+        p0 += pllEval(p0),        
+        targetPLL = oneSigmaNLL + p0[2]
+
+        def contourIntersect(guess,epsilon=0.01,xepsilon=0.001):
+            guess += pllEval(guess),
+            def point(g): return (p0[0] + g * (guess[0]-p0[0]),
+                                  p0[1] + g * (guess[1]-p0[1]))
+
+            def bsearch(lo,hi):
+                assert pllEval(lo) < targetPLL
+                assert pllEval(hi) > targetPLL
+                p = tuple(0.5*(lo[i]+hi[i]) for i in [0,1])
+                PLL = pllEval(p)
+                if math.sqrt(sum((lo[i]-hi[i])**2 for i in [0,1])) < xepsilon: return p
+                if PLL < targetPLL-epsilon: return bsearch(p,hi)
+                if PLL > targetPLL+epsilon: return bsearch(lo,p)
+                return p
+
+            mlo = guess if guess[2] < targetPLL else None
+            mhi = guess if targetPLL < guess[2] else None
+            iteration = 0
+            while True:
+                if guess[2] < p0[2] : return None
+                p = point( math.sqrt((targetPLL-p0[2]) / (guess[2]-p0[2])) )
+                if abs(targetPLL-pllEval(p)) < epsilon: return p
+                if pllEval(p) < targetPLL and (not mlo or pllEval(mlo) < pllEval(p)): mlo = p
+                if pllEval(p) > targetPLL and (not mhi or pllEval(p) < pllEval(mhi)): mhi = p
+                if iteration>5 and mlo and mhi: return bsearch(mlo,mhi)
+                guess = p + (pllEval(p),)
+                iteration += 1
+
+        points = []
+        for p in pllPoints:
+            points.append(contourIntersect(p))
+            if not points[-1]: return None,None
+        return p0,points
 
     @staticmethod
     def fields(): 
