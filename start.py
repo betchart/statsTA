@@ -3,6 +3,7 @@
 import sys
 import ROOT as r
 import systematics
+from ensembles import ensemble_specs
 from measurement import measurement
 from options import opts
 
@@ -24,21 +25,26 @@ if __name__ == '__main__':
              allSystematics if options.systematics=='all' else 
              options.systematics.split(','))
 
-    ensembles = (None if not options.ensembles else tuple(int(i) for i in options.ensembles.split(':')))
+    allEnsembles = [e['label'] for e in ensemble_specs()]
+    if options.ensembles == True:
+        print ','.join(allEnsembles)
+        exit()
+    ensembles = ([] if not options.ensembles else
+                 allEnsembles if options.ensembles=='all' else
+                 options.ensembles.split(','))
+
+    ensSlice = ((None,None) if not options.ensSlice else tuple(int(i) for i in options.ensSlice.split(':')))
     templates = (None if not options.templates else tuple(options.ensembles))
     
-    chunk = 10
-
-    if ( len(partitions)==1 and 
-         len(systs) <= chunk and 
-         ((not ensembles) or ensembles[1]-ensembles[0] <= chunk) and
-         ((not templates) or templates[1]-templates[0] == 1) ):
-        assert len(filter(None,[systs,ensembles,templates]))<2
+    if options.batch:
+        chunk = 10
+        pass
+    else:
         mp = systematics.measurement_pars(partition=partitions[0])
         mp.update({'doVis':options.visualize,
                    'evalSystematics':systs,
-                   'ensembles':ensembles})
+                   'ensembles':ensembles,
+                   'ensSlice':ensSlice})
+        print mp
         measurement(**mp)
-    else:
-        pass
 
