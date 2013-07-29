@@ -18,6 +18,7 @@ def measurement_pars(measure='asymmetry', partition='full'):
              N + 2*cycle, (N, N + 2*cycle), (N, N + 2*cycle), (N, N + 1*cycle)]
     pars.update({'R0_': dict(zip(partitions,pDirs))[partition]})
     if measure=='fraction': pars.update({'hackZeroBins':True})
+    pars.update({'label':'_'.join([measure,partition])})
     return pars
 
 

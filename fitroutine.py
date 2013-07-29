@@ -185,11 +185,8 @@ class fit(object):
         self.pll = pll
         return
 
-    @classmethod
-    def fields(cls, doAsymm): 
-        if not doAsymm:
-            return ('#label d_qq error' +
-                    'fhat_gg fhat_qg fhat_qq fhat_ag status')
+    @staticmethod
+    def fields(): 
         return ('#label fqq.Ac_y_qq  fqg.Ac_y_qg  XX  XY  YY fhat_gg ' +
                 'fhat_qg fhat_qq fhat_ag Ac_y_qq_hat Ac_y_qg_hat f_gg.Ac_y_gg fitstatus NLL Ac_phi_qq_hat Ac_phi_gg_hat Ac_phi_ag_hat Ac_phi_qg_hat')
 
