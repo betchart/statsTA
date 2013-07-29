@@ -1,6 +1,6 @@
 import math
 import numpy as np
-
+import itertools
 
 class ellipse(object):
 
@@ -20,9 +20,8 @@ class ellipse(object):
 
     def fillMatrix(self):
         E,R = np.linalg.eig(self.sigmas2)
-        shape = np.hstack([np.vstack([
-                        R.dot(np.diag([1/e for e in E])).dot(R.T),
-                        [0,0]]), 
+        twobytwo = R.dot(np.diag([1/e for e in E])).dot(R.T)
+        shape = np.hstack([np.vstack([twobytwo, [0,0]]), 
                            [[0],[0],[-1]]])
         trans = np.eye(3)
         trans[0,2] = -self.mean[0]
@@ -35,11 +34,17 @@ class ellipse(object):
     def fillSigmas(self):
         pass
 
-    def fillParametric(self):
-        E,R = np.linalg.eig(self.matrix)
-        D = np.diag(np.sqrt(np.abs(E))).dot(R.T)
-        self.parametric = np.linalg.inv(D)
 
+    @staticmethod
+    def getParametric(matrix):
+        E,R = np.linalg.eig(matrix)
+        for p in itertools.permutations(range(3),3):
+            d = np.diag(np.sqrt(np.abs(E[p,:]))).dot(R[:,p].T)
+            if np.allclose(matrix, d.T.dot(np.diag([1,1,-1]).dot(d))):
+                return np.linalg.inv(d) 
+
+    def fillParametric(self):
+        self.parametric = self.getParametric(self.matrix)
 
     def eval(self,t):
         point = self.parametric.dot([math.cos(t), math.sin(t), 1])

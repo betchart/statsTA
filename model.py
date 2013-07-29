@@ -6,7 +6,7 @@ import ROOT as r
 from asymmNames import genNameX,genNameY
 
 def unqueue(h, doIt):
-    return utils.unQueuedBins(h,7,[-1,1],[-1,1]) if doIt else h
+    return utils.unQueuedBins(h,5,[-1,1],[-1,1]) if doIt else h
 
 
 class topModel(object):
@@ -147,7 +147,12 @@ class topModel(object):
         [(roo.factory(w, "SUM::%(n)s( alphaT * %(n)s_both, %(n)s_symm )" % {'n': L + '_ttag'}),
           roo.factory(w, "SUM::%(n)s( alphaT * %(n)s_both, %(n)s_symm )" % {'n': L + '_ttqg'}),
           roo.factory(w, "SUM::%(n)s( alphaL * %(n)s_both, %(n)s_symm )" % {'n': L + '_ttqq'}))
-         for L in self.channels.keys() + self.channels_qcd.keys()]
+         for L in self.channels.keys()]
+
+        [(roo.factory(w, "SUM::%(n)s( 0 * %(n)s_both, %(n)s_symm )" % {'n': L + '_ttag'}),
+          roo.factory(w, "SUM::%(n)s( 0 * %(n)s_both, %(n)s_symm )" % {'n': L + '_ttqg'}),
+          roo.factory(w, "SUM::%(n)s( 0 * %(n)s_both, %(n)s_symm )" % {'n': L + '_ttqq'}))
+         for L in self.channels_qcd.keys()]
 
         assert self.gen.samples['tt'].datas[0].GetXaxis().GetTitle() == genNameX
         assert self.gen.samples['tt'].datas[0].GetYaxis().GetTitle() == genNameY

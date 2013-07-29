@@ -21,7 +21,7 @@ def asymmetry(hist) :
     bans = [(y2-y1, y2+y1, e1**2+e2**2) for (x1,y1,e1),(x2,y2,e2) in zip(bins,bins[::-1]) if x1<x2 and y2+y1]
     num = sum( n for n,_,_ in bans )
     err2 = sum( e2 for _,_,e2 in bans )
-    denom = sum( d for _,d,_ in bans )
+    denom = hist.Integral(0,hist.GetNbinsX()+2)
     return  num / denom, math.sqrt(err2) / denom
 #####################################
 def alphaMax(symm,anti):
@@ -214,3 +214,45 @@ def ratioHistogram( num, den, relErrMax=0.25) :
         ratio.SetBinContent(i+1,groupR(g))
         ratio.SetBinError(i+1,groupErr(g))
     return ratio
+
+#####################################################
+def coupling(th2):
+    coup = th2.Clone(th2.GetName() + '_coupling')
+    nx = coup.GetNbinsX()
+    ny = coup.GetNbinsY()
+    for iX in range(nx+2):
+        norm = coup.Integral(iX, iX, 0, ny+2)
+        if not norm: continue
+        for iY in range(ny+2):
+            coup.SetBinContent(iX,iY, coup.GetBinContent(iX,iY)/norm)
+            coup.SetBinError(iX,iY, coup.GetBinError(iX,iY)/norm)
+    return coup
+
+
+def coupling_symmAnti(hist) :
+    nbinsX = hist.GetNbinsX()
+    nbinsY = hist.GetNbinsY()
+    symm = hist.Clone(hist.GetName()+'_symm')
+    anti = hist.Clone(hist.GetName()+'_anti')
+    for iX in range(2+nbinsX) :
+        iX2 = 1+nbinsX - iX
+        for iY in range(2+nbinsY) :
+            iY2 = 1+nbinsY-iY
+            a,b = hist.GetBinContent(iX,iY), hist.GetBinContent(iX2,iY2)
+            e = 0.5 * math.sqrt( hist.GetBinError(iX,iY)**2 + hist.GetBinError(iX2,iY2)**2 )
+            symm.SetBinContent(iX,iY,0.5*(a+b)) ; symm.SetBinError(iX,iY,e)
+            anti.SetBinContent(iX,iY,0.5*(a-b)) ; anti.SetBinError(iX,iY,e)
+    return symm,anti
+
+def slice3D(hist,iC,AXIS=3):
+    axis = getattr(hist,'Get%saxis'%('XYZ'[AXIS-1]))()
+    axis.SetRange(iC,iC)
+    ab = hist.Project3D(('xy' if AXIS==3 else 'xz' if AXIS==2 else 'yz')+str(iC))
+    axis.SetRange(0,axis.GetNbins()+1)
+    return ab
+            
+
+#def smear(gen,coupling):
+
+
+#####################################

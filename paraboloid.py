@@ -1,7 +1,8 @@
 import math, numpy as np
+import itertools
 
 class paraboloid(object):
-    '''Useful properties of a paraboloid defined by six points.'''
+    '''Useful properties of a vertical paraboloid defined by six points.'''
     
     def __init__(self, points=[]):
         if len(points)!=6 : raise Exception("NPointsNot6")
@@ -41,8 +42,10 @@ class paraboloid(object):
         '''Matrix multiplying [cos(t),sin(t),1] to yield points on the ellipse.'''
         ellipse = self.ellipse(dz)
         E,R = np.linalg.eig(ellipse)
-        s = np.diag(1./np.sqrt(np.abs(E)))
-        return R.dot(s)
+        for p in itertools.permutations(range(3),3):
+            d = np.diag(np.sqrt(np.abs(E[p,:]))).dot(R[:,p].T)
+            if np.allclose(matrix, d.T.dot(np.diag([1,1,-1]).dot(d))):
+                return np.linalg.inv(d) 
 
     def major_angle(self):
         A,B,C,_,_,_ = self.ABCDEF

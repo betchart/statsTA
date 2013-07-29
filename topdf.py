@@ -1,7 +1,18 @@
-import os
-pages = 7
+#!/usr/bin/python
+
+import os,sys
+if len(sys.argv)<3:
+    print "Usage: topdf <npages> <file.ps>"
+    exit()
+else:
+    pages = int(sys.argv[1])
+    D = dict(zip(['fname','ext'],sys.argv[2].split('.')))
+
 for i in range(pages):
-    os.system("psselect -p%d plot.ps plot%d.ps"%(i+1,i+1))
-    os.system("epstopdf --autorotate=All plot%s.ps"%(i+1))
-os.system('pdftk %s cat output plot.pdf'%(' '.join(['plot%d.pdf'%(i+1) for i in range(pages)])))
-os.system('rm %s'%(' '.join(['plot%d.*'%(i+1) for i in range(pages)])))
+    D['n']=i+1
+    os.system("psselect -p%(n)d %(fname)s.%(ext)s %(fname)s%(n)d.%(ext)s"%D)
+    os.system("epstopdf --autorotate=All %(fname)s%(n)d.%(ext)s"%D)
+inputs = (' '.join(['%s%d.pdf'%(D['fname'],i+1) for i in range(pages)]))
+os.system('pdftk %s cat output %s.pdf'%(inputs,D['fname']))
+os.system('rm %s'%inputs)
+os.system('rm %s'%inputs.replace('.pdf','.ps'))
