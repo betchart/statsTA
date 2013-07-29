@@ -8,8 +8,8 @@ from functools import partial
 
 summarize = True
 
-pairs = dict([(item,(item+'_dn',item+'_up')) for item in ['RF','JER','JES','PU','lumi','DY','ST','DY2','ST2'][:-2]])
-pairs.update(dict([('PD:%02d-%02d'%(i,i+1),('PD_%02d'%i,'PD_%02d'%(i+1))) for i in range(1,53,2)]))
+pairs = dict([(item,(item+'_dn',item+'_up')) for item in ['RF','JER','JES','PU','lumi','DY','ST','DY2','ST2'][1:-2]])
+#pairs.update(dict([('PD:%02d-%02d'%(i,i+1),('PD_%02d'%i,'PD_%02d'%(i+1))) for i in range(1,53,2)]))
 pairs.update(dict([('muid',('mu2','mu3')),
                    ('mutrig',('mu0','mu1')),
                    ('elid',('el2','el3')),

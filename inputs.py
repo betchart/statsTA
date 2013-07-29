@@ -9,8 +9,8 @@ class sample_data(object):
         self.xs_sigma = sigma
         self.eff = selectionEfficiency
         self.frac = preselectionFraction
-        self.datas = (signalDistributions if all(signalDistributions) else
-                      ((signalDistributions[0],) +
+        #self.datas = (signalDistributions if all(signalDistributions) else
+        self.datas = (((signalDistributions[0],) +
                        tuple(utils.symmAnti(signalDistributions[0]))))
 
         self.alphaMax = utils.alphaMax(*self.datas[1:])
@@ -35,7 +35,7 @@ class sample_data(object):
                 d.Add(od,-1)
 
     def asymmStr(self):
-        unqueued = utils.unQueuedBins(self.datas[0],7,[-1,1],[-1,1])
+        unqueued = utils.unQueuedBins(self.datas[0],5,[-1,1],[-1,1])
         unqx = unqueued.ProjectionX()
         unqy = unqueued.ProjectionY()
         ay = tuple([100*f for f in utils.asymmetry(unqx)])
@@ -68,10 +68,9 @@ class channel_data(object):
                  prePre = False, hackZeroBins=False):
         filePattern="data/stats_%s_%s_%s.root"
         tfile = r.TFile.Open(filePattern % (partition, lepton, tag))
-
         self.lepton = lepton
         self.lumi = tfile.Get('lumiHisto/data').GetBinContent(1)
-        self.lumi_sigma = 0.04
+        self.lumi_sigma = 0.05
 
         def full(pf) :
             return next((ky.GetName() + '/' for ky in tfile.GetListOfKeys()
@@ -86,7 +85,7 @@ class channel_data(object):
                     (sigPrefix if prePre else '') + 
                     '%s; %s/'%(genNameX,genNameY),
                     'meweighted/')
-
+        
         self.samples = {}
         for s in self.__samples__[4 if getTT else 0:None if getTT else -1]:
             self.add(s, tfile, paths, prepaths)
@@ -99,7 +98,7 @@ class channel_data(object):
 
         pre = get( s, prepaths)
         if not pre and not s == 'data': return
-        doSymmAnti = s[:2] == 'tt' and 'QueuedBin' in paths[0]
+        doSymmAnti = False #s[:2] == 'tt' and 'QueuedBin' in paths[0]
 
         datas = (get('/' + s,paths).Clone(self.lepton + '_' + s),
                  get('_symm/' + s,paths).Clone(self.lepton + '_symm_' + s)
@@ -148,7 +147,26 @@ class channel_data(object):
 
 
 if __name__ == '__main__':
-    channels = dict([(lep, channel_data(lep, 'top', signal='fitTopQueuedBin7TridiscriminantWTopQCD')) for lep in ['el', 'mu']])
+    import sys
+    from systematics import measurements, partitions, measurement_pars
+    i,j = [int(k) for k in sys.argv[1:3]] if len(sys.argv)>2 else (0,0)
+    print '#', measurements[i], partitions[j]
+    
+    pars = measurement_pars(measurements[i], partitions[j])
+    R0_,diffR0_ = pars['R0_'] if type(pars['R0_'])==tuple else (pars['R0_'],None)
+
+    getTT = True
+
+    channels = dict([(lep,
+                      channel_data(lep,
+                                   'top',
+                                   signal=pars['signal'],
+                                   dirPrefix="R%02d" % R0_, getTT=getTT)) for lep in
+                     ['el','mu'] ])
+    if diffR0_:
+        for lep,chan in channels.items():
+            chan.subtract(channel_data(lep,'top',signal=pars['signal'],
+                                       dirPrefix="R%02d" % diffR0_, getTT=getTT))
     print
     print channels['el']
     print

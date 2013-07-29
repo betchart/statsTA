@@ -37,7 +37,7 @@ if __name__ == '__main__':
     tfile = r.TFile.Open('.'.join(sys.argv[1].split('.')[:-1]+['root']), 'RECREATE')
     book = autoBook(tfile)
     names = ['delta_Aqq','delta_Aqg','error_Aqq','error_Aqg','pullqq','pullqg']
-    fixedLimits = [(-1.5,1.5),(-1.5,1.5),(0.34,0.4),(0.09,0.15),(-5,5),(-5,5)]
+    fixedLimits = [(-1.5,1.5),(-1.5,1.5),(0.0,0.50),(0.04,0.20),(-5,5),(-5,5)]
     meanNLL = sum(nll(k) for k in M) / len(M)
     rmsNLL = math.sqrt(sum((nll(k) - meanNLL)**2 for k in M) / len(M))
     if False:

@@ -4,9 +4,9 @@ partitions = ['full', 'hiM', 'loM', 'hiY', 'loY']
 
 def measurement_pars(measure='asymmetry', partition='full'):
     fields = ('R0_', 'signal', 'profile')
-    base = 4
-    hemicycle = 6
-    asymmetry = (base, 'fitTopQueuedBin7TridiscriminantWTopQCD', ('falphaL', 'falphaT'))
+    base = 2
+    hemicycle = 4
+    asymmetry = (base, 'fitTopQueuedBin5_TridiscriminantWTopQCD', ('falphaL', 'falphaT'))
     fraction = (base+hemicycle, 'fitTopTanhRapiditySum_triD', ('d_qq',))
 
     mtype = dict([(m, dict(zip(fields, eval(m)))) for m in measurements])
@@ -36,14 +36,14 @@ def central():
 
 def systematics():
     sys =  ([
-            {'label': 'RF_dn', 'dirIncrement': 4, 'sigPre': '000_', 'genDirPre':'R02', 'genPre': '000_'},
-            {'label': 'RF_up', 'dirIncrement': 5, 'sigPre': '000_', 'genDirPre':'R03', 'genPre': '000_'},
-
-            {'label': 'JER_up', 'tag': 'ph_su_jn_20'},
-            {'label': 'JER_dn', 'tag': 'ph_sd_jn_20'},
-
-            {'label': 'JES_up', 'tag': 'ph_sn_ju_20'},
-            {'label': 'JES_dn', 'tag': 'ph_sn_jd_20'},
+            #{'label': 'RF_dn', 'dirIncrement': 4, 'sigPre': '000_', 'genDirPre':'R02', 'genPre': '000_'},
+            #{'label': 'RF_up', 'dirIncrement': 5, 'sigPre': '000_', 'genDirPre':'R03', 'genPre': '000_'},
+        
+            #{'label': 'JER_up', 'tag': 'ph_su_jn_20'},
+            #{'label': 'JER_dn', 'tag': 'ph_sd_jn_20'},
+            #
+            #{'label': 'JES_up', 'tag': 'ph_sn_ju_20'},
+            #{'label': 'JES_dn', 'tag': 'ph_sn_jd_20'},
 
             {'label': 'PU_up', 'dirIncrement': 1, 'sigPre': '001_'},
             {'label': 'PU_dn', 'dirIncrement': 1, 'sigPre': '000_'},

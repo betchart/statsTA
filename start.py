@@ -14,17 +14,18 @@ from paraboloid import paraboloid
 from parabola import parabola
 from itertools import combinations
 from asymmNames import genNameX,genNameY
+from enclosing_ellipse import enclosing_ellipse
+from goldenSection import goldenSectionSearch
 
 class fit(object):
     def __init__(self, label, signal, profileVars, R0_,
                  d_lumi, d_xs_dy, d_xs_st, tag, genPre, sigPre, dirIncrement, genDirPre, 
-                 quiet = False, hackZeroBins=False, defaults = {}, pllPoints=[],
+                 quiet = False, hackZeroBins=False, defaults = {},
                  log=None, fixSM=False,altData=None, lumiFactor=1.0):
 
         self.label = label
         self.quiet = quiet
         self.profileVars = profileVars
-        self.pllPoints = pllPoints
         self.doAsymm = 'QueuedBin' in signal
         self.log = log if log else sys.stdout
         if type(R0_) == tuple:
@@ -46,11 +47,11 @@ class fit(object):
                                               dirPrefix=genDirPre, genDirPre=genDirPre, 
                                               getTT=True, prePre = prePre)
 
-        for n,c in channels.items() :
-            if n == 'gen': continue
-            print n
-            print c.asymmStr()
-            print
+        #for n,c in channels.items() :
+        #    if n == 'gen': continue
+        #    print n
+        #    print c.asymmStr()
+        #    print
 
         if diffR0_ :
             for lepPart,chan in channels.items():
@@ -71,23 +72,25 @@ class fit(object):
                         r.RooFit.PrintLevel(-1)]
         self.model.import_data(altData)
 
-        if fixSM:
-            fixVars = (['R_ag','slosh','falphaL','falphaT'] if self.doAsymm else
-                       ['d_qq','R_ag'])
-            for item in fixVars: self.model.w.arg(item).setConstant()
-            nll = self.model.w.pdf('model').createNLL(self.model.w.data('data'), *self.fitArgs[:-1])
-            minu = r.RooMinuit(nll)
-            minu.setPrintLevel(-1)
-            minu.setNoWarn()
-            minu.setStrategy(2)
-            minu.migrad()
+        if fixSM: self.doSM()
         else:
             self.doFit()
 
     @roo.quiet
+    def doSM(self):
+        fixVars = (['R_ag','slosh','falphaL','falphaT'] if self.doAsymm else
+                   ['d_qq','R_ag'])
+        for item in fixVars: self.model.w.arg(item).setConstant()
+        nll = self.model.w.pdf('model').createNLL(self.model.w.data('data'), *self.fitArgs[:-1])
+        minu = r.RooMinuit(nll)
+        minu.setPrintLevel(-1)
+        minu.setNoWarn()
+        minu.setStrategy(2)
+        minu.migrad()
+
+    @roo.quiet
     def doFit(self):
         w = self.model.w
-        N = len(self.profileVars)
         nll = w.pdf('model').createNLL(w.data('data'), *self.fitArgs[:-1])
         minu = r.RooMinuit(nll)
         minu.setPrintLevel(-1)
@@ -103,69 +106,90 @@ class fit(object):
             minu.setStrategy(1)
             minu.migrad()
         print>>self.log
-        if not self.pllPoints:
-            print>>self.log, minu.minos(w.argSet(','.join(self.profileVars)))
+        errMin = 0.12
+        oneSigmaNLL = 1.14
+        p0 = [w.arg(a).getVal() for a in self.profileVars]
         self.NLL = nll.getVal()
         pll = nll.createProfile(w.argSet(','.join(self.profileVars)))
         print>>self.log, roo.str(nll)
         print>>self.log, roo.str(pll)
-        pll.minuit().setStrategy(2)
+        pll.minimizer().setStrategy(2)
 
-        def pllEval(**kwargs) :
-            for name,val in kwargs.items(): w.arg(name).setVal(val)
-            return pll.getVal()
+        pllCache = {}
+        def pllEval(p):
+            p = tuple(p)[:2]
+            if p not in pllCache:
+                for name,val in zip(self.profileVars,p): w.arg(name).setVal(val)
+                pllCache[p] = pll.getVal()
+            return pllCache[p]
 
-        errMin = {2:0.08, 1:0.005}[N]
-        def vE(a) : return w.arg(a).getVal(), max(errMin, w.arg(a).getError())
+        pllPoints = None
+        while not pllPoints:
+            cands = [(p0[0]+errMin*math.cos(t),p0[1]+errMin*math.sin(t))
+                     for t in np.arange(0,2*math.pi,math.pi/8)]
+            minP = min(cands, key=pllEval)
+            if pllEval(minP) < pllEval(p0):
+                print 'new minimum'
+                p0 = minP
+                pll.clearAbsMin()
+                pll.bestFitObs()
+                pllEval(p0)
+                print p0
+            else: pllPoints = cands
+        p0 += pllEval(p0),
+        
+        targetPLL = oneSigmaNLL + p0[2]
+        def contourIntersect(guess,epsilon=0.01,xepsilon=0.001):
+            guess += pllEval(guess),
+            def point(g): return (p0[0] + g * (guess[0]-p0[0]),
+                                  p0[1] + g * (guess[1]-p0[1]))
 
-        muSig = [vE(a) for a in self.profileVars]
-        if not self.pllPoints:
-            print>>self.log, muSig
-            self.pllPoints = [tuple(m + i*s for i, (m, s) in zip(signs, muSig))
-                              for signs in sorted(set(combinations([0, 1, 0, -1, 0], N)))]
-            if N==1:
-                for i in range(len(self.pllPoints)):
-                    if self.pllPoints[i][0]<-1 : self.pllPoints[i] = ((muSig[0][0]-1)/2,)
-            print>>self.log, self.pllPoints
 
-        points = [p + (pllEval(**dict(zip(self.profileVars, p))),) 
-                  for p in self.pllPoints]
-        print>>self.log, zip(*points)[-1]
+            def bsearch(lo,hi):
+                assert pllEval(lo) < targetPLL
+                assert pllEval(hi) > targetPLL
+                p = tuple(0.5*(lo[i]+hi[i]) for i in [0,1])
+                PLL = pllEval(p)
+                if math.sqrt(sum((lo[i]-hi[i])**2 for i in [0,1])) < xepsilon: return p
+                if PLL < targetPLL-epsilon: return bsearch(p,hi)
+                if PLL > targetPLL+epsilon: return bsearch(lo,p)
+                return p
 
-        oneSigmaNLL = {1: 0.5, 2: 1.14}[N]
-        if N == 1:
-            parb = parabola(points)
-            self.profVal = parb.xmin,
-            self.profErr = parb.dx(oneSigmaNLL)
-        else:
-            parb = paraboloid(points)
-            self.profVal = parb.xymin
-            self.profErr = parb.dxy(oneSigmaNLL)
+            mlo = guess if pllEval(guess) < targetPLL else None
+            mhi = guess if targetPLL < pllEval(guess) else None
+            iteration = 0
+            while True:
+                p = point( math.sqrt((targetPLL-p0[2]) / (guess[2]-p0[2])) )
+                if abs(targetPLL-pllEval(p)) < epsilon: return p
+                if pllEval(p) < targetPLL and (not mlo or pllEval(mlo) < pllEval(p)): mlo = p
+                if pllEval(p) > targetPLL and (not mhi or pllEval(p) < pllEval(mhi)): mhi = p
+                if iteration>5 and mlo and mhi: return bsearch(mlo,mhi)
+                guess = p + (pllEval(p),)
+                iteration += 1
 
-        if self.doAsymm: 
-            self.scales = np.array([w.arg(a).getVal() for a in ['Ac_y_ttqq', 'Ac_y_ttqg']])
-            self.scalesPhi= [w.arg('Ac_phi_%s'%n).getVal() for n in ['ttqq','ttgg','ttag','ttqg','tt']]
-            self.correction = w.arg('Ac_y_ttgg').getVal() * w.arg('f_gg').getVal()
+        points = [contourIntersect(p) for p in pllPoints]
+        print '\n'.join(str(a) for a in [p0] + points)
+        print
+        ell = enclosing_ellipse([p[:2] for p in points],p0[:2])
+        print '\n'.join([str((x/W,y/W)) for x,y,W in [np.dot( ell.parametric, [math.cos(t),math.sin(t),1]) for t in np.arange(0,2*math.pi,math.pi/8)]])
+        
+        self.profVal = p0[:2]
+        self.profErr = ell.sigmas2
+        self.profPLL = p0[2]
+        self.best = self.profVal
+
+        self.scales = np.array([w.arg(a).getVal() for a in ['Ac_y_ttqq', 'Ac_y_ttqg']])
+        self.scalesPhi= [w.arg('Ac_phi_%s'%n).getVal() for n in ['ttqq','ttgg','ttag','ttqg','tt']]
+        self.correction = w.arg('Ac_y_ttgg').getVal() * w.arg('f_gg').getVal()
         self.fractionHats = [w.arg('f_%s_hat' % a).getVal() for a in ['gg','qg','qq','ag']]
 
-        self.parb = parb
-        self.muSig = muSig
-        self.profPLL = pllEval(**dict(zip(self.profileVars, self.profVal)))
-        self.fitPLL = pllEval(**dict(zip(self.profileVars,[m for m,_ in muSig])))
-        choosePLL = ((N==3 and self.profErr[0,0] > 0 and self.profErr[1,1] > 0 
-                      and self.profPLL < self.fitPLL) or 
-                     (N==1 and self.profErr != None and self.profVal[0]>-1))
-        self.best = self.profVal if choosePLL else [m for m,_ in muSig]
-        if N==1 and not choosePLL: self.profErr = muSig[0][1]
-
         if not self.quiet:
-            print>>self.log, zip(*muSig)[0], self.fitPLL
             print>>self.log, self.profVal, self.profPLL
             print>>self.log, self.profErr
             for item in ['d_qq','d_xs_tt','d_xs_wj',
                          'factor_elqcd','factor_muqcd',
                          'f_gg','f_qq','f_qg','f_ag',
-                         'R_ag','slosh','alphaL'][:-3 if N==1 else None]:
+                         'R_ag','slosh','alphaL']:
                 print>>self.log, '\t', roo.str(w.arg(item))
         self.pll = pll
         return
@@ -197,7 +221,7 @@ class fit(object):
                          )
 
 class measurement(object):
-    def __init__(self, label, signal, profile, R0_, hackZeroBins=False, doVis=False, doSys=False, doEnsembles=False):
+    def __init__(self, label, signal, profile, R0_, hackZeroBins=False, doVis=False, doSys=True, doEnsembles=False):
         self.isAsymmetry = 'QueuedBin' in signal
         outNameBase = 'data/' + '_'.join(label.split(',')) + ['_nosys',''][int(doSys)]
         write = open(outNameBase + '.txt', 'w')
@@ -218,20 +242,8 @@ class measurement(object):
         print >> write, str(self.central)
         self.central.model.print_n()
 
-        if self.isAsymmetry:
-            para = self.central.parb.parametricEllipse(0.5)
-            angle = self.central.parb.major_angle()
-            points = [(x/w,y/w) for x,y,w in [para.dot([math.cos(angle+f*math.pi),
-                                                        math.sin(angle+f*math.pi),
-                                                        1])
-                                              for f in [0, 0.5, 0.75, 1.0, 1.5]]]
-            points.insert(0,self.central.parb.xymin)
-            self.central.pllPoints = points
-
-            vars_ = ['slosh', 'falphaL', 'falphaT','R_ag',
-                     'd_xs_tt', 'd_xs_wj', 'factor_elqcd', 'factor_muqcd']
-        else:
-            vars_ = ['d_qq','R_ag','d_xs_tt','d_xs_wj','factor_elqcd','factor_muqcd']
+        vars_ = ['slosh', 'falphaL', 'falphaT','R_ag',
+                 'd_xs_tt', 'd_xs_wj', 'factor_elqcd', 'factor_muqcd']
 
         defaults = dict([(v,self.central.model.w.arg(v).getVal()) for v in vars_])
         print>>log, '\n'.join(str(kv) for kv in defaults.items())
@@ -248,10 +260,9 @@ class measurement(object):
         for sys in [[],systematics.systematics()][int(doSys)]:
             pars = systematics.central()
             pars.update(sys)
-            f = fit(signal=signal, profileVars=profile, R0_=R0_, quiet=False,
-                    hackZeroBins=hackZeroBins,
-                    defaults=defaults, pllPoints=list(self.central.pllPoints), log=log,
-                    **pars)
+            f = fit(signal=signal, profileVars=profile, R0_=R0_,
+                    quiet=False, hackZeroBins=hackZeroBins,
+                    defaults=defaults, log=log, **pars)
             #f.model.visualize(visCanvas)
             #utils.tCanvasPrintPdf(visCanvas, outNameBase, verbose=False, title=pars['label'])
             syss.append(f)
@@ -302,19 +313,22 @@ class measurement(object):
                                r.RooFit.Extended(True)
                            )
         skip=0
-        Nens = 1000
+        Nens = 100
         mcstudy.generate(Nens,0,True)
         with open('ensemble_%s_LF%d.txt'%(ens,100*lumiFactor),'w') as ensfile:
-            fAqq = self.central.model.w.arg('falphaL').getVal() * self.central.model.w.arg('Ac_y_ttqq').getVal()
-            fAqg = self.central.model.w.arg('falphaT').getVal() * self.central.model.w.arg('Ac_y_ttqg').getVal()
-            print >> ensfile, '\t'.join(["#truth", '%f'%fAqq, '%f'%fAqg])
-            print >> ensfile, fit.fields(self.isAsymmetry)
-            for i in range(skip,Nens):
-                alt = mcstudy.genData(i)
-                pars['label'] = 'ens%d'%i
-                f = fit(altData=alt, **pars)
-                print >> ensfile, f
-                ensfile.flush()
+            with open('ensemble_%s_LF%d.log'%(ens,100*lumiFactor),'w') as enslog:
+                pars['log'] = enslog
+                fAqq = self.central.model.w.arg('falphaL').getVal() * self.central.model.w.arg('Ac_y_ttqq').getVal()
+                fAqg = self.central.model.w.arg('falphaT').getVal() * self.central.model.w.arg('Ac_y_ttqg').getVal()
+                print >> ensfile, '\t'.join(["#truth", '%f'%fAqq, '%f'%fAqg])
+                print >> ensfile, fit.fields(self.isAsymmetry)
+                for i in range(skip,Nens):
+                    alt = mcstudy.genData(i)
+                    pars['label'] = 'ens%d'%i
+                    f = fit(altData=alt, **pars)
+                    print >> ensfile, f
+                    ensfile.flush()
+                    enslog.flush()
 
 
 def query(items, default = ()):

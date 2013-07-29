@@ -1,7 +1,7 @@
 import math, numpy as np
 
 class parabola(object) :
-    '''Useful properties of a parabola defined by three points.'''
+    '''Useful properties of a vertical parabola defined by three points.'''
     
     def __init__(self, points = [] ) :
         if len(points)!=3 : raise Exception("NPointsNot3")
