@@ -232,8 +232,7 @@ class fit(object):
                  str    : ("c", "C", "Char_t")
              }
 
-        genitems = (['fitX','fitY']+self.modelItems())
-        genvals = dict([(item,-99999999.) for item in genitems])
+        genvals = dict([(item,-99999999.) for item in (['fitX','fitY']+self.modelItems())])
         genvals.update(truth)
 
         selfStuff = ['label','fitX','fitY','fitXX','fitXY','fitYY','sigmaX','sigmaY',

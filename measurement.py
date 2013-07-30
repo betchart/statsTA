@@ -77,8 +77,8 @@ class measurement(object):
                 wGen.arg(item).setVal(-wGen.arg(item).getVal())
 
 
-        truth = {'fitX': self.central.fitX,
-                 'fitY': self.central.fitY}
+        truth = {'fitX': float(wGen.arg('falphaL')*self.central.scales[0]),
+                 'fitY': float(wGen.arg('falphaT')*self.central.scales[1])}
         for item in fit.modelItems(): truth[item] = wGen.arg(item).getVal()
 
         mcstudy = r.RooMCStudy(wGen.pdf('model'),
