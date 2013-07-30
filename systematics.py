@@ -52,11 +52,11 @@ def systematics():
             {'label': 'lumi_up', "d_lumi": +0.05},
             {'label': 'lumi_dn', "d_lumi": -0.05},
             
-            {'label': 'DY_up', "d_xs_dy": +0.05},
-            {'label': 'DY_dn', "d_xs_dy": -0.05},
+            {'label': 'DY_up', "d_xs_dy": +0.10},
+            {'label': 'DY_dn', "d_xs_dy": -0.10},
             
-            {'label': 'ST_up', "d_xs_st": +0.05},
-            {'label': 'ST_dn', "d_xs_st": -0.05},
+            {'label': 'ST_up', "d_xs_st": +0.10},
+            {'label': 'ST_dn', "d_xs_st": -0.10},
 
             ] +
             [{'label': 'el%d' % i,
