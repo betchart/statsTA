@@ -7,6 +7,7 @@ import inputs
 import model
 from enclosing_ellipse import enclosing_ellipse
 from asymmNames import genNameX,genNameY
+from CLprojection import oneSigmaCLprojection
 
 
 class fit(object):
@@ -92,10 +93,14 @@ class fit(object):
         self.scalesPhi= [w.arg('Ac_phi_%s'%n).getVal() for n in ['ttqq','ttgg','ttag','ttqg','tt']]
         self.correction = w.arg('Ac_y_ttgg').getVal() * w.arg('f_gg').getVal()
         self.fractionHats = [w.arg('f_%s_hat' % a).getVal() for a in ['gg','qg','qq','ag']]
-        self.fitX,self.fitY = [float(i) for i in self.profVal*self.scales]
-        self.fitXX = float(self.profErr[0,0] * self.scales[0]**2)
-        self.fitXY = float(self.profErr[0,1] * self.scales[0]*self.scales[1])
-        self.fitYY = float(self.profErr[1,1] * self.scales[1]**2)
+        fitXY = self.profVal*self.scales
+        sigmas2 = np.diag(self.scales).dot(self.profErr).dot(np.diag(self.scales))
+        self.fitX,self.fitY = [float(i) for i in fitXY]
+        self.fitXX = float(sigmas2[0,0])
+        self.fitXY = float(sigmas2[0,1])
+        self.fitYY = float(sigmas2[1,1])
+        self.sigmaX = oneSigmaCLprojection(sigmas2)
+        self.sigmaY = oneSigmaCLprojection(sigmas2[(1,0),][:,(1,0)])
         self.contourPointsX,self.contourPointsY, = zip(*[[float(i) for i in self.scales*p] for p in contourPoints])
 
         if not self.quiet:
@@ -107,6 +112,9 @@ class fit(object):
                          'R_ag','slosh','alphaL']:
                 print>>self.log, '\t', roo.str(w.arg(item))
         self.pll = pll
+        w.arg('falphaL').setVal(p0[0])
+        w.arg('falphaT').setVal(p0[1])
+        pll.getVal()
         return
 
     @roo.quiet
@@ -207,7 +215,14 @@ class fit(object):
                          self.scalesPhi[:4]
                          )
 
-    def ttree(self):
+    @staticmethod
+    def modelItems():
+        return ( [item%xx for item in ['Ac_y_tt%s','Ac_phi_tt%s','f_%s_hat','f_%s'] for xx in ['qq','qg','ag','gg']] +
+                 ['d_xs_%s'%item for item in ['tt','wj','st','dy']] +
+                 ['expect_%s_%s'%(lep,s) for lep in ['el','mu'] for s in ['tt','wj','mj','st','dy']] +
+                 ['d_lumi','lumi_factor','R_ag','slosh','alphaL','alphaT','falphaL','falphaT','factor_elqcd','factor_muqcd'] )
+
+    def ttree(self, truth={}):
         # Note : ROOT and array.array use opposite conventions for upper/lowercase (un)signed
         #         name     array  ROOT  ROOT_typedef
         types = {int    : ("i", "I", "Int_t"),
@@ -217,19 +232,18 @@ class fit(object):
                  str    : ("c", "C", "Char_t")
              }
 
-        tree = r.TTree('fitresult','')
+        genitems = (['fitX','fitY']+self.modelItems())
+        genvals = dict([(item,-99999999.) for item in genitems])
+        genvals.update(truth)
 
-        selfStuff = ['label','fitX','fitY','fitXX','fitXY','fitYY','NLL','fitstatus','contourPointsX','contourPointsY','correction','fixSM']
-        modelStuff = [item%xx for item in ['Ac_y_tt%s','Ac_phi_tt%s','f_%s_hat','f_%s'] for xx in ['qq','qg','ag','gg']]
-        modelStuff += ['d_xs_%s'%item for item in ['tt','wj','st','dy']]
-        modelStuff += ['expect_%s_%s'%(lep,s) for lep in ['el','mu'] for s in ['tt','wj','mj','st','dy']]
-        modelStuff += ['d_lumi','lumi_factor','R_ag','slosh','alphaL','alphaT','falphaL','falphaT','factor_elqcd','factor_muqcd']
-
+        selfStuff = ['label','fitX','fitY','fitXX','fitXY','fitYY','sigmaX','sigmaY',
+                     'NLL','fitstatus','contourPointsX','contourPointsY','correction','fixSM']
         selfPairs = [(item,getattr(self,item)) for item in selfStuff]
-        modelPairs = [(item,self.model.w.arg(item).getVal()) for item in modelStuff]
+        modelPairs = [(item,self.model.w.arg(item).getVal()) for item in self.modelItems()]
         
         address = {}
-        for name,value in selfPairs+modelPairs:
+        tree = r.TTree('fitresult','')
+        for name,value in selfPairs+modelPairs+[('gen_'+key,val) for key,val in genvals.items()]:
             if type(value) not in [list,tuple]:
                 ar,ro,t = types[type(value)]
                 address[name] = array.array(ar, value if type(value)==str else [value])
