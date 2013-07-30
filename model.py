@@ -247,18 +247,18 @@ class topModel(object):
             print "%s: %.04f" % (item, w.arg(item).getVal())
         print
 
-    def print_n(self):
+    def print_n(self,logfile):
         scale = 1000.
         w = self.w
         length = 24
 
         chans = ['el','mu']
         cross = ['tt', 'wj', 'mj', 'st', 'dy']
-        print '\t','&','\t&\t'.join(r'\multicolumn{2}{c}{N_{%s}}'%xs for xs in cross), 'Total', 'Observed'
+        print>>logfile, '\t','&','\t&\t'.join(r'\multicolumn{2}{c}{N_{%s}}'%xs for xs in cross), 'Total', 'Observed'
         for chan in chans:
             tot = 0
             tote2 = 0
-            print chan,'&',
+            print>>logfile, chan,'&',
             for xs in cross:
                 val = w.arg('expect_%s_%s' % (chan, xs)).getVal()
                 delta = w.arg('d_xs_%s'%xs)
@@ -268,11 +268,11 @@ class topModel(object):
                              factor.getError() / factor.getVal() if xs=='mj' else 0)
                 tot += val
                 tote2 += (val*relerr)**2
-                print utils.roundString(val/scale,relerr*val/scale).rjust(length / 3), '&',
-            print utils.roundString(tot/scale,math.sqrt(tote2)/scale).rjust(length / 3), '&',
-            print self.channels[chan].samples['data'].datas[0].Integral()/scale, r'\\'
-        print
-        
+                print>>logfile, utils.roundString(val/scale,relerr*val/scale).rjust(length / 3), '&',
+            print>>logfile, utils.roundString(tot/scale,math.sqrt(tote2)/scale).rjust(length / 3), '&',
+            print>>logfile, self.channels[chan].samples['data'].datas[0].Integral()/scale, r'\\'
+        print>>logfile
+
 
     @roo.quiet
     def visualize1D(self, canvas=None):

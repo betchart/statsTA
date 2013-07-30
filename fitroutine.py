@@ -253,3 +253,10 @@ class fit(object):
                 tree.Branch(name, address[name])
         tree.Fill()
         return tree
+
+    def ttreeWrite(self, fname, truth={}):
+        tfile = r.TFile.Open(fname,'RECREATE')
+        tree = self.ttree(truth)
+        tree.Write()
+        tfile.Close()
+
