@@ -4,3 +4,4 @@
 graphics/
 data/
 output
+*.root
