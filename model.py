@@ -11,7 +11,7 @@ def unqueue(h, doIt):
 
 class topModel(object):
     @roo.quiet
-    def __init__(self, channelDict, asymmetry=True, quiet=False, w=None):
+    def __init__(self, channelDict, asymmetry=True, w=None):
 
         leptons = ['el', 'mu']
         ttcomps = ('qq', 'ag', 'gg', 'qg')
@@ -23,7 +23,7 @@ class topModel(object):
 
         if not w: w = r.RooWorkspace('Workspace')
 
-        for item in ['quiet', 'asymmetry', 'gen', 'channels', 'channels_qcd',
+        for item in ['asymmetry', 'gen', 'channels', 'channels_qcd',
                      'ttcomps', 'observables', 'w']: setattr(self, item, eval(item))
 
         for item in ['fractions', 'xs_lumi', 'efficiencies', 'shapes', 'qcd', 'asymmetry',
@@ -164,9 +164,6 @@ class topModel(object):
             roo.wimport_const(w, 'Ac_phi_' + n, p)
             roo.wimport_const(w, 'err_Ac_y_' + n, ey)
             roo.wimport_const(w, 'err_Ac_phi_' + n, ep)
-            if not self.quiet:
-                w.arg('Ac_y_' + n).Print()
-                w.arg('Ac_phi_' + n).Print()
 
     def import_model(self, w):
         which = dict((i, '_both') for i in ['dy', 'wj', 'st', 'ttgg', 'ttqq', 'ttqg', 'ttag'])
