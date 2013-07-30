@@ -18,12 +18,15 @@ class measurement(object):
                       hackZeroBins=hackZeroBins, fixSM=True, **systematics.central())
         print >> log, self.SM.model.TTbarComponentsStr()
 
-
         self.central = fit(signal=signal, profileVars=profile, R0_=R0_, log=log,
                            hackZeroBins=hackZeroBins, **systematics.central())
 
         print >> write, str(self.central)
         self.central.model.print_n()
+        tfile = r.TFile.Open(outNameBase+'.root','RECREATE')
+        tree = self.central.ttree()
+        tree.Write()
+        tfile.Close()
 
         vars_ = ['slosh', 'falphaL', 'falphaT','R_ag',
                  'd_xs_tt', 'd_xs_wj', 'factor_elqcd', 'factor_muqcd']

@@ -1,4 +1,5 @@
 import math
+import array
 import numpy as np
 import ROOT as r
 import roo
@@ -14,10 +15,7 @@ class fit(object):
                  quiet = False, hackZeroBins=False, defaults = {},
                  log=None, fixSM=False,altData=None, lumiFactor=1.0):
 
-        self.label = label
-        self.quiet = quiet
-        self.profileVars = profileVars
-        self.doAsymm = 'QueuedBin' in signal
+        for item in ['label','quiet','fixSM','profileVars'] : setattr(self,item,eval(item))
         self.log = log if log else sys.stdout
         if type(R0_) == tuple:
             diffR0_ = R0_[1]
@@ -54,7 +52,7 @@ class fit(object):
 
         print "###", label
         print>>self.log, "###", label
-        self.model = model.topModel(channels, asymmetry=self.doAsymm, quiet=True)
+        self.model = model.topModel(channels, asymmetry=True)
         self.model.w.arg('lumi_factor').setVal(lumiFactor)
         for k,v in defaults.items(): self.model.w.arg(k).setVal(v)
         for item in ['d_lumi', 'd_xs_dy', 'd_xs_st']: self.model.w.arg(item).setVal(eval(item))
@@ -68,8 +66,7 @@ class fit(object):
 
     @roo.quiet
     def doSM(self):
-        fixVars = (['R_ag','slosh','falphaL','falphaT'] if self.doAsymm else
-                   ['d_qq','R_ag'])
+        fixVars = ['R_ag','slosh','falphaL','falphaT']
         for item in fixVars: self.model.w.arg(item).setConstant()
         nll = self.model.w.pdf('model').createNLL(self.model.w.data('data'), *self.fitArgs[:-1])
         minu = r.RooMinuit(nll)
@@ -86,20 +83,20 @@ class fit(object):
             pll = self.minimize()
             p0, contourPoints = self.contourPoints(pll)
 
-        print '\n'.join(str(a) for a in [p0] + contourPoints)
-        print
         ell = enclosing_ellipse([p[:2] for p in contourPoints],p0[:2])
-        print '\n'.join([str((x/W,y/W)) for x,y,W in [np.dot( ell.parametric, [math.cos(t),math.sin(t),1]) for t in np.arange(0,2*math.pi,math.pi/8)]])
-        
         self.profVal = p0[:2]
         self.profErr = ell.sigmas2
         self.profPLL = p0[2]
-        self.best = self.profVal
 
         self.scales = np.array([w.arg(a).getVal() for a in ['Ac_y_ttqq', 'Ac_y_ttqg']])
         self.scalesPhi= [w.arg('Ac_phi_%s'%n).getVal() for n in ['ttqq','ttgg','ttag','ttqg','tt']]
         self.correction = w.arg('Ac_y_ttgg').getVal() * w.arg('f_gg').getVal()
         self.fractionHats = [w.arg('f_%s_hat' % a).getVal() for a in ['gg','qg','qq','ag']]
+        self.fitX,self.fitY = [float(i) for i in self.profVal*self.scales]
+        self.fitXX = float(self.profErr[0,0] * self.scales[0]**2)
+        self.fitXY = float(self.profErr[0,1] * self.scales[0]*self.scales[1])
+        self.fitYY = float(self.profErr[1,1] * self.scales[1]**2)
+        self.contourPointsX,self.contourPointsY, = zip(*[[float(i) for i in self.scales*p] for p in contourPoints])
 
         if not self.quiet:
             print>>self.log, self.profVal, self.profPLL
@@ -122,11 +119,11 @@ class fit(object):
         for j in range(10):
             minu.setStrategy(2)
             for i in range(10):
-                self.status = minu.migrad()
+                self.fitstatus = minu.migrad()
                 print>>self.log, i + 10*j,
                 self.log.flush()
-                if not self.status: break
-            if not self.status: break
+                if not self.fitstatus: break
+            if not self.fitstatus: break
             minu.setStrategy(1)
             minu.migrad()
         print>>self.log
@@ -136,6 +133,7 @@ class fit(object):
         print>>self.log, roo.str(pll)
         pll.minimizer().setStrategy(2)
         return pll
+        
 
     def contourPoints(self,pll):
         w = self.model.w
@@ -189,25 +187,56 @@ class fit(object):
             if not points[-1]: return None,None
         return p0,points
 
+
     @staticmethod
     def fields(): 
         return ('#label fqq.Ac_y_qq  fqg.Ac_y_qg  XX  XY  YY fhat_gg ' +
                 'fhat_qg fhat_qq fhat_ag Ac_y_qq_hat Ac_y_qg_hat f_gg.Ac_y_gg fitstatus NLL Ac_phi_qq_hat Ac_phi_gg_hat Ac_phi_ag_hat Ac_phi_qg_hat')
 
     def __str__(self):
-        if not self.doAsymm:
-            return '\t'.join(str(i) for i in [self.label] + list(self.best) +
-                             [self.profErr] + self.fractionHats + [self.status])
-
         return '\t'.join(str(i) for i in [self.label] +
-                         list(self.best*self.scales) +
+                         list(self.profVal*self.scales) +
                          [self.profErr[0,0]*self.scales[0]**2,
                           self.profErr[0,1]*self.scales[0]*self.scales[1],
                           self.profErr[1,1]*self.scales[1]**2] +
                          self.fractionHats+
                          list(self.scales) +
                          [self.correction,
-                          self.status,
+                          self.fitstatus,
                           self.NLL]+
                          self.scalesPhi[:4]
                          )
+
+    def ttree(self):
+        # Note : ROOT and array.array use opposite conventions for upper/lowercase (un)signed
+        #         name     array  ROOT  ROOT_typedef
+        types = {int    : ("i", "I", "Int_t"),
+                 long   : ("l", "L", "Long_t"),
+                 float  : ("f", "F", "Float_t"),
+                 bool   : ("B", "O", "Bool_t"),
+                 str    : ("c", "C", "Char_t")
+             }
+
+        tree = r.TTree('fitresult','')
+
+        selfStuff = ['label','fitX','fitY','fitXX','fitXY','fitYY','NLL','fitstatus','contourPointsX','contourPointsY','correction']
+        modelStuff = [item%xx for item in ['Ac_y_tt%s','Ac_phi_tt%s','f_%s_hat','f_%s'] for xx in ['qq','qg','ag','gg']]
+        modelStuff += ['d_xs_%s'%item for item in ['tt','wj','st','dy']]
+        modelStuff += ['expect_%s_%s'%(lep,s) for lep in ['el','mu'] for s in ['tt','wj','mj','st','dy']]
+        modelStuff += ['d_lumi','lumi_factor','R_ag','slosh','alphaL','alphaT','falphaL','falphaT','factor_elqcd','factor_muqcd']
+
+        selfPairs = [(item,getattr(self,item)) for item in selfStuff]
+        modelPairs = [(item,self.model.w.arg(item).getVal()) for item in modelStuff]
+        
+        address = {}
+        for name,value in selfPairs+modelPairs:
+            if type(value) not in [list,tuple]:
+                ar,ro,t = types[type(value)]
+                address[name] = array.array(ar, value if type(value)==str else [value])
+                tree.Branch(name, address[name], "%s/%s"%(name,ro))
+            else:
+                address[name] = r.std.vector('float')()
+                for item in value: address[name].push_back(item)
+                tree.Branch(name, address[name])
+        tree.Fill()
+        return tree
