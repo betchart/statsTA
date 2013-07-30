@@ -219,7 +219,7 @@ class fit(object):
 
         tree = r.TTree('fitresult','')
 
-        selfStuff = ['label','fitX','fitY','fitXX','fitXY','fitYY','NLL','fitstatus','contourPointsX','contourPointsY','correction']
+        selfStuff = ['label','fitX','fitY','fitXX','fitXY','fitYY','NLL','fitstatus','contourPointsX','contourPointsY','correction','fixSM']
         modelStuff = [item%xx for item in ['Ac_y_tt%s','Ac_phi_tt%s','f_%s_hat','f_%s'] for xx in ['qq','qg','ag','gg']]
         modelStuff += ['d_xs_%s'%item for item in ['tt','wj','st','dy']]
         modelStuff += ['expect_%s_%s'%(lep,s) for lep in ['el','mu'] for s in ['tt','wj','mj','st','dy']]
