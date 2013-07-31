@@ -6,6 +6,7 @@ import systematics
 from ensembles import ensemble_specs
 from measurement import measurement
 from options import opts
+from inputs import channel_data
 
 if __name__ == '__main__':
     r.gROOT.SetBatch(1)
@@ -34,17 +35,20 @@ if __name__ == '__main__':
                  options.ensembles.split(','))
 
     ensSlice = ((None,None) if not options.ensSlice else tuple(int(i) for i in options.ensSlice.split(':')))
-    templates = (None if not options.templates else tuple(options.ensembles))
+    templates = ((0,0) if not options.templates else tuple(int(i) for i in options.templates.split(':')))
     
     if options.batch:
         chunk = 10
         pass
     else:
-        mp = systematics.measurement_pars(partition=partitions[0])
-        mp.update({'doVis':options.visualize,
-                   'evalSystematics':systs,
-                   'ensembles':ensembles,
-                   'ensSlice':ensSlice})
-        print mp
-        measurement(**mp)
-
+        for part in partitions:
+            for tID in ([None] if templates[0]==templates[1] else 
+                        range(channel_data.nTemplates)[slice(*templates)]):
+                mp = systematics.measurement_pars(partition=part)
+                mp.update({'doVis':options.visualize,
+                           'evalSystematics':systs,
+                           'ensembles':ensembles,
+                           'ensSlice':ensSlice,
+                           'templateID':tID})
+                print mp
+                measurement(**mp)

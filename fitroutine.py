@@ -13,9 +13,10 @@ from CLprojection import oneSigmaCLprojection
 class fit(object):
     def __init__(self, label, signal, profileVars, R0_,
                  d_lumi, d_xs_dy, d_xs_st, tag, genPre, sigPre, dirIncrement, genDirPre, 
-                 quiet = False, hackZeroBins=False, defaults = {},
+                 quiet = False, hackZeroBins=False, templateID=None, defaults = {},
                  log=None, fixSM=False,altData=None, lumiFactor=1.0):
 
+        np.random.seed(1981)
         for item in ['label','quiet','fixSM','profileVars'] : setattr(self,item,eval(item))
         self.log = log if log else sys.stdout
         if type(R0_) == tuple:
@@ -24,9 +25,9 @@ class fit(object):
         else: diffR0_ = None
         prePre = dirIncrement in [0,4,5]
         channels = dict([((lep,part),
-                          inputs.channel_data(lep, part, tag, signal, sigPre, 
+                          inputs.channel_data(lep, part, tag, signal, sigPre,
                                               "R%02d" % (R0_ + dirIncrement),
-                                              genDirPre, prePre = prePre,
+                                              genDirPre, prePre=prePre, templateID=templateID,
                                               hackZeroBins=hackZeroBins and 'QCD'==part))
                          for lep in ['el', 'mu']
                          for part in ['top', 'QCD']

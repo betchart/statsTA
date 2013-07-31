@@ -7,17 +7,23 @@ from fitroutine import fit
 
 class measurement(object):
     def __init__(self, label, signal, profile, R0_, hackZeroBins=False,
-                 doVis=False, evalSystematics=[], ensembles=None, ensSlice=(None,None), outDir='output/'):
-        self.outNameBase = outDir + '_'.join(label.split(','))
+                 doVis=False, evalSystematics=[], ensembles=None, ensSlice=(None,None), outDir='output/', templateID=None):
+        self.outNameBase = (outDir + 
+                            '_'.join(label.split(',')) + 
+                            ('_t%03d'%templateID if templateID!=None else ''))
 
         with open(self.outNameBase + 'SM.log', 'w') as log:
+            pars = systematics.central()
+            pars['label'] += 'SM'
             self.SM = fit(signal=signal, profileVars=profile, R0_=R0_, log=log,
-                          hackZeroBins=hackZeroBins, fixSM=True, **systematics.central())
+                          hackZeroBins=hackZeroBins, fixSM=True, **pars)
             print >> log, self.SM.model.TTbarComponentsStr()
 
         with open(self.outNameBase + '.log', 'w') as log:
+            pars = systematics.central()
+            if templateID!=None: pars['label'] = 'T%03d'%templateID
             self.central = fit(signal=signal, profileVars=profile, R0_=R0_, log=log,
-                               hackZeroBins=hackZeroBins, **systematics.central())
+                               hackZeroBins=hackZeroBins, templateID=templateID, **pars)
             self.central.model.print_n(log)
             self.central.ttreeWrite(self.outNameBase+'.root')
 
