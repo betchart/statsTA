@@ -1,16 +1,11 @@
 batch the stats
-check template uncertainty on results: 100 poisson drawings, smallest ellipse enclosing 68
-do Q^2 variations via Q = 0.5x or 2x top mass in pdf reweightings
-increase delta_xs for DY and ST to 10%
-including alpha strong reweighting
 
+do Q^2 variations via Q = 0.5x or 2x top mass in pdf reweightings
+including alpha strong reweighting
 
 include raw asymmetry in results
 include projections of template distributions
 include additional ensembles
 
 
-* visualize
-
-* less hacky ensemble testing
-
+* visualize templates
