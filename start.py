@@ -8,12 +8,13 @@ from measurement import measurement
 from options import opts
 from inputs import channel_data
 import os
+import batch
 
 def chunk(L,n):
     return [L[i:i+n] for i in range(0,len(L), n)] if L else []
 
 def chunktuple(T,n):
-    return [(i,min(i+n,T[1])) for i in range(T[0],T[1], n)] if T else []
+    return [(i,min(i+n,T[1])) for i in range(T[0],T[1], n)] if T[0]!=T[1] else []
 
 if __name__ == '__main__':
     r.gROOT.SetBatch(1)
@@ -54,6 +55,7 @@ if __name__ == '__main__':
             if syschunks: stack.extend(["./start.py --partition %s --systematics %s"%(part, ','.join(s)) for s in syschunks])
             if templates: stack.extend(["./start.py --partition %s --templates %d:%d"%((part,)+t) for t in tmpchunks])
             if enschunks: stack.extend(["./start.py --partition %s --ensembles %s --ensSlice %d:%d"%((part, e)+s) for s in enschunks for e in ensembles])
+        batch.batch(stack)
     else:
         for part in partitions:
             for tID in ([None] if templates[0]==templates[1] else 
