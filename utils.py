@@ -1,6 +1,7 @@
 from multiprocessing import Process,JoinableQueue
 import math,traceback,sys,itertools, ROOT as r
 import array
+import subprocess
 try: import numpy as np
 except: pass
 
@@ -252,7 +253,7 @@ def slice3D(hist,iC,AXIS=3):
     return ab
             
 
-#def smear(gen,coupling):
-
-
-#####################################
+def getCommandOutput(command):
+    p = subprocess.Popen(command, shell = True, stdout = subprocess.PIPE, stderr = subprocess.PIPE)
+    stdout,stderr = p.communicate()
+    return {"stdout":stdout, "stderr":stderr, "returncode":p.returncode}

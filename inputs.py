@@ -1,17 +1,17 @@
 import ROOT as r
 import utils
+import numpy as np
 from asymmNames import genNameX,genNameY
 
 class sample_data(object):
-    def __init__(self, signalDistributions, xs=None, sigma=None,
+    def __init__(self, signalDistribution, xs=None, sigma=None,
                  selectionEfficiency=1.0, preselectionFraction=1.0):
         self.xs = xs
         self.xs_sigma = sigma
         self.eff = selectionEfficiency
         self.frac = preselectionFraction
-        #self.datas = (signalDistributions if all(signalDistributions) else
-        self.datas = (((signalDistributions[0],) +
-                       tuple(utils.symmAnti(signalDistributions[0]))))
+        self.datas = ((signalDistribution,) +
+                      tuple(utils.symmAnti(signalDistribution)))
 
         self.alphaMax = utils.alphaMax(*self.datas[1:])
 
@@ -62,12 +62,14 @@ class sample_data(object):
 class channel_data(object):
     __samples__ = ['data', 'wj', 'dy', 'st', 'ttgg', 'ttqg', 'ttqq', 'ttag', 'tt']
     __xs_uncertainty__ = {'tt': 1.0, 'wj': 2.0, 'st': 0.04, 'dy': 0.04}
+    nTemplates = 1000
 
     def __init__(self, lepton, partition, tag = 'ph_sn_jn_20',
                  signal="", sigPrefix="", dirPrefix="R04", genDirPre="R01", getTT=False,
-                 prePre = False, hackZeroBins=False):
+                 prePre = False, hackZeroBins=False, templateID=None):
         filePattern="data/stats_%s_%s_%s.root"
         tfile = r.TFile.Open(filePattern % (partition, lepton, tag))
+        self.templateID = templateID
         self.lepton = lepton
         self.lumi = tfile.Get('lumiHisto/data').GetBinContent(1)
         self.lumi_sigma = 0.05
@@ -98,26 +100,29 @@ class channel_data(object):
 
         pre = get( s, prepaths)
         if not pre and not s == 'data': return
-        doSymmAnti = False #s[:2] == 'tt' and 'QueuedBin' in paths[0]
 
-        datas = (get('/' + s,paths).Clone(self.lepton + '_' + s),
-                 get('_symm/' + s,paths).Clone(self.lepton + '_symm_' + s)
-                 if doSymmAnti else None)
-        if doSymmAnti:
-            datas += (datas[0].Clone(self.lepton + '_anti_' + s),)
-            datas[2].Add(datas[1], -1)
+        data = get('/' + s,paths).Clone(self.lepton + '_' + s)
+        data.SetDirectory(0)
+        if s != 'data': self.jiggle(data)
 
-        for d in filter(None, datas): d.SetDirectory(0)
         xs = tfile.Get('xsHisto/' + s).GetBinContent(1) if s != 'data' else None
         delta = (self.__xs_uncertainty__[s[:2]]
                  if s[:2] in self.__xs_uncertainty__ else None)
 
         named = \
-            {'selectionEfficiency': (datas[0].Integral() / pre.Integral() if pre else 0),
+            {'selectionEfficiency': (data.Integral() / pre.Integral() if pre else 0),
              'preselectionFraction': (1.0 if s[:2] != 'tt' else
                                       pre.Integral() / get( 'tt', prepaths ).Integral())
              }
-        self.samples[s] = sample_data(datas, xs, delta, **named)
+        self.samples[s] = sample_data(data, xs, delta, **named)
+
+    def jiggle(self,hist):
+        if self.templateID == None: return
+        factor = hist.GetEffectiveEntries() / hist.Integral()
+        for iX in range(1,1+hist.GetNbinsX()):
+            for iY in range(1,1+hist.GetNbinsY()):
+                hist.SetBinContent(iX,iY,np.random.poisson(hist.GetBinContent(iX,iY)*factor, self.nTemplates)[self.templateID]/factor)
+        return
 
     def hackZeroBins(self):
         if 'data' not in self.samples: return

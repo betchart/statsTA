@@ -11,7 +11,7 @@ def unqueue(h, doIt):
 
 class topModel(object):
     @roo.quiet
-    def __init__(self, channelDict, asymmetry=True, quiet=False, w=None):
+    def __init__(self, channelDict, asymmetry=True, w=None):
 
         leptons = ['el', 'mu']
         ttcomps = ('qq', 'ag', 'gg', 'qg')
@@ -23,7 +23,7 @@ class topModel(object):
 
         if not w: w = r.RooWorkspace('Workspace')
 
-        for item in ['quiet', 'asymmetry', 'gen', 'channels', 'channels_qcd',
+        for item in ['asymmetry', 'gen', 'channels', 'channels_qcd',
                      'ttcomps', 'observables', 'w']: setattr(self, item, eval(item))
 
         for item in ['fractions', 'xs_lumi', 'efficiencies', 'shapes', 'qcd', 'asymmetry',
@@ -164,9 +164,6 @@ class topModel(object):
             roo.wimport_const(w, 'Ac_phi_' + n, p)
             roo.wimport_const(w, 'err_Ac_y_' + n, ey)
             roo.wimport_const(w, 'err_Ac_phi_' + n, ep)
-            if not self.quiet:
-                w.arg('Ac_y_' + n).Print()
-                w.arg('Ac_phi_' + n).Print()
 
     def import_model(self, w):
         which = dict((i, '_both') for i in ['dy', 'wj', 'st', 'ttgg', 'ttqq', 'ttqg', 'ttag'])
@@ -250,18 +247,18 @@ class topModel(object):
             print "%s: %.04f" % (item, w.arg(item).getVal())
         print
 
-    def print_n(self):
+    def print_n(self,logfile):
         scale = 1000.
         w = self.w
         length = 24
 
         chans = ['el','mu']
         cross = ['tt', 'wj', 'mj', 'st', 'dy']
-        print '\t','&','\t&\t'.join(r'\multicolumn{2}{c}{N_{%s}}'%xs for xs in cross), 'Total', 'Observed'
+        print>>logfile, '\t','&','\t&\t'.join(r'\multicolumn{2}{c}{N_{%s}}'%xs for xs in cross), 'Total', 'Observed'
         for chan in chans:
             tot = 0
             tote2 = 0
-            print chan,'&',
+            print>>logfile, chan,'&',
             for xs in cross:
                 val = w.arg('expect_%s_%s' % (chan, xs)).getVal()
                 delta = w.arg('d_xs_%s'%xs)
@@ -271,11 +268,11 @@ class topModel(object):
                              factor.getError() / factor.getVal() if xs=='mj' else 0)
                 tot += val
                 tote2 += (val*relerr)**2
-                print utils.roundString(val/scale,relerr*val/scale).rjust(length / 3), '&',
-            print utils.roundString(tot/scale,math.sqrt(tote2)/scale).rjust(length / 3), '&',
-            print self.channels[chan].samples['data'].datas[0].Integral()/scale, r'\\'
-        print
-        
+                print>>logfile, utils.roundString(val/scale,relerr*val/scale).rjust(length / 3), '&',
+            print>>logfile, utils.roundString(tot/scale,math.sqrt(tote2)/scale).rjust(length / 3), '&',
+            print>>logfile, self.channels[chan].samples['data'].datas[0].Integral()/scale, r'\\'
+        print>>logfile
+
 
     @roo.quiet
     def visualize1D(self, canvas=None):

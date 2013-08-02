@@ -3,7 +3,6 @@ phi = 0.5 * (1 + math.sqrt(5));
 resphi = 2 - phi;
 
 def goldenSectionSearch(f, p, epsilon):
-    print p
     a,b,c = zip(*p)[0]
     x = ( (b + resphi * (c - b))  if (c - b > b - a) else
           (b - resphi * (b - a)) )

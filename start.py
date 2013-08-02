@@ -1,31 +1,71 @@
-#!/usr/bin/python
+#!/usr/bin/env python
 
 import sys
 import ROOT as r
 import systematics
+from ensembles import ensemble_specs
 from measurement import measurement
+from options import opts
+from inputs import channel_data
+import os
+import batch
 
-def query(items, default = ()):
-    display = '\n'.join('%d %s' % iD for iD in enumerate(items)) + '\nWhich? '
-    i = eval(next(default, "input(display)"))
-    return items[i] if 0 <= i <= len(items) else None
+def chunk(L,n):
+    return [L[i:i+n] for i in range(0,len(L), n)] if L else []
 
+def chunktuple(T,n):
+    return [(i,min(i+n,T[1])) for i in range(T[0],T[1], n)] if T[0]!=T[1] else []
 
 if __name__ == '__main__':
     r.gROOT.SetBatch(1)
+    options = opts()
 
-    defaults = iter(sys.argv[1:])
-    mp = [query(systematics.measurements, defaults),
-          query(systematics.partitions, defaults)]
+    measure = 0
+    if options.partitions==True:
+        print ','.join(systematics.partitions)
+        exit()
+    partitions = options.partitions.split(',')
 
-    if any(n == None for n in mp):
-        print 'invalid'
-        exit(0)
+    allSystematics = [s['label'] for s in systematics.systematics()]
+    if options.systematics == True:
+        print ','.join(allSystematics)
+        exit()
+    systs = ([] if not options.systematics else 
+             allSystematics if options.systematics=='all' else 
+             options.systematics.split(','))
 
-    print ','.join(mp)
-    pars = systematics.measurement_pars(*mp)
-    for p,v in pars.items():
-        print "   %s: %s" % (p, str(v))
-    print
+    allEnsembles = [e['label'] for e in ensemble_specs()]
+    if options.ensembles == True:
+        print ','.join(allEnsembles)
+        exit()
+    ensembles = ([] if not options.ensembles else
+                 allEnsembles if options.ensembles=='all' else
+                 options.ensembles.split(','))
 
-    measurement(','.join(mp), **pars)
+    ensSlice = ((None,None) if not options.ensSlice else tuple(int(i) for i in options.ensSlice.split(':')) if ':' in options.ensSlice else (int(options.ensSlice),1+int(options.ensSlice)))
+    templates = ((0,0) if not options.templates else tuple(int(i) for i in options.templates.split(':')) if ':' in options.templates else (int(options.templates),1+int(options.templates)))
+    
+    if options.batch:
+        chunksize = 10
+        stack = []
+        for part in partitions:
+            syschunks = chunk(systs, chunksize)
+            enschunks = chunktuple(ensSlice, chunksize)
+            tmpchunks = chunktuple(templates, chunksize)
+            if syschunks: stack.extend(["./start.py --partition %s --systematics %s"%(part, ','.join(s)) for s in syschunks])
+            if templates: stack.extend(["./start.py --partition %s --templates %d:%d"%((part,)+t) for t in tmpchunks])
+            if enschunks: stack.extend(["./start.py --partition %s --ensembles %s --ensSlice %d:%d"%((part, e)+s) for s in enschunks for e in ensembles])
+            if not any([syschunks,tmpchunks,enschunks]): stack.append("./start.py --partition %s"%part)
+        batch.batch(stack, site=options.site)
+    else:
+        for part in partitions:
+            for tID in ([None] if templates[0]==templates[1] else 
+                        range(channel_data.nTemplates)[slice(*templates)]):
+                mp = systematics.measurement_pars(partition=part)
+                mp.update({'doVis':options.visualize,
+                           'evalSystematics':systs if tID == None else [],
+                           'ensembles':ensembles if tID == None else [],
+                           'ensSlice':ensSlice,
+                           'templateID':tID})
+                print mp
+                measurement(**mp)
