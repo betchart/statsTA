@@ -140,7 +140,9 @@ class fit(object):
         pll = nll.createProfile(w.argSet(','.join(self.profileVars)))
         print>>self.log, roo.str(nll)
         print>>self.log, roo.str(pll)
-        pll.minimizer().setStrategy(2)
+        if hasattr(pll,'minimizer'):
+            pll.minimizer().setStrategy(2)
+        else: pll.minuit().setStrategy(2)
         return pll
         
 
