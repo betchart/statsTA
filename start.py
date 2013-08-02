@@ -42,8 +42,8 @@ if __name__ == '__main__':
                  allEnsembles if options.ensembles=='all' else
                  options.ensembles.split(','))
 
-    ensSlice = ((None,None) if not options.ensSlice else tuple(int(i) for i in options.ensSlice.split(':')))
-    templates = ((0,0) if not options.templates else tuple(int(i) for i in options.templates.split(':')))
+    ensSlice = ((None,None) if not options.ensSlice else tuple(int(i) for i in options.ensSlice.split(':')) if ':' in options.ensSlice else (int(options.ensSlice),1+int(options.ensSlice)))
+    templates = ((0,0) if not options.templates else tuple(int(i) for i in options.templates.split(':')) if ':' in options.templates else (int(options.templates),1+int(options.templates)))
     
     if options.batch:
         chunksize = 10
