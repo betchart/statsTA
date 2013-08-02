@@ -55,7 +55,8 @@ if __name__ == '__main__':
             if syschunks: stack.extend(["./start.py --partition %s --systematics %s"%(part, ','.join(s)) for s in syschunks])
             if templates: stack.extend(["./start.py --partition %s --templates %d:%d"%((part,)+t) for t in tmpchunks])
             if enschunks: stack.extend(["./start.py --partition %s --ensembles %s --ensSlice %d:%d"%((part, e)+s) for s in enschunks for e in ensembles])
-        batch.batch(stack)
+            if not any([syschunks,tmpchunks,enschunks]): stack.append("./start.py --partition %s"%part)
+        batch.batch(stack, site=options.site)
     else:
         for part in partitions:
             for tID in ([None] if templates[0]==templates[1] else 

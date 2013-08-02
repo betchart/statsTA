@@ -12,6 +12,7 @@ parser.add_option("--ensSlice", dest="ensSlice", default=None, metavar='lo:hi', 
 parser.add_option("--templates", dest="templates", default=None, metavar='lo:hi', help='templates by slice notation')
 parser.add_option("--visualize", dest='visualize', default=False, action='store_true', help='project the fits')
 parser.add_option("--batch", dest='batch', default=False, action='store_true', help='run on the batch queue')
+parser.add_option("--site", dest='site', default=None, metavar='ic', help='batch site')
 
 def opts() :
     options,args = parser.parse_args()
