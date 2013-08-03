@@ -1,6 +1,7 @@
 redo elliptize
 redo summarize_ensemble
 redo format_ensemble
+redo sysmag
 
 include raw asymmetry in results
 include projections of template distributions
