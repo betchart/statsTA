@@ -1,5 +1,5 @@
 set term postscript enhanced color 22 size 7in, 7in
-set output 'plot.ps'
+set output 'graphics/plot.ps'
 
 set bmargin 3
 set tmargin 3

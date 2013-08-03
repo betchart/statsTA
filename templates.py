@@ -51,7 +51,7 @@ maxs = reduce( MAX, [[tuple([i.GetMaximum()+i.GetBinError(4) for i in pair]) for
 mins = reduce( MIN, [[tuple([i.GetMinimum()-i.GetBinError(4) for i in pair]) for pair in L] for L in projections.values()], 3*[(0,0)])
 
 c = r.TCanvas()
-fn = 'template.pdf'
+fn = 'graphics/template.pdf'
 c.Print(fn+'[')
 
 for i,label in enumerate(['X_{L}','X_{T}']):

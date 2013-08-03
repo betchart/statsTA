@@ -44,7 +44,7 @@ for (h,k),label in zip([qg,gg,qq],
 qg[1].Draw('hist same')
 leg.Draw()
 
-c.Print('qRecoilPt.pdf(')
+c.Print('graphics/qRecoilPt.pdf(')
 c.SetLogy()
-c.Print('qRecoilPt.pdf)')
+c.Print('graphics/qRecoilPt.pdf)')
 

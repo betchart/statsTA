@@ -1,5 +1,5 @@
 set term postscript enhanced 22 size 7in, 7in
-set output 'lumi_dep.ps'
+set output 'graphics/lumi_dep.ps'
 
 set logscale xy
 set xlabel 'luminosity / 19.59fb^{-1}'
