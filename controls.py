@@ -10,18 +10,18 @@ r.TGaxis.SetMaxDigits(3)
 #r.tdrStyle.SetPadRightMargin(0.06)
 from inputs import channel_data
 
-d_xs_wj = 0.7822232858137581
-d_xs_tt = 0.15925221429457714
-factor_qcd = {'el':3.1447404463336044,
-              'mu':1.2367604160238135}
+d_xs_wj = 0.75986
+d_xs_tt = 0.166398
+factor_qcd = {'el':3.20075,
+              'mu':1.25533}
 
 channels = dict([(('_'.join([lep,par])), 
-                  channel_data(lep, par, signal='fitTopQueuedBin7TridiscriminantWTopQCD')) 
+                  channel_data(lep, par, signal='fitTopQueuedBin5_TridiscriminantWTopQCD')) 
                  for lep in ['el', 'mu'] for par in ['top','QCD']])
 
 for n,c in channels.items():
     lep,par = n.split('_')
-    c.samples.update(channel_data(lep, par, signal='fitTopQueuedBin7TridiscriminantWTopQCD', getTT=True).samples)
+    c.samples.update(channel_data(lep, par, signal='fitTopQueuedBin5_TridiscriminantWTopQCD', getTT=True).samples)
     for item in ['gg','qq','qg','ag'] : del c.samples['tt'+item]
     c.samples['tt'].eff /= 4
     c.samples['tt'].xs *= (1+d_xs_tt)
