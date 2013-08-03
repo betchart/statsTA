@@ -146,7 +146,7 @@ def make(gname):
     r.tdrStyle.SetPadRightMargin(0.11 if 'mass' in gname else 0.06)
     r.tdrStyle.SetPadLeftMargin(0.14 if 'mass' in gname else 0.15)
     ggname = (gname%{'lep':'lep'}).replace('[','').replace(']','')
-    fname = 'graphics/'+ ggname + '.pdf'
+    fname = 'graphics/control/'+ ggname + '.pdf'
     c = r.TCanvas()
 
     c.Print(fname+'[')
