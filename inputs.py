@@ -103,7 +103,7 @@ class channel_data(object):
 
         data = get('/' + s,paths).Clone(self.lepton + '_' + s)
         data.SetDirectory(0)
-        if s != 'data': self.jiggle(data)
+        if s not in ['data']: self.jiggle(data)
 
         xs = tfile.Get('xsHisto/' + s).GetBinContent(1) if s != 'data' else None
         delta = (self.__xs_uncertainty__[s[:2]]
