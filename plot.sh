@@ -6,13 +6,15 @@ set tmargin 1
 set rmargin 4
 set lmargin 6
 set grid x2tics ytics
-#set key bottom right
-#set key samplen 1.5 font "Helvetica, 14"
+set key invert
+set key top right
+set key width -20
+set key samplen 1.5 font "Helvetica, 14"
 set x2label 'A@_{c}^{y(qq)}  (%)' offset 0,-0.7
 set ylabel 'A@_{c}^{y(qg)}  (%)' offset 1,0
 set xlabel 'A@_{c}^{y}  (%)' offset 0,0.8
 
-unset key
+#unset key
 
 kr2012 = 0.0102
 ep = 0.0001
@@ -58,9 +60,9 @@ plot [-hor:hor] [-ver:ver] \
     tic(x,0.03) notitle lt 4 lc 7, \
     above(x, kr2012 - x) lt 1 lc rgb "#E0E0E0" lw 11 title '{}_{KR2012}', \
     'output/asymmetry_full_points.txt' u 7:8 w filledcu closed lc 2 title '{}_{POWHEG-CT10}', \
-    'output/asymmetry_full.txt' u ($0==0?$2:1/0):3 pt 7 ps 0.6 lc col title 'Full Selection', \
-    'output/asymmetry_full_points.txt' w lines lt 1 lc col title 'PLL contour: 1.14', \
-    '' u (itemize?$3:$17):(itemize?$4:$18) w lines lt 2 lc col title 'Systematic Unc.', \
+    '' u (itemize?$15:1/0):(itemize?$16:1/0) w lines lt 4 lc col title 'Sys (MC stat)', \
+    '' u (itemize?$3:$17):(itemize?$4:$18) w lines lt 2 lc col title 'Systematic', \
+    '' w lines lt 1 lc col title 'PLL = 1.14', \
     '' u 5:6 w lines lt 1 lw 3 lc col title '68% CI', \
     '' u 9:(ver-5*ep) w lines lt 1 lc col lw 10 notitle, \
     '' u 12:(ver-5*ep) w lines lt 1 lc 2 lw 3 notitle, \
@@ -68,7 +70,7 @@ plot [-hor:hor] [-ver:ver] \
     '' u (-hor+5*ep*hor/ver):13 w lines lt 1 lc 2 lw 3 notitle, \
     '' u (altox($11,off)):(altoy($11,off)) w lines lt 1 lw 10 lc col notitle, \
     '' u (altox($14,off)):(altoy($14,off)) w lines lt 1 lw 3 lc 2 notitle, \
-    '' u (itemize?$15:1/0):(itemize?$16:1/0) w lines lt 4 lc col title 'Systematic (MC stats)'
+    'output/asymmetry_full.txt' u ($0==0?$2:1/0):3 pt 7 ps 0.6 lc col title 'Full Selection'
 
 col=5
 plot [-hor:hor] [-ver:ver] \
@@ -82,10 +84,10 @@ plot [-hor:hor] [-ver:ver] \
     tic(x,0.02) notitle lt 4 lc 7, \
     tic(x,0.03) notitle lt 4 lc 7, \
     above(x, kr2012 - x) lt 1 lc rgb "#E0E0E0" lw 11 title '{}_{KR2012}', \
-    'output/asymmetry_full_points.txt' u 7:8 w filledcu closed lc 2 title '{}_{POWHEG-CT10}', \
-    'output/asymmetry_hiM.txt' u ($0==0?$2:1/0):3 pt 7 ps 0.6 lc col title 'm_{tt} > 450 GeV', \
-    'output/asymmetry_hiM_points.txt' w lines lt 1 lc col title 'PLL contour: 1.14', \
-    '' u (itemize?$3:$17):(itemize?$4:$18) w lines lt 2 lc col title 'Systematic Unc.', \
+    'output/asymmetry_hiM_points.txt' u 7:8 w filledcu closed lc 2 title '{}_{POWHEG-CT10}', \
+    '' u (itemize?$15:1/0):(itemize?$16:1/0) w lines lt 4 lc col title 'Sys (MC stat)', \
+    '' u (itemize?$3:$17):(itemize?$4:$18) w lines lt 2 lc col title 'Systematic', \
+    '' w lines lt 1 lc col title 'PLL = 1.14', \
     '' u 5:6 w lines lt 1 lw 3 lc col title '68% CI', \
     '' u 9:(ver-5*ep) w lines lt 1 lc col lw 10 notitle, \
     '' u 12:(ver-5*ep) w lines lt 1 lc 2 lw 3 notitle, \
@@ -93,7 +95,7 @@ plot [-hor:hor] [-ver:ver] \
     '' u (-hor+5*ep*hor/ver):13 w lines lt 1 lc 2 lw 3 notitle, \
     '' u (altox($11,off)):(altoy($11,off)) w lines lt 1 lw 10 lc col notitle, \
     '' u (altox($14,off)):(altoy($14,off)) w lines lt 1 lw 3 lc 2 notitle, \
-    '' u (itemize?$15:1/0):(itemize?$16:1/0) w lines lt 4 lc col title 'Systematic (MC stats)'
+    'output/asymmetry_hiM.txt' u ($0==0?$2:1/0):3 pt 7 ps 0.6 lc col title 'm_{tt} > 450 GeV'
 
 col=3
 plot [-hor:hor] [-ver:ver] \
@@ -107,10 +109,10 @@ plot [-hor:hor] [-ver:ver] \
     tic(x,0.02) notitle lt 4 lc 7, \
     tic(x,0.03) notitle lt 4 lc 7, \
     above(x, kr2012 - x) lt 1 lc rgb "#E0E0E0" lw 11 title '{}_{KR2012}', \
-    'output/asymmetry_full_points.txt' u 7:8 w filledcu closed lc 2 title '{}_{POWHEG-CT10}', \
-    'output/asymmetry_loM.txt' u ($0==0?$2:1/0):3 pt 7 ps 0.6 lc col title 'm_{tt} < 450 GeV', \
-    'output/asymmetry_loM_points.txt' w lines lt 1 lc col title 'PLL contour: 1.14', \
-    '' u (itemize?$3:$17):(itemize?$4:$18) w lines lt 2 lc col title 'Systematic Unc.', \
+    'output/asymmetry_loM_points.txt' u 7:8 w filledcu closed lc 2 title '{}_{POWHEG-CT10}', \
+    '' u (itemize?$15:1/0):(itemize?$16:1/0) w lines lt 4 lc col title 'Sys (MC stat)', \
+    '' u (itemize?$3:$17):(itemize?$4:$18) w lines lt 2 lc col title 'Systematic', \
+    '' w lines lt 1 lc col title 'PLL = 1.14', \
     '' u 5:6 w lines lt 1 lw 3 lc col title '68% CI', \
     '' u 9:(ver-5*ep) w lines lt 1 lc col lw 10 notitle, \
     '' u 12:(ver-5*ep) w lines lt 1 lc 2 lw 3 notitle, \
@@ -118,7 +120,7 @@ plot [-hor:hor] [-ver:ver] \
     '' u (-hor+5*ep*hor/ver):13 w lines lt 1 lc 2 lw 3 notitle, \
     '' u (altox($11,off)):(altoy($11,off)) w lines lt 1 lw 10 lc col notitle, \
     '' u (altox($14,off)):(altoy($14,off)) w lines lt 1 lw 3 lc 2 notitle, \
-    '' u (itemize?$15:1/0):(itemize?$16:1/0) w lines lt 4 lc col title 'Systematic (MC stats)'
+    'output/asymmetry_loM.txt' u ($0==0?$2:1/0):3 pt 7 ps 0.6 lc col title 'm_{tt} < 450 GeV'
 
 col=1
 plot [-hor:hor] [-ver:ver] \
@@ -132,10 +134,10 @@ plot [-hor:hor] [-ver:ver] \
     tic(x,0.02) notitle lt 4 lc 7, \
     tic(x,0.03) notitle lt 4 lc 7, \
     above(x, kr2012 - x) lt 1 lc rgb "#E0E0E0" lw 11 title '{}_{KR2012}', \
-    'output/asymmetry_full_points.txt' u 7:8 w filledcu closed lc 2 title '{}_{POWHEG-CT10}', \
-    'output/asymmetry_hiY.txt' u ($0==0?$2:1/0):3 pt 7 ps 0.6 lc col title 'tanh|y_{tt}| > 0.5', \
-    'output/asymmetry_hiY_points.txt' w lines lt 1 lc col title 'PLL contour: 1.14', \
-    '' u (itemize?$3:$17):(itemize?$4:$18) w lines lt 2 lc col title 'Systematic Unc.', \
+    'output/asymmetry_hiY_points.txt' u 7:8 w filledcu closed lc 2 title '{}_{POWHEG-CT10}', \
+    '' u (itemize?$15:1/0):(itemize?$16:1/0) w lines lt 4 lc col title 'Sys (MC stat)', \
+    '' u (itemize?$3:$17):(itemize?$4:$18) w lines lt 2 lc col title 'Systematic', \
+    '' w lines lt 1 lc col title 'PLL = 1.14', \
     '' u 5:6 w lines lt 1 lw 3 lc col title '68% CI', \
     '' u 9:(ver-5*ep) w lines lt 1 lc col lw 10 notitle, \
     '' u 12:(ver-5*ep) w lines lt 1 lc 2 lw 3 notitle, \
@@ -143,7 +145,7 @@ plot [-hor:hor] [-ver:ver] \
     '' u (-hor+5*ep*hor/ver):13 w lines lt 1 lc 2 lw 3 notitle, \
     '' u (altox($11,off)):(altoy($11,off)) w lines lt 1 lw 10 lc col notitle, \
     '' u (altox($14,off)):(altoy($14,off)) w lines lt 1 lw 3 lc 2 notitle, \
-    '' u (itemize?$15:1/0):(itemize?$16:1/0) w lines lt 4 lc col title 'Systematic (MC stats)'
+    'output/asymmetry_hiY.txt' u ($0==0?$2:1/0):3 pt 7 ps 0.6 lc col title 'tanh|y_{tt}| > 0.5'
 
 col=4
 plot [-hor:hor] [-ver:ver] \
@@ -157,10 +159,10 @@ plot [-hor:hor] [-ver:ver] \
     tic(x,0.02) notitle lt 4 lc 7, \
     tic(x,0.03) notitle lt 4 lc 7, \
     above(x, kr2012 - x) lt 1 lc rgb "#E0E0E0" lw 11 title '{}_{KR2012}', \
-    'output/asymmetry_full_points.txt' u 7:8 w filledcu closed lc 2 title '{}_{POWHEG-CT10}', \
-    'output/asymmetry_loY.txt' u ($0==0?$2:1/0):3 pt 7 ps 0.6 lc col title 'tanh|y_{tt}| < 0.5', \
-    'output/asymmetry_loY_points.txt' w lines lt 1 lc col title 'PLL contour: 1.14', \
-    '' u (itemize?$3:$17):(itemize?$4:$18) w lines lt 2 lc col title 'Systematic Unc.', \
+    'output/asymmetry_loY_points.txt' u 7:8 w filledcu closed lc 2 title '{}_{POWHEG-CT10}', \
+    '' u (itemize?$15:1/0):(itemize?$16:1/0) w lines lt 4 lc col title 'Sys (MC stat)', \
+    '' u (itemize?$3:$17):(itemize?$4:$18) w lines lt 2 lc col title 'Systematic', \
+    '' w lines lt 1 lc col title 'PLL = 1.14', \
     '' u 5:6 w lines lt 1 lw 3 lc col title '68% CI', \
     '' u 9:(ver-5*ep) w lines lt 1 lc col lw 10 notitle, \
     '' u 12:(ver-5*ep) w lines lt 1 lc 2 lw 3 notitle, \
@@ -168,7 +170,7 @@ plot [-hor:hor] [-ver:ver] \
     '' u (-hor+5*ep*hor/ver):13 w lines lt 1 lc 2 lw 3 notitle, \
     '' u (altox($11,off)):(altoy($11,off)) w lines lt 1 lw 10 lc col notitle, \
     '' u (altox($14,off)):(altoy($14,off)) w lines lt 1 lw 3 lc 2 notitle, \
-    '' u (itemize?$15:1/0):(itemize?$16:1/0) w lines lt 4 lc col title 'Systematic (MC stats)'
+    'output/asymmetry_loY.txt' u ($0==0?$2:1/0):3 pt 7 ps 0.6 lc col title 'tanh|y_{tt}| < 0.5'
 
 
 lwidth=5
