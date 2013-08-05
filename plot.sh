@@ -1,11 +1,13 @@
-set term postscript enhanced color 22 size 7in, 7in
+set term postscript enhanced color 22 size 8in, 8in
 set output 'graphics/plot.ps'
 
-set bmargin 3
-set tmargin 3
+set bmargin 1
+set tmargin 1
+set rmargin 4
+set lmargin 6
 set grid x2tics ytics
-set key bottom right
-set key samplen 1.5 font "Helvetica, 14"
+#set key bottom right
+#set key samplen 1.5 font "Helvetica, 14"
 set x2label 'A@_{c}^{y(qq)}  (%)' offset 0,-0.7
 set ylabel 'A@_{c}^{y(qg)}  (%)' offset 1,0
 set xlabel 'A@_{c}^{y}  (%)' offset 0,0.8
@@ -21,7 +23,7 @@ set mytics 2
 set format y "%.0t"
 set format x2 "%.0t"
 set x2tics -0.03,0.01,0.03 offset 0,-0.5
-set xtics ("-3" -0.02, "-2" -0.01, "-1" 0, "0" 0.01, "1" 0.02, "2" 0.03, "3" 0.04) rotate by 15
+set xtics ("-3" -0.02, "-2" -0.01, "-1" 0, "0" 0.01, "1" 0.02, "2" 0.03, "3" 0.04) rotate by 25
 set size square
 
 hor=0.02
