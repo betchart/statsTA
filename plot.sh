@@ -14,7 +14,6 @@ set x2label 'A@_{c}^{y(qq)}  (%)' offset 0,-0.7
 set ylabel 'A@_{c}^{y(qg)}  (%)' offset 1,0
 set xlabel 'A@_{c}^{y}  (%)' offset 0,0.8
 
-#unset key
 
 kr2012 = 0.0102
 ep = 0.0001
@@ -42,6 +41,7 @@ aplot(x) = (x-hor)*tan(theta)
 tic(x,o) = (o-x<aplot(x)?o-x:1/0)
 above(x,y)= y>aplot(x)?y:1/0
 
+set linetype 5 lc rgb "#008B8B"
 set style fill solid 1.0 noborder
 set sample 1001
 
