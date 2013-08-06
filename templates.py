@@ -7,6 +7,7 @@ r.setTDRStyle()
 r.tdrStyle.SetErrorX(r.TStyle().GetErrorX())
 r.tdrStyle.SetPadTopMargin(0.065)
 r.TGaxis.SetMaxDigits(3)
+r.tdrStyle.SetEndErrorSize(6)
 #r.tdrStyle.SetPadRightMargin(0.06)
 
 def unqueue(h):
