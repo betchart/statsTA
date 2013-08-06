@@ -4,12 +4,17 @@ r.gROOT.ProcessLine(".L tdrstyle.C")
 r.setTDRStyle()
 r.gStyle.SetOptFit(0)
 
-xstat = 0.36828715173
-ystat = 0.108619583584
-nll = -6121051.71045
+tfile = r.TFile.Open('output/full/asymmetry_full.root')
+tree= tfile.Get('fitresult')
+tree.GetEntry(0)
+xstat = 100*tree.sigmaX
+ystat = 100*tree.sigmaY
+nll = tree.NLL
+print xstat,ystat,nll
+tfile.Close()
 
-names = ['ensemble_atMeasured','ensemble_B_LF100','ensemble_C_LF100','ensemble_atZero']
-tfiles = [r.TFile.Open('data/%s.root'%name) for name in names]
+names = ['ensembleA','ensembleB','ensembleC','ensembleD']
+tfiles = [r.TFile.Open('output/full/ens/%s.root'%name) for name in names]
 
 c = r.TCanvas()
 c.SetRightMargin(0.06)
@@ -34,7 +39,7 @@ def par(h,name):
     p = h.GetFunction('gaus').GetParameter(name)
     e = h.GetFunction('gaus').GetParError(h.GetFunction('gaus').GetParNumber(name))
     p1,p2 = divmod(abs(p),1)
-    sign = '-' if p<0 else ''
+    sign = '-' if p<0 else ' '
     s = 100000
     return "%s%d&%05d(%05d)"%(sign,p1,s*p2,s*e)
         
@@ -53,6 +58,9 @@ for item,x in zip(plots,labels):
         h_.GetXaxis().SetTitle(x)
         h_.SetMaximum(m)
         if 'NLL' not in item: print par(h_,'Mean'), '&', par(h_,'Sigma')
+    if 'error_Aqg' in item: h[0].GetXaxis().SetNdivisions(5,4,0)
+    if 'error_Aqq' in item: h[0].GetXaxis().SetNdivisions(4,5,0)
+
     print
     h[0].Draw()
     for i,(color,style) in enumerate(zip([r.kRed,r.kRed,r.kBlack],[False,True,True])):

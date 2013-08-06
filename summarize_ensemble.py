@@ -16,54 +16,35 @@ if __name__ == '__main__':
         print 'Usage: summarize_ensemble.py <ensemblefile>'
         exit()
     
-    with open(sys.argv[1]) as mFile:
-        M = dict([(line.split()[0], tuple(eval(f) for f in line.split()[1:6] + line.split()[-1:]))
-                  for line in mFile.readlines() if '#' not in line])
+    infile  = r.TFile.Open(sys.argv[1])
+    tree = infile.Get('fitresult')
+    outname = sys.argv[1].replace('asymmetry_full','ensemble').replace('.root', '')
 
-    with open(sys.argv[1]) as mFile:
-        fA = [eval(i) for i in mFile.readline().split()[1:]]
-
-    def deltas(k): return [ scale*(M[k][i] - fA[i]) for i in [0,1]]
-    def errors(k):
-        sigmas2 = np.array([[M[k][2],M[k][3]],
-                            [M[k][3],M[k][4]]])
-        return [scale * oneSigmaCLprojection(sigmas2),
-                scale * oneSigmaCLprojection(sigmas2[(1,0),][:,(1,0)])]
-    def pulls(k): return [d/e for d,e in zip(deltas(k),errors(k))]
-
-    def nll(k): return M[k][5]
-
-
-    tfile = r.TFile.Open('.'.join(sys.argv[1].split('.')[:-1]+['root']), 'RECREATE')
+    tfile = r.TFile.Open(outname+'.root', 'RECREATE')
     book = autoBook(tfile)
     names = ['delta_Aqq','delta_Aqg','error_Aqq','error_Aqg','pullqq','pullqg']
-    fixedLimits = [(-1.5,1.5),(-1.5,1.5),(0.0,0.50),(0.04,0.20),(-5,5),(-5,5)]
-    meanNLL = sum(nll(k) for k in M) / len(M)
-    rmsNLL = math.sqrt(sum((nll(k) - meanNLL)**2 for k in M) / len(M))
-    if False:
-        eAqq,eAqg = sum(np.array(errors(k)) for k in M) / len(M)
-        ew = 0.03
-        limits = [(-5*eAqq,5*eAqq),(-5*eAqq,5*eAqq),(eAqq-ew, eAqq+ew),(eAqg-ew, eAqg+ew),(-5,5),(-5,5)]
-        wNLL = 3*rmsNLL
-    else:
-        limits = fixedLimits
-        wNLL = 40000
+    fixedLimits = [(-1,1),(-1,1),(0.05,0.45),(0.04,0.14),(-5,5),(-5,5)]
+    meanNLL = sum(e.NLL for e in tree) / tree.GetEntries()
+    limits = fixedLimits
+    wNLL = 40000
 
-    truth = tuple(fA + [1.])
     within=0
-    for k in M:
-        mean = M[k][:2]
-        sigmas2 = [[M[k][2], M[k][3]],
-                   [M[k][3], M[k][4]]]
+    for e in tree:
+        truth = e.gen_fitX,e.gen_fitY,1.
+        mean = e.fitX,e.fitY
+        sigmas2 = [[e.fitXX,e.fitXY],
+                   [e.fitXY,e.fitYY]]
         el = ellipse(mean=mean,sigmas2=sigmas2)
         if np.dot(truth, el.matrix).dot(truth) < 0: within+=1
-        book.fill(meanNLL, 'meanNLL', 40, -6.2e6,-5.8e6)
-        book.fill(nll(k)-meanNLL, 'dNLL', 40, -wNLL,wNLL)
+        nbins = 30
+        book.fill(meanNLL, 'meanNLL', nbins, -6.2e6,-5.8e6)
+        book.fill(e.NLL-meanNLL, 'dNLL', nbins, -wNLL,wNLL)
         try:
-            values = deltas(k) + errors(k) + pulls(k)
+            values = 100*np.array([e.fitX-e.gen_fitX, e.fitY-e.gen_fitY, e.sigmaX, e.sigmaY])
+            values = tuple(values) + (values[0]/values[2], values[1]/values[3])
             for n,v,lim in zip(names,values,limits):
-                book.fill(v,n,40,*lim)
-            book.fill(tuple(values[2:4]), 'errors2D', (40,40), (limits[2][0],limits[3][0]), (limits[2][1],limits[3][1]))
+                book.fill(v,n,nbins,*lim)
+            book.fill(tuple(values[2:4]), 'errors2D', (nbins,nbins), (limits[2][0],limits[3][0]), (limits[2][1],limits[3][1]))
         except:
             pass
     print within
@@ -75,6 +56,6 @@ if __name__ == '__main__':
         book[k].Fit('gaus','Q')
         book[k].Draw()
 
-    c.Print('.'.join(sys.argv[1].split('.')[:-1]+['pdf']))
+    c.Print(outname+'.pdf')
     tfile.Write()
     tfile.Close()

@@ -1,6 +1,14 @@
-redo summarize_ensemble
-redo format_ensemble
-redo sysmag
+templates explanation
+
+lumi_dep
+redo sysmag and table
+
+update systematic uncertainties explanation:
+* poisson uncertainty on templates
+* DY and ST +/- 10%
+* alpha_strong
+* Q^2
+
 
 include raw asymmetry in results
 include projections of template distributions
