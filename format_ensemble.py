@@ -63,7 +63,7 @@ for item,x in zip(plots,labels):
 
     print
     h[0].Draw()
-    for i,(color,style) in enumerate(zip([r.kRed,r.kRed,r.kBlack],[False,True,True])):
+    for i,(color,style) in list(enumerate(zip([r.kBlack,r.kRed,r.kRed],[True,False,True])))[::-1]:
         h[i+1].SetLineColor(color)
         h[i+1].SetMarkerColor(color)
         h[i+1].SetMarkerSize(1.1)
@@ -72,6 +72,7 @@ for item,x in zip(plots,labels):
             h[i+1].GetFunction('gaus').SetLineColor(color)
             if style: h[i+1].GetFunction('gaus').SetLineStyle(2)
         h[i+1].Draw('same')
+    h[0].Draw('same')
 
     x_ = xstat if 'Aqq' in item else ystat if 'Aqg' in item else nll-tfiles[0].Get('meanNLL').GetMean()
     if 'error' in item or 'NLL' in item: a.DrawArrow(x_,3,x_,0.4*h[0].GetMaximum(),0.05,"<")
