@@ -59,7 +59,9 @@ plot [-hor:hor] [-ver:ver] \
     tic(x,0.01) notitle lt 4 lc 7, \
     tic(x,0.02) notitle lt 4 lc 7, \
     tic(x,0.03) notitle lt 4 lc 7, \
-    above(x, kr2012 - x) lt 1 lc rgb "#E0E0E0" lw 11 title '{}_{KR2012}', \
+    above(x, kr2012 +0.0005- x) lt 1 lc 0 lw 1 notitle, \
+    above(x, kr2012 -0.0005- x) lt 1 lc 0 lw 1 notitle, \
+    above(x, kr2012 - x) lt 1 lc rgb "#E0E0E0" lw 21 title '{}_{KR2012}', \
     'output/asymmetry_full_points.txt' u 7:8 w filledcu closed lc 2 title '{}_{POWHEG-CT10}', \
     '' u (itemize?$15:1/0):(itemize?$16:1/0) w lines lt 4 lc col title 'Sys (MC stat)', \
     '' u (itemize?$3:$17):(itemize?$4:$18) w lines lt 2 lc col title 'Systematic', \
@@ -85,7 +87,9 @@ plot [-hor:hor] [-ver:ver] \
     tic(x,0.01) notitle lt 4 lc 7, \
     tic(x,0.02) notitle lt 4 lc 7, \
     tic(x,0.03) notitle lt 4 lc 7, \
-    above(x, kr2012 - x) lt 1 lc rgb "#E0E0E0" lw 11 title '{}_{KR2012}', \
+    above(x, kr2012 +0.0005- x) lt 1 lc 0 lw 1 notitle, \
+    above(x, kr2012 -0.0005- x) lt 1 lc 0 lw 1 notitle, \
+    above(x, kr2012 - x) lt 1 lc rgb "#E0E0E0" lw 21 title '{}_{KR2012}', \
     'output/asymmetry_loM_points.txt' u 7:8 w filledcu closed lc 2 title '{}_{POWHEG-CT10}', \
     '' u (itemize?$15:1/0):(itemize?$16:1/0) w lines lt 4 lc col title 'Sys (MC stat)', \
     '' u (itemize?$3:$17):(itemize?$4:$18) w lines lt 2 lc col title 'Systematic', \
@@ -110,7 +114,9 @@ plot [-hor:hor] [-ver:ver] \
     tic(x,0.01) notitle lt 4 lc 7, \
     tic(x,0.02) notitle lt 4 lc 7, \
     tic(x,0.03) notitle lt 4 lc 7, \
-    above(x, kr2012 - x) lt 1 lc rgb "#E0E0E0" lw 11 title '{}_{KR2012}', \
+    above(x, kr2012 +0.0005- x) lt 1 lc 0 lw 1 notitle, \
+    above(x, kr2012 -0.0005- x) lt 1 lc 0 lw 1 notitle, \
+    above(x, kr2012 - x) lt 1 lc rgb "#E0E0E0" lw 21 title '{}_{KR2012}', \
     'output/asymmetry_hiM_points.txt' u 7:8 w filledcu closed lc 2 title '{}_{POWHEG-CT10}', \
     '' u (itemize?$15:1/0):(itemize?$16:1/0) w lines lt 4 lc col title 'Sys (MC stat)', \
     '' u (itemize?$3:$17):(itemize?$4:$18) w lines lt 2 lc col title 'Systematic', \
@@ -136,7 +142,9 @@ plot [-hor:hor] [-ver:ver] \
     tic(x,0.01) notitle lt 4 lc 7, \
     tic(x,0.02) notitle lt 4 lc 7, \
     tic(x,0.03) notitle lt 4 lc 7, \
-    above(x, kr2012 - x) lt 1 lc rgb "#E0E0E0" lw 11 title '{}_{KR2012}', \
+    above(x, kr2012 +0.0005- x) lt 1 lc 0 lw 1 notitle, \
+    above(x, kr2012 -0.0005- x) lt 1 lc 0 lw 1 notitle, \
+    above(x, kr2012 - x) lt 1 lc rgb "#E0E0E0" lw 21 title '{}_{KR2012}', \
     'output/asymmetry_loY_points.txt' u 7:8 w filledcu closed lc 2 title '{}_{POWHEG-CT10}', \
     '' u (itemize?$15:1/0):(itemize?$16:1/0) w lines lt 4 lc col title 'Sys (MC stat)', \
     '' u (itemize?$3:$17):(itemize?$4:$18) w lines lt 2 lc col title 'Systematic', \
@@ -161,7 +169,9 @@ plot [-hor:hor] [-ver:ver] \
     tic(x,0.01) notitle lt 4 lc 7, \
     tic(x,0.02) notitle lt 4 lc 7, \
     tic(x,0.03) notitle lt 4 lc 7, \
-    above(x, kr2012 - x) lt 1 lc rgb "#E0E0E0" lw 11 title '{}_{KR2012}', \
+    above(x, kr2012 +0.0005- x) lt 1 lc 0 lw 1 notitle, \
+    above(x, kr2012 -0.0005- x) lt 1 lc 0 lw 1 notitle, \
+    above(x, kr2012 - x) lt 1 lc rgb "#E0E0E0" lw 21 title '{}_{KR2012}', \
     'output/asymmetry_hiY_points.txt' u 7:8 w filledcu closed lc 2 title '{}_{POWHEG-CT10}', \
     '' u (itemize?$15:1/0):(itemize?$16:1/0) w lines lt 4 lc col title 'Sys (MC stat)', \
     '' u (itemize?$3:$17):(itemize?$4:$18) w lines lt 2 lc col title 'Systematic', \
@@ -191,7 +201,9 @@ plot [-hor:hor] [-ver:ver] \
     tic(x,0.01) notitle lt 4 lc 7, \
     tic(x,0.02) notitle lt 4 lc 7, \
     tic(x,0.03) notitle lt 4 lc 7, \
-    above(x, kr2012 - x) lt 1 lc rgb "#E0E0E0" lw 11 title '{}_{KR2012}', \
+    above(x, kr2012 +0.0005- x) lt 1 lc 0 lw 1 notitle, \
+    above(x, kr2012 -0.0005- x) lt 1 lc 0 lw 1 notitle, \
+    above(x, kr2012 - x) lt 1 lc rgb "#E0E0E0" lw 21 title '{}_{KR2012}', \
     'output/asymmetry_full_points.txt' u 7:8 w filledcu closed lc 2 title '{}_{POWHEG-CT10}', \
     '' u 12:(ver-6*ep) w lines lt 1 lc 2 lw 50 notitle, \
     '' u (-hor+6*ep*hor/ver):13 w lines lt 1 lc 2 lw 50 notitle, \
