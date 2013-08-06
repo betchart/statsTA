@@ -39,7 +39,15 @@ class collate(object):
 
         self.sigmas_totl = sum([self.sigmas_stat,self.sigmas_syst,self.sigmas_pois],self.sigmas([0,0]))
         self.write('output/asymmetry_%s_points.txt'%partition)
-        print self
+
+    @property
+    def label(self):
+        return {'full':'Full Selection',
+                'hiM':r'$m_{\ttbar}>450\GeV$',
+                'loM':r'$m_{\ttbar}<450\GeV$',
+                'hiY':r'$\tanh\abs{y_{\ttbar}}>0.5$',
+                'loY':r'$\tanh\abs{y_{\ttbar}}<0.5$',
+        }[self.partition]
 
     def __str__(self):
         return '\n'.join([str(i) for i in [
@@ -96,6 +104,38 @@ class collate(object):
                                                                          pois,
                                                                          poissyst
                                                                      ])), ()))
+        temp = r'''
+        \begin{tabular}{c|r@{.}lr@{.}lr@{.}l}
+        \hline
+        &\multicolumn{6}{c}{(%s)}\\
+        & \multicolumn{2}{c}{$A_c^{y(\QQ)}$} & \multicolumn{2}{c}{$A_c^{y(\QG)}$} & \multicolumn{2}{c}{$A_c^{y}$} \\
+        \hline
+        \hline
+        \POWHEG \sc{ct10} & %s & %s & %s \\
+        %s & %s & %s & %s \\
+        \hline
+        \end{tabular}'''
+        def form(n,e):
+            n*=100
+            e*=100
+            err_digit = int(math.floor(math.log(abs(e))/math.log(10)))-1 if e else 0
+            scale = float(10**(-err_digit)) if e else 1
+            p,d = divmod(round(abs(n*scale))/scale,1)
+
+            return (("%s%d&%0"+str(-err_digit)+"d(%d)")%('-' if n<0 else ' ',p,d*scale,round(e*scale))).ljust(8)
+
+        simcorrection = self.central.tree.f_gg_hat * self.central.tree.Ac_y_ttgg
+
+        print temp%(r'\%',
+                    form(self.simmean[0], sim_d_Aqq),
+                    form(self.simmean[1], sim_d_Aqg),
+                    form(sum(self.simmean)+simcorrection, sim_d_Ac),
+                    self.label,
+                    form(self.mean[0], d_Aqq),
+                    form(self.mean[1], d_Aqg),
+                    form(sum(self.mean)+self.central.tree.correction, d_Ac),
+                    )
+
 
 
 if __name__=='__main__':
