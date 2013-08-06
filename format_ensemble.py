@@ -60,6 +60,7 @@ for item,x in zip(plots,labels):
         if 'NLL' not in item: print par(h_,'Mean'), '&', par(h_,'Sigma')
     if 'error_Aqg' in item: h[0].GetXaxis().SetNdivisions(5,4,0)
     if 'error_Aqq' in item: h[0].GetXaxis().SetNdivisions(4,5,0)
+    if 'delta' in item: h[0].GetXaxis().SetNdivisions(4,5,0)
 
     print
     h[0].Draw()
