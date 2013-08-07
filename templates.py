@@ -30,7 +30,7 @@ for lt,(lep,ch) in zip(linetypes,channels.items()):
         [h.SetLineColor(color) for h in [symm,anti]]
         [h.SetLineStyle(lt) for h in [symm,anti]]
         [h.SetMarkerColor(color) for h in [symm,anti]]
-        if lep=='mu': [h.SetMarkerStyle(34) for h in [symm,anti]]
+        if lep=='mu': [h.SetMarkerStyle(4) for h in [symm,anti]]
         
         sf = 1./symm.Integral()
         symm.Scale(sf)
@@ -63,6 +63,7 @@ for i,label in enumerate(['X_{L}','X_{T}']):
             for lep in channels:
                 h = projections[(lep,comp)][i][j]
                 if j: h.SetBinError(3,0)
+                h.GetXaxis().SetNdivisions(5,4,0,False)
                 h.SetMaximum(1.1*maxs[i][j])
                 h.SetMinimum(1.1*mins[i][j])
                 h.SetMarkerSize(1.5 - 0.3*math.sqrt(k) - (0 if lep=='mu' else 0.3))
