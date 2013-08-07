@@ -62,10 +62,16 @@ for i,label in enumerate(['X_{L}','X_{T}']):
         for k,comp in enumerate(reversed(comps)):
             for lep in channels:
                 h = projections[(lep,comp)][i][j]
-                if j: h.SetBinError(3,0)
+                if j: 
+                    h.SetBinError(3,0)
+                    h.SetMinimum(-0.0065)
+                    h.SetMaximum(0.0065)
+                else:
+                    h.SetMinimum(0)
+                    h.SetMaximum(0.265)
                 h.GetXaxis().SetNdivisions(5,4,0,False)
-                h.SetMaximum(1.1*maxs[i][j])
-                h.SetMinimum(1.1*mins[i][j])
+                #h.SetMaximum(1.1*maxs[i][j])
+                #h.SetMinimum(1.1*mins[i][j])
                 h.SetMarkerSize(1.5 - 0.3*math.sqrt(k) - (0 if lep=='mu' else 0.3))
                 h.SetLineWidth(4-k)
                 h.GetXaxis().SetTitleOffset(0.9)
