@@ -1,6 +1,7 @@
 from inputs import channel_data
 import utils
 import ROOT as r
+import math
 r.gROOT.SetBatch(1)
 r.gROOT.ProcessLine(".L tdrstyle.C")
 r.setTDRStyle()
@@ -17,8 +18,8 @@ def unqueue(h):
 channels = dict([(lep, channel_data(lep, 'top', signal='fitTopQueuedBin5_TridiscriminantWTopQCD')) for lep in ['el', 'mu']])
 linetypes = [1, 2]
 
-comps = ['ttqg','ttag','ttqq']
-colors = [r.kBlue, r.kGreen,r.kRed ]
+comps = ['ttgg','ttag','ttqg','ttqq']
+colors = [r.kBlack, r.kGreen, r.kBlue, r.kRed]
 
 projections = {}
 
@@ -58,12 +59,14 @@ c.Print(fn+'[')
 for i,label in enumerate(['X_{L}','X_{T}']):
     for j,sublabel in enumerate(['symmetrized ','antisymmetrized ']):
         init = False
-        for lep in channels:
-            for comp in comps:
+        for k,comp in enumerate(reversed(comps)):
+            for lep in channels:
                 h = projections[(lep,comp)][i][j]
+                if j: h.SetBinError(3,0)
                 h.SetMaximum(1.1*maxs[i][j])
                 h.SetMinimum(1.1*mins[i][j])
-                h.SetMarkerSize(1.5)
+                h.SetMarkerSize(1.5 - 0.3*math.sqrt(k) - (0 if lep=='mu' else 0.3))
+                h.SetLineWidth(4-k)
                 h.GetXaxis().SetTitleOffset(0.9)
                 h.GetYaxis().SetTitle(sublabel + ' probability')
                 h.GetXaxis().SetTitle(label)
