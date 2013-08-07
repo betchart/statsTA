@@ -8,6 +8,7 @@ set grid
 set key spacing 1.7
 
 plot \
-    'lumi_dep.txt' u 1:($2/0.3665) pt 7  title 'A@_c^{(qq)}', \
-    '' u 1:($3/0.1085)  title 'A@_c^{(qg)}', \
-    1./sqrt(x) title 'x^{-1/2}'
+    'output/lumi_dep.txt' \
+    u    1:2 pt 7  title 'A@_c^{(qq)}', \
+    '' u 1:3       title 'A@_c^{(qg)}', \
+    1./sqrt(x)     title 'x^{-1/2}'
