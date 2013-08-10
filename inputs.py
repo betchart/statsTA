@@ -119,9 +119,10 @@ class channel_data(object):
     def jiggle(self,hist):
         if self.templateID == None: return
         factor = hist.GetEffectiveEntries() / hist.Integral()
-        for iX in range(1,1+hist.GetNbinsX()):
-            for iY in range(1,1+hist.GetNbinsY()):
-                hist.SetBinContent(iX,iY,np.random.poisson(hist.GetBinContent(iX,iY)*factor, self.nTemplates)[self.templateID]/factor)
+        for iZ in range(1,1+hist.GetNbinsZ()):
+            for iX in range(1,1+hist.GetNbinsX()):
+                for iY in range(1,1+hist.GetNbinsY()):
+                    hist.SetBinContent(iX,iY,iZ,np.random.poisson(hist.GetBinContent(iX,iY,iZ)*factor, self.nTemplates)[self.templateID]/factor)
         return
 
     def hackZeroBins(self):
