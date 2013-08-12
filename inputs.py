@@ -22,27 +22,22 @@ class sample_data(object):
     def format(sd):
         if sd.GetDimension()<3:
             return ((sd,) + tuple(utils.symmAnti(sd)))
-        sd.SetTitle(";x;y;z")
-        yz = sd.Project3D("zy e")
-        yz_symm,yz_anti = utils.symmAnti(yz)
+        #sd.SetTitle(";x;y;z")
+        #yz = sd.Project3D("zy e")
+        #yz_symm,yz_anti = utils.symmAnti(yz)
+        #yz_minusminus = yz.Clone(yz.GetName()+'_minusminus')
+        #for iZ in range(1,1+sd.GetNbinsZ()):
+        #    sd.GetZaxis().SetRange(iZ,iZ)
+        #    xy = sd.Project3D("tmp%d_yxe"%iZ)
+        #    x = xy.ProjectionX()
+        #    M = utils.coupling(xy)
+        #    M_symm,M_anti = utils.coupling_symmAnti(M)
+        #    xsymm, xanti = utils.symmAnti(x)
+        #    for iY in range(1,1+M.GetNbinsY()):
+        #        yz_minusminus.SetBinContent(iY,iZ, sum(xanti.GetBinContent(iX) * M_anti.GetBinContent(iX,iY) for iX in range(1,1+x.GetNbinsX())))
+        #        print 100 * yz_minusminus.GetBinContent(iY,iZ) / yz_symm.GetBinContent(iY,iZ)
+        #sd.GetZaxis().SetRange(0,sd.GetNbinsZ())
         #return yz,yz_symm,yz_anti
-        for iZ in range(1,1+sd.GetNbinsZ()):
-            sd.GetZaxis().SetRange(iZ,iZ)
-            xy = sd.Project3D("yx e")
-            x = xy.ProjectionX()
-            for iX in range(1,1+xy.GetNbinsX()):
-                if not x.GetBinContent(iX): continue
-                for iY in range(1,1+xy.GetNbinsY()):
-                    xy.SetBinContent(iX, iY, xy.GetBinContent(iX,iY) / x.GetBinContent(iX))
-                    xy.SetBinError(iX, iY, xy.GetBinError(iX,iY) / x.GetBinContent(iX))
-            M = xy
-            xsymm, xanti = utils.symmAnti(x)
-            for iY in range(1,1+M.GetNbinsY()):
-                yz_symm.SetBinContent(iY,iZ, sum(xsymm.GetBinContent(iX) * M.GetBinContent(iX,iY) for iX in range(1,1+x.GetNbinsX())))
-                yz_anti.SetBinContent(iY,iZ, sum(xanti.GetBinContent(iX) * M.GetBinContent(iX,iY) for iX in range(1,1+x.GetNbinsX())))
-        sd.GetZaxis().SetRange(0,sd.GetNbinsZ())
-
-        return yz,yz_symm,yz_anti
 
     def subtract(self,other):
         assert self.xs == other.xs
@@ -101,10 +96,10 @@ class channel_data(object):
                         '')
         fullDirName = full(dirPrefix)
 
-        signal3D = signal.split('_')[0].replace('fit','gen') +'_'+ signal
-        paths = (fullDirName + sigPrefix + signal3D,
-                 fullDirName + signal3D,
-                 fullDirName + sigPrefix + signal,
+        #signal3D = signal.split('_')[0].replace('fit','gen') +'_'+ signal
+        #(fullDirName + sigPrefix + signal3D,
+        #         fullDirName + signal3D,
+        paths = (fullDirName + sigPrefix + signal,
                  fullDirName + signal)
 
         prepaths = (full(genDirPre) + 
