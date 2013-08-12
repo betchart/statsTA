@@ -10,18 +10,39 @@ class sample_data(object):
         self.xs_sigma = sigma
         self.eff = selectionEfficiency
         self.frac = preselectionFraction
-        self.datas = ((signalDistribution,) +
-                      tuple(utils.symmAnti(signalDistribution)))
+        self.datas = self.format(signalDistribution)
 
         self.alphaMax = utils.alphaMax(*self.datas[1:])
-
-        for d in filter(None, self.datas):
-            if d.GetNbinsY() == 100: d.RebinY(20)
-            if d.GetNbinsX() > 80: d.RebinX()
 
         self.datasX = tuple(d.ProjectionX() if d else None for d in self.datas)
         self.datasY = tuple(d.ProjectionY() if d else None for d in self.datas)
         for d in self.datasX + self.datasY + self.datas: d.SetDirectory(0)
+
+    @staticmethod
+    def format(sd):
+        if sd.GetDimension()<3:
+            return ((sd,) + tuple(utils.symmAnti(sd)))
+        sd.SetTitle(";x;y;z")
+        yz = sd.Project3D("zy e")
+        yz_symm,yz_anti = utils.symmAnti(yz)
+        #return yz,yz_symm,yz_anti
+        for iZ in range(1,1+sd.GetNbinsZ()):
+            sd.GetZaxis().SetRange(iZ,iZ)
+            xy = sd.Project3D("yx e")
+            x = xy.ProjectionX()
+            for iX in range(1,1+xy.GetNbinsX()):
+                if not x.GetBinContent(iX): continue
+                for iY in range(1,1+xy.GetNbinsY()):
+                    xy.SetBinContent(iX, iY, xy.GetBinContent(iX,iY) / x.GetBinContent(iX))
+                    xy.SetBinError(iX, iY, xy.GetBinError(iX,iY) / x.GetBinContent(iX))
+            M = xy
+            xsymm, xanti = utils.symmAnti(x)
+            for iY in range(1,1+M.GetNbinsY()):
+                yz_symm.SetBinContent(iY,iZ, sum(xsymm.GetBinContent(iX) * M.GetBinContent(iX,iY) for iX in range(1,1+x.GetNbinsX())))
+                yz_anti.SetBinContent(iY,iZ, sum(xanti.GetBinContent(iX) * M.GetBinContent(iX,iY) for iX in range(1,1+x.GetNbinsX())))
+        sd.GetZaxis().SetRange(0,sd.GetNbinsZ())
+
+        return yz,yz_symm,yz_anti
 
     def subtract(self,other):
         assert self.xs == other.xs
@@ -80,7 +101,10 @@ class channel_data(object):
                         '')
         fullDirName = full(dirPrefix)
 
-        paths = (fullDirName + sigPrefix + signal,
+        signal3D = signal.split('_')[0].replace('fit','gen') +'_'+ signal
+        paths = (fullDirName + sigPrefix + signal3D,
+                 fullDirName + signal3D,
+                 fullDirName + sigPrefix + signal,
                  fullDirName + signal)
 
         prepaths = (full(genDirPre) + 
