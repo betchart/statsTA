@@ -15,11 +15,22 @@ def unqueue(h):
     return utils.unQueuedBins(h,5,[-1,1],[-1,1])
 
 threeD = True
+check = False
 channels = dict([(lep, channel_data(lep, 'top', signal='fitTopQueuedBin5_TridiscriminantWTopQCD', threeD=True)) for lep in ['el', 'mu']])
 linetypes = [1, 2]
 
 comps = ['ttgg','ttag','ttqg','ttqq']
 colors = [r.kBlack, r.kGreen, r.kBlue, r.kRed]
+
+if check:
+    channels_def = dict([(lep, channel_data(lep, 'top', signal='fitTopQueuedBin5_TridiscriminantWTopQCD', threeD=False)) for lep in ['el', 'mu']])
+    for lep,ch in channels.items():
+        for comp in comps:
+            c = ch.samples[comp].datas
+            d = channels_def[lep].samples[comp].datas
+            for a,b in zip(c,d):
+                b.Add(a,-1)
+                print ' '.join(str(b.GetBinContent(i)) for i in range(2+b.GetNbinsX()))
 
 projections = {}
 
