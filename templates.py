@@ -14,12 +14,23 @@ r.tdrStyle.SetEndErrorSize(6)
 def unqueue(h):
     return utils.unQueuedBins(h,5,[-1,1],[-1,1])
 
-
-channels = dict([(lep, channel_data(lep, 'top', signal='fitTopQueuedBin5_TridiscriminantWTopQCD')) for lep in ['el', 'mu']])
+threeD = True
+check = False
+channels = dict([(lep, channel_data(lep, 'top', signal='fitTopQueuedBin5_TridiscriminantWTopQCD', threeD=True)) for lep in ['el', 'mu']])
 linetypes = [1, 2]
 
 comps = ['ttgg','ttag','ttqg','ttqq']
 colors = [r.kBlack, r.kGreen, r.kBlue, r.kRed]
+
+if check:
+    channels_def = dict([(lep, channel_data(lep, 'top', signal='fitTopQueuedBin5_TridiscriminantWTopQCD', threeD=False)) for lep in ['el', 'mu']])
+    for lep,ch in channels.items():
+        for comp in comps:
+            c = ch.samples[comp].datas
+            d = channels_def[lep].samples[comp].datas
+            for a,b in zip(c,d):
+                b.Add(a,-1)
+                print ' '.join(str(b.GetBinContent(i)) for i in range(2+b.GetNbinsX()))
 
 projections = {}
 
@@ -27,18 +38,20 @@ for lt,(lep,ch) in zip(linetypes,channels.items()):
     for comp,color in zip(comps,colors): 
         symm = unqueue(ch.samples[comp].datas[1])
         anti = unqueue(ch.samples[comp].datas[2])
-        [h.SetLineColor(color) for h in [symm,anti]]
-        [h.SetLineStyle(lt) for h in [symm,anti]]
-        [h.SetMarkerColor(color) for h in [symm,anti]]
-        if lep=='mu': [h.SetMarkerStyle(4) for h in [symm,anti]]
+        quad = unqueue(ch.samples[comp].datas[3 if threeD else 0])
+        [h.SetLineColor(color) for h in [symm,anti,quad]]
+        [h.SetLineStyle(lt) for h in [symm,anti,quad]]
+        [h.SetMarkerColor(color) for h in [symm,anti,quad]]
+        if lep=='mu': [h.SetMarkerStyle(4) for h in [symm,anti,quad]]
         
         sf = 1./symm.Integral()
         symm.Scale(sf)
         anti.Scale(sf)
+        quad.Scale(sf)
 
-        projections[(lep,comp)] = [(symm.ProjectionX('symmx'+lep+comp), anti.ProjectionX('antix'+lep+comp)),
-                                   (symm.ProjectionY('symmy'+lep+comp), anti.ProjectionY('antiy'+lep+comp)),
-                                   (symm.ProjectionZ('symmz'+lep+comp), anti.ProjectionZ('antiz'+lep+comp))
+        projections[(lep,comp)] = [(symm.ProjectionX('symmx'+lep+comp), anti.ProjectionX('antix'+lep+comp), quad.ProjectionX('quadx'+lep+comp)),
+                                   (symm.ProjectionY('symmy'+lep+comp), anti.ProjectionY('antiy'+lep+comp), quad.ProjectionY('quady'+lep+comp)),
+                                   (symm.ProjectionZ('symmz'+lep+comp), anti.ProjectionZ('antiz'+lep+comp), quad.ProjectionZ('quadz'+lep+comp))
                                ]
 
 def extrema(A,B, func):
@@ -57,12 +70,12 @@ fn = 'graphics/template.pdf'
 c.Print(fn+'[')
 
 for i,label in enumerate(['X_{L}','X_{T}']):
-    for j,sublabel in enumerate(['symmetrized ','antisymmetrized ']):
+    for j,sublabel in enumerate(['symmetrized ','antisymmetrized ', 'quadratic correction'][:None if threeD else 2]):
         init = False
         for k,comp in enumerate(reversed(comps)):
             for lep in channels:
                 h = projections[(lep,comp)][i][j]
-                if j: 
+                if j:
                     h.SetBinError(3,0)
                     h.SetMinimum(-0.0065)
                     h.SetMaximum(0.0065)
