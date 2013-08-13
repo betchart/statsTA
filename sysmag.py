@@ -65,26 +65,27 @@ if __name__ == '__main__':
     results = [fitresult(p) for p,_ in partitions]
 
     def formkey(key) :
-        subs = [('PD_','pdf'),
-                 ('mu0','$\mu$ trig_up'),
-                 ('mu1','$\mu$ trig_dn'),
-                 ('mu2','$\mu$ id_up'),
-                 ('mu3','$\mu$ id_dn'),
-                 ('el0','$e$ trig_up'),
-                 ('el1','$e$ trig_dn'),
-                 ('el2','$e$ id_up'),
-                 ('el3','$e$ id_dn'),
-                 ('_up','${}^{\uparrow}$'),
-                 ('_dn','${}_{\downarrow}$'),
-                 ('PU','pileup'),
-                 ('RF','RFS'),
-                 ('lumi','\lumi'),
-                 ('ST','single'),
-                 ('mutrig','$\mu$ trig'),
-                 ('muid', '$\mu$ id'),
-                 ('eltrig','$e$ trig'),
-                 ('elid', '$e$ id'),
-                 ('PD:','pdf ')
+        subs = [('PD_',r'pdf'),
+                ('mu0',r'$\mu$ trig_up'),
+                ('mu1',r'$\mu$ trig_dn'),
+                ('mu2',r'$\mu$ id_up'),
+                ('mu3',r'$\mu$ id_dn'),
+                ('el0',r'$e$ trig_up'),
+                ('el1',r'$e$ trig_dn'),
+                ('el2',r'$e$ id_up'),
+                ('el3',r'$e$ id_dn'),
+                ('_up',r'${}^{\uparrow}$'),
+                ('_dn',r'${}_{\downarrow}$'),
+                ('PU',r'pileup'),
+                ('RF',r'RFS'),
+                ('lumi',r'\lumi'),
+                ('ST',r'single'),
+                ('mutrig',r'$\mu$ trig'),
+                ('muid', r'$\mu$ id'),
+                ('eltrig',r'$e$ trig'),
+                ('elid',r'$e$ id'),
+                ('PD:',r'pdf '),
+                ('as',r'\alpha_s')
                  ]
         def rep(key,ps):
             if not ps: return key
