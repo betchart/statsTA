@@ -57,13 +57,12 @@ class fitresult(object):
 if __name__ == '__main__':
 
     summarize=True
-    partitions = {'full':'Full Selection',
-                  'loM':r'$m_{\ttbar}<450\GeV$',
-                  'hiM':r'$m_{\ttbar}>450\GeV$',
-                  'loY':r'$\tanh\abs{y_{\ttbar}}<0.5$',
-                  'hiY':r'$\tanh\abs{y_{\ttbar}}>0.5$',
-              }
-    results = [fitresult(p) for p in partitions]
+    partitions = [('full','Full Selection'),
+                  ('loM',r'$m_{\ttbar}<450\GeV$'),
+                  ('hiM',r'$m_{\ttbar}>450\GeV$'),
+                  ('loY',r'$\tanh\abs{y_{\ttbar}}<0.5$'),
+                  ('hiY',r'$\tanh\abs{y_{\ttbar}}>0.5$')]
+    results = [fitresult(p) for p,_ in partitions]
 
     def formkey(key) :
         subs = [('PD_','pdf'),
@@ -110,7 +109,7 @@ The five greatest sources of systematic uncertainty in each selection are in bol
     print r'\begin{longtable}{lccccc}'
     print r'\hline'
     print r'&\multicolumn{5}{c}{(\%)}\\'
-    print '  &  '.join(partitions.values()).join(['  &  ',r'  \\'])
+    print '  &  '.join(zip(*partitions)[1]).join(['  &  ',r'  \\'])
     print r'\hline'
     print r'\hline'
     print r'\endhead'
