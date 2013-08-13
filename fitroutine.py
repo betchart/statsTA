@@ -38,12 +38,6 @@ class fit(object):
                                               dirPrefix=genDirPre, genDirPre=genDirPre, 
                                               getTT=True, prePre = prePre)
 
-        #for n,c in channels.items() :
-        #    if n == 'gen': continue
-        #    print n
-        #    print c.asymmStr()
-        #    print
-
         if diffR0_ :
             for lepPart,chan in channels.items():
                 if type(lepPart) != tuple: continue
@@ -154,9 +148,9 @@ class fit(object):
         pllPoints = [(p0[0]+errMin*math.cos(t),p0[1]+errMin*math.sin(t))
                      for t in np.arange(0,2*math.pi,math.pi/8)]
         pllCache = {}
-        def pllEval(p):
+        def pllEval(p, force=False):
             p = tuple(p)[:2]
-            if p not in pllCache:
+            if force or p not in pllCache:
                 for name,val in zip(self.profileVars,p): w.arg(name).setVal(val)
                 pllCache[p] = pll.getVal()
             return pllCache[p]
@@ -196,6 +190,7 @@ class fit(object):
         for p in pllPoints:
             points.append(contourIntersect(p))
             if not points[-1]: return None,None
+        reset = pllEval(p0,force=True)
         return p0,points
 
 
