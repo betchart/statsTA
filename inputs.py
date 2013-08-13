@@ -12,7 +12,7 @@ class sample_data(object):
         self.frac = preselectionFraction
         self.datas = self.format(signalDistribution)
 
-        self.alphaMax = utils.alphaMax(*self.datas[1:])
+        self.alphaMax = utils.alphaMax(*self.datas[1:3])
 
         self.datasX = tuple(d.ProjectionX() if d else None for d in self.datas)
         self.datasY = tuple(d.ProjectionY() if d else None for d in self.datas)
@@ -22,22 +22,21 @@ class sample_data(object):
     def format(sd):
         if sd.GetDimension()<3:
             return ((sd,) + tuple(utils.symmAnti(sd)))
-        #sd.SetTitle(";x;y;z")
-        #yz = sd.Project3D("zy e")
-        #yz_symm,yz_anti = utils.symmAnti(yz)
-        #yz_minusminus = yz.Clone(yz.GetName()+'_minusminus')
-        #for iZ in range(1,1+sd.GetNbinsZ()):
-        #    sd.GetZaxis().SetRange(iZ,iZ)
-        #    xy = sd.Project3D("tmp%d_yxe"%iZ)
-        #    x = xy.ProjectionX()
-        #    M = utils.coupling(xy)
-        #    M_symm,M_anti = utils.coupling_symmAnti(M)
-        #    xsymm, xanti = utils.symmAnti(x)
-        #    for iY in range(1,1+M.GetNbinsY()):
-        #        yz_minusminus.SetBinContent(iY,iZ, sum(xanti.GetBinContent(iX) * M_anti.GetBinContent(iX,iY) for iX in range(1,1+x.GetNbinsX())))
-        #        print 100 * yz_minusminus.GetBinContent(iY,iZ) / yz_symm.GetBinContent(iY,iZ)
-        #sd.GetZaxis().SetRange(0,sd.GetNbinsZ())
-        #return yz,yz_symm,yz_anti
+        sd.SetTitle(";x;y;z")
+        yz = sd.Project3D("zy e")
+        yz_symm,yz_anti = utils.symmAnti(yz)
+        yz_minusminus = yz.Clone(yz.GetName()+'_minusminus')
+        for iZ in range(1,1+sd.GetNbinsZ()):
+            sd.GetZaxis().SetRange(iZ,iZ)
+            xy = sd.Project3D("tmp%d_yxe"%iZ)
+            x = xy.ProjectionX()
+            M = utils.coupling(xy)
+            M_symm,M_anti = utils.coupling_symmAnti(M)
+            xsymm, xanti = utils.symmAnti(x)
+            for iY in range(1,1+M.GetNbinsY()):
+                yz_minusminus.SetBinContent(iY,iZ, sum(xanti.GetBinContent(iX) * M_anti.GetBinContent(iX,iY) for iX in range(1,1+x.GetNbinsX())))
+        sd.GetZaxis().SetRange(0,sd.GetNbinsZ())
+        return yz,yz_symm,yz_anti,yz_minusminus
 
     def subtract(self,other):
         assert self.xs == other.xs
@@ -82,7 +81,7 @@ class channel_data(object):
 
     def __init__(self, lepton, partition, tag = 'ph_sn_jn_20',
                  signal="", sigPrefix="", dirPrefix="R04", genDirPre="R01", getTT=False,
-                 prePre = False, hackZeroBins=False, templateID=None):
+                 prePre = False, hackZeroBins=False, templateID=None, threeD=False):
         filePattern="data/stats_%s_%s_%s.root"
         tfile = r.TFile.Open(filePattern % (partition, lepton, tag))
         self.templateID = templateID
@@ -96,11 +95,13 @@ class channel_data(object):
                         '')
         fullDirName = full(dirPrefix)
 
-        #signal3D = signal.split('_')[0].replace('fit','gen') +'_'+ signal
-        #(fullDirName + sigPrefix + signal3D,
-        #         fullDirName + signal3D,
-        paths = (fullDirName + sigPrefix + signal,
-                 fullDirName + signal)
+        if threeD:
+            signal3D = signal.split('_')[0].replace('fit','gen') +'_'+ signal
+            paths = (fullDirName + sigPrefix + signal3D,
+                     fullDirName + signal3D)
+        else: paths = ()
+        paths += (fullDirName + sigPrefix + signal,
+                  fullDirName + signal)
 
         prepaths = (full(genDirPre) + 
                     (sigPrefix if prePre else '') + 
