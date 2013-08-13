@@ -47,6 +47,7 @@ for lt,(lep,ch) in zip(linetypes,channels.items()):
         sf = 1./symm.Integral()
         symm.Scale(sf)
         anti.Scale(sf)
+        quad.Scale(sf)
 
         projections[(lep,comp)] = [(symm.ProjectionX('symmx'+lep+comp), anti.ProjectionX('antix'+lep+comp), quad.ProjectionX('quadx'+lep+comp)),
                                    (symm.ProjectionY('symmy'+lep+comp), anti.ProjectionY('antiy'+lep+comp), quad.ProjectionY('quady'+lep+comp)),
