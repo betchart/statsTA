@@ -40,12 +40,8 @@ class fitresult(object):
                                   'd':math.sqrt(dX**2+dY**2)
                               }
         self.order = sorted(self.values, key = lambda k: self.values[k]['d'], reverse=True)
-        print self.order[:5]
-        
         self.pvalues = dict([(name, math.sqrt(self.values[a]['dA']**2 + self.values[b]['dA']**2)) for name,(a,b) in self.pairs.items()])
         self.porder = sorted(self.pvalues, key = lambda k: self.pvalues[k], reverse=True)
-        print self.porder[:5]
-        print
 
     def form(self,key):
         top = key in self.order[:5]+self.porder[:5]
@@ -122,5 +118,5 @@ The five greatest sources of systematic uncertainty in each selection are in bol
     print r'\endlastfoot'
     print '\n'.join(
         formkey(key).ljust(28) +' & '+ ' & '.join(fr.form(key) for fr in results) + r'  \\' + (vspace if i%5==4 else '')
-        for i,key in enumerate(results[0].porder))
+        for i,key in enumerate(results[0].porder if summarize else results[0].order))
     print r'\end{longtable}'
