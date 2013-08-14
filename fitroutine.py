@@ -7,8 +7,8 @@ import inputs
 import model
 from enclosing_ellipse import enclosing_ellipse
 from asymmNames import genNameX,genNameY
-from CLprojection import oneSigmaCLprojection
 
+oneSigmaNLL = 1.14
 
 class fit(object):
     def __init__(self, label, signal, profileVars, R0_,
@@ -94,8 +94,8 @@ class fit(object):
         self.fitXX = float(sigmas2[0,0])
         self.fitXY = float(sigmas2[0,1])
         self.fitYY = float(sigmas2[1,1])
-        self.sigmaX = oneSigmaCLprojection(sigmas2)
-        self.sigmaY = oneSigmaCLprojection(sigmas2[(1,0),][:,(1,0)])
+        self.sigmaX = math.sqrt( self.fitXX / (2*oneSigmaNLL))
+        self.sigmaY = math.sqrt( self.fitYY / (2*oneSigmaNLL))
         self.contourPointsX,self.contourPointsY, = zip(*[[float(i) for i in self.scales*p] for p in contourPoints])
 
         if not self.quiet:
@@ -144,7 +144,6 @@ class fit(object):
         w = self.model.w
         p0 = [w.arg(a).getVal() for a in self.profileVars]
         errMin = 0.12
-        oneSigmaNLL = 1.14
         pllPoints = [(p0[0]+errMin*math.cos(t),p0[1]+errMin*math.sin(t))
                      for t in np.arange(0,2*math.pi,math.pi/8)]
         pllCache = {}

@@ -14,34 +14,48 @@ class fitresult(object):
     pairs.update(dict([('muid',('mu2','mu3')),
                        ('mutrig',('mu0','mu1')),
                        ('elid',('el2','el3')),
-                       ('eltrig',('el0','el1'))]))
+                       ('eltrig',('el0','el1')),
+                       ('MC stat.',('',''))]))
     labels = sum(pairs.values(),())
 
     def __init__(self,partition):
         self.summarize = summarize
-        self.tfile = r.TFile.Open('output/%s/asymmetry_%s_sys.root'%(partition,partition))
+        self.file = r.TFile.Open('output/%s/asymmetry_%s_sys.root'%(partition,partition))
         self.cfile = r.TFile.Open('output/%s/asymmetry_%s.root'%(partition,partition))
-        self.tree = self.tfile.Get('fitresult')
+        self.tfile = r.TFile.Open('output/%s/asymmetry_%s_t.root'%(partition,partition))
+        self.tree = self.file.Get('fitresult')
         self.ctree = self.cfile.Get('fitresult')
+        self.ttree = self.tfile.Get('fitresult')
         self.ctree.GetEntry(0)
         self.extract()
+
+    @staticmethod
+    def sigmas(deltas): return np.outer(*(2*[deltas]))
+    def deltas(self,e): return (e.fitX - self.ctree.fitX, e.fitY - self.ctree.fitY)
+
+    @staticmethod
+    def sigmaAC(sigmas2):
+        R = np.array([[1,1],[-1,1]]) # rotate pi/4, except also scale by sqrt(2)
+        return math.sqrt(R.dot(sigmas2.dot(R.T))[0,0])
+
+    @property
+    def sigma_mcStat(self):
+        return self.sigmaAC( sum([self.sigmas(self.deltas(e)) for e in self.ttree],self.sigmas([0,0])) / self.ttree.GetEntries() )
 
     def extract(self):
         self.values = {}
         for e in self.tree:
             label = max(os.path.commonprefix([e.label,l]) for l in self.labels)
             if label not in self.labels: continue
-            dX = e.fitX - self.ctree.fitX
-            dY = e.fitY - self.ctree.fitY
-            self.values[label] = {'dX':dX,
-                                  'dY':dY,
-                                  'dA':dX+dY,
-                                  'adA':abs(dX+dY),
-                                  'd':math.sqrt(dX**2+dY**2)
+            self.values[label] = {'deltas':self.deltas(e),
+                                  'dA':sum(self.deltas(e)),
+                                  'd':math.sqrt(np.dot(*(2*[self.deltas(e)])))
                               }
         self.order = sorted(self.values, key = lambda k: self.values[k]['d'], reverse=True)
-        self.pvalues = dict([(name, math.sqrt(self.values[a]['dA']**2 + self.values[b]['dA']**2)) for name,(a,b) in self.pairs.items()])
+        self.pvalues = dict([(name, math.sqrt(0.5*(self.values[a]['dA']**2 + self.values[b]['dA']**2))) for name,(a,b) in self.pairs.items() if a])
+        self.pvalues['MC stat.'] = self.sigma_mcStat
         self.porder = sorted(self.pvalues, key = lambda k: self.pvalues[k], reverse=True)
+        self.pvalues2 = dict([(name, self.sigmaAC((0.5*sum([np.outer(*(2*[self.values[q]['deltas']])) for q in [a,b]],self.sigmas([0,0]))))) for name,(a,b) in self.pairs.items() if a])
 
     def form(self,key):
         top = key in self.order[:5]+self.porder[:5]

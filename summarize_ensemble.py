@@ -3,7 +3,6 @@
 import sys
 import math
 from ellipse import ellipse
-from CLprojection import oneSigmaCLprojection
 import numpy as np
 from __autoBook__ import autoBook
 import ROOT as r

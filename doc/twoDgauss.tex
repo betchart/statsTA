@@ -14,19 +14,21 @@
 \[A(\chi) = N'\int_0^\chi e^{-\frac{r^2}{2\sigma^2}} r\dee r\]
 \[A(\chi) = N'\left[-\sigma^2e^{-\frac{r^2}{2\sigma^2}}\right|_0^\chi\]
 \[A(\chi) = N''\left(1-e^{-\frac{\chi^2}{2\sigma^2}}\right)\]
-\[x(\chi) = A(\chi)/A(\infty) = \left(1-e^{-\frac{\chi^2}{2\sigma^2}}\right)\]
-\[\chi(x)/\sigma = \sqrt{-2\log(1-x)}\]
-
-We can use this formula to find confidence level contours of the
-negative log likelihood, assuming the likelihood is gaussian.
+\[C(\chi) = A(\chi)/A(\infty) = \left(1-e^{-\frac{\chi^2}{2\sigma^2}}\right)\]
+\[\chi(C)/\sigma = \sqrt{-2\log(1-C)},\]
+where $C$ is the probability contained in the confidence interval of
+$\chi(C)/\sigma$ multiples of $\sigma$.  We can use this formula to
+find confidence level contours of the negative log likelihood,
+assuming the likelihood is gaussian.
 
 \[L = e^{-\frac{\chi^2}{2\sigma^2}}\]
 \[-\log L = \frac{1}{2}\left(\frac{\chi}{\sigma}\right)^2\]
-\[-\log L = -\log( 1-x )\]
+\[-\log L = -\log( 1-C )\]
 
 A countour at some level $L$ gives an error matrix $\Sigma^2_L$.  A
 different level $L'$ then has the error matrix
 \[\Sigma^2_{L'} = \frac{L'}{L}\Sigma^2_L\]
+
 
 \section{Projection to 1D}
 
@@ -43,8 +45,8 @@ Given a normalized 2D gaussian probability density
 \[
 \rho(\vec{r}) = N \exp(-0.5 \vec{r}^TA\vec{r}), \qquad N = \frac{\sqrt{\abs{A}}}{2\pi}
 \]
-calculate $q$ such that the probability $C$ of the interval
-$x\in[-q,q]$ is
+calculate $q$ such that the probability of the interval $x\in[-q,q]$
+is $C$:
 
 \begin{eqnarray*}
   C 
@@ -62,8 +64,26 @@ $x\in[-q,q]$ is
 A 1-sigma confidence interval contains probability equal to
 $C=\mathrm{ERF}\left(\frac{1}{\sqrt{2}}\right)\approx 68\%$, for which
 \[
-q = \sqrt{\frac{A_{22}}{\abs{A}}}
+q = \sqrt{\frac{A_{22}}{\abs{A}}} = \sqrt{\left(A^{-1}\right)_{11}}
 \]
 
+\section{Find $A$ from a PLL contour}
+
+Suppose a 2D gaussian probability distribution
+\[
+\rho(\vec{r}) = N \exp(-0.5 \vec{r}^TA\vec{r}), \qquad N = \frac{\sqrt{\abs{A}}}{2\pi}.
+\]
+The negative log likelihood is 
+\[
+-\log L = c + \frac{1}{2} \vec{r}^TA\vec{r}.
+\]
+Ignoring the constant term, the contour is described by the ellipse
+\[
+1  = \vec{r}^T\frac{A}{2(-\log L)}\vec{r}.
+\]
+The error matrix for this ellipse is given by
+\[
+\Sigma^2 = 2(-\log L)A^{-1}
+\]
 
 \end{document}

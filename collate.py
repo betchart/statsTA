@@ -2,7 +2,6 @@ import ROOT as r
 import numpy as np
 import math
 from ellipse import ellipse
-from CLprojection import oneSigmaCLprojection
 
 class fitresult(object):
     def __init__(self,fname, getfirstentry = False):
@@ -19,6 +18,8 @@ class lineUD(object):
         x = self.mean + self.sig*(2*t-1)
         return x,
 
+oneSigmaN2LL = 1.14 * 2
+
 class collate(object):
     def __init__(self,partition):
         self.partition = partition
@@ -32,7 +33,7 @@ class collate(object):
         self.simmean = self.sim(self.central.tree)
         self.simmean30 = self.sim(self.thr30.tree)
 
-        self.sigmas_stat = np.array([[self.central.tree.fitXX,self.central.tree.fitXY],[self.central.tree.fitXY,self.central.tree.fitYY]])
+        self.sigmas_stat = np.array([[self.central.tree.fitXX,self.central.tree.fitXY],[self.central.tree.fitXY,self.central.tree.fitYY]]) / oneSigmaN2LL
         self.sigmas_syst = sum([self.sigmas(self.deltas(e)) for e in self.sys.tree],self.sigmas([0,0])) / 2
         self.sigmas_pois = sum([self.sigmas(self.deltas(e)) for e in self.pois.tree],self.sigmas([0,0])) / self.pois.tree.GetEntries()
         self.sigmas_simu = sum([self.sigmas(self.deltas_sim(e)) for e in self.sys.tree],self.sigmas([0,0]))
@@ -67,19 +68,19 @@ class collate(object):
 
     def write(self,fname):
         R = np.array([[1,1],[-1,1]]) # rotate pi/4, except also scale by sqrt(2)
-        d_Aqq = oneSigmaCLprojection(self.sigmas_totl)
-        d_Aqg = oneSigmaCLprojection(self.sigmas_totl[(1,0),][:,(1,0)])
-        d_Ac = oneSigmaCLprojection(R.dot(self.sigmas_totl.dot(R.T)))
-        sim_d_Aqq = oneSigmaCLprojection(self.sigmas_simu)
-        sim_d_Aqg = oneSigmaCLprojection(self.sigmas_simu[(1,0),][:,(1,0)])
-        sim_d_Ac = oneSigmaCLprojection(R.dot(self.sigmas_simu.dot(R.T)))
+        d_Aqq,d_Aqg = np.sqrt(np.diag(self.sigmas_totl))
+        d_Ac = math.sqrt(R.dot(self.sigmas_totl.dot(R.T))[0,0])
+        sim_d_Aqq,sim_d_Aqg = np.sqrt(np.diag(self.sigmas_simu))
+        sim_d_Ac = math.sqrt(R.dot(self.sigmas_simu.dot(R.T))[0,0])
+        #syst_d_Ac = math.sqrt(R.dot(self.sigmas_syst.dot(R.T))[0,0])
+        #print 100*syst_d_Ac
 
-        stat = ellipse(mean=list(self.mean), sigmas2=list(self.sigmas_stat))
-        syst = ellipse(mean=list(self.mean), sigmas2=list(self.sigmas_syst))
-        pois = ellipse(mean=list(self.mean), sigmas2=list(self.sigmas_pois))
-        totl = ellipse(mean=list(self.mean), sigmas2=list(self.sigmas_totl))
-        simu = ellipse(mean=list(self.simmean), sigmas2=list(self.sigmas_simu))
-        poissyst = ellipse(mean=list(self.mean), sigmas2=list(self.sigmas_syst+self.sigmas_pois))
+        stat = ellipse(mean=list(self.mean), sigmas2=list(oneSigmaN2LL * self.sigmas_stat))
+        syst = ellipse(mean=list(self.mean), sigmas2=list(oneSigmaN2LL * self.sigmas_syst))
+        pois = ellipse(mean=list(self.mean), sigmas2=list(oneSigmaN2LL * self.sigmas_pois))
+        totl = ellipse(mean=list(self.mean), sigmas2=list(oneSigmaN2LL * self.sigmas_totl))
+        simu = ellipse(mean=list(self.simmean), sigmas2=list(oneSigmaN2LL * self.sigmas_simu))
+        poissyst = ellipse(mean=list(self.mean), sigmas2=list(oneSigmaN2LL * (self.sigmas_syst+self.sigmas_pois)))
 
         with open(fname.replace('_points',''), 'w') as wFile:
             print >> wFile, 'central', self.mean[0], self.mean[1]
