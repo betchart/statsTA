@@ -95,7 +95,7 @@ if __name__ == '__main__':
                 ('eltrig',r'$e$ trig'),
                 ('elid',r'$e$ id'),
                 ('PD:',r'pdf '),
-                ('as',r'\alpha_s')
+                ('as',r'$\alpha_s$')
                  ]
         def rep(key,ps):
             if not ps: return key
