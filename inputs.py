@@ -26,6 +26,8 @@ class sample_data(object):
         yz = sd.Project3D("zy e")
         yz_symm,yz_anti = utils.symmAnti(yz)
         yz_minusminus = yz.Clone(yz.GetName()+'_minusminus')
+        M_minus = yz.Clone(yz.GetName()+'_M_minus')
+        z = sd.Project3D("ze")
         for iZ in range(1,1+sd.GetNbinsZ()):
             sd.GetZaxis().SetRange(iZ,iZ)
             xy = sd.Project3D("tmp%d_yxe"%iZ)
@@ -35,8 +37,9 @@ class sample_data(object):
             xsymm, xanti = utils.symmAnti(x)
             for iY in range(1,1+M.GetNbinsY()):
                 yz_minusminus.SetBinContent(iY,iZ, sum(xanti.GetBinContent(iX) * M_anti.GetBinContent(iX,iY) for iX in range(1,1+x.GetNbinsX())))
+                M_minus.SetBinContent(iY,iZ, sum(x.Integral()/x.GetNbinsX() * M_anti.GetBinContent(iX,iY) for iX in range(1,1+x.GetNbinsX())))
         sd.GetZaxis().SetRange(0,sd.GetNbinsZ())
-        return yz,yz_symm,yz_anti,yz_minusminus
+        return yz,yz_symm,yz_anti,yz_minusminus,M_minus
 
     def subtract(self,other):
         assert self.xs == other.xs
