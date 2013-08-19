@@ -69,7 +69,7 @@ fn = 'graphics/template.pdf'
 c.Print(fn+'[')
 
 for i,label in enumerate(['X_{L}^{rec}','X_{T}^{rec}']):
-    for j,sublabel in enumerate(['symmetrized ','antisymmetrized ', 'quadratic correction','M^{-} operating on uniform'][:None if threeD else 2]):
+    for j,sublabel in enumerate(['symmetrized ','antisymmetrized ', 'M^{-}#bf{x}^{-} ','M^{-}#bf{x}^{+} '][:None if threeD else 2]):
         init = False
         for k,comp in enumerate(reversed(comps)):
             for lep in channels:
