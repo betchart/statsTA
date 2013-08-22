@@ -206,10 +206,13 @@ class topModel(object):
         obs_ = w.argSet(','.join(self.observables))
         obs = r.RooArgList(obs_)
 
-        datas = [(L, r.RooDataHist('data_' + L, 'N_{obs}^{%s}' % L, obs,
-                                   unqueue(chan.samples['data'].datas[0], self.asymmetry)
-                                   ))
-                 for L, chan in self.channels.items()]
+        dataHists = dict([(L,unqueue(chan.samples['data'].datas[0], self.asymmetry)) for L,chan in self.channels.items()])
+        datas = [(L, r.RooDataHist('data_' + L, 'N_{obs}^{%s}' % L, obs, data))  for L, data in dataHists.items()]
+        print self.observables[0]
+        print '\n'.join('%s: %.6f (%.6f)'%((L,)+utils.asymmetry(hist.ProjectionX())) for L,hist in dataHists.items())
+        #print self.observables[1]
+        #print '\n'.join('%s: %.6f (%.6f)'%((L,)+utils.asymmetry(hist.ProjectionY())) for L,hist in dataHists.items())
+        print
 
         [roo.wimport(w, dat) for _, dat in datas]
         args = [r.RooFit.Import(*dat) for dat in datas]
