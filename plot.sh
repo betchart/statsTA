@@ -10,6 +10,8 @@ set key invert
 set key top right
 set key width -20
 set key samplen 1.5 font "Helvetica, 14"
+set key spacing 0.8
+set key at 0.02,0.009
 set x2label 'A@_{c}^{y(qq)}  (%)' offset 0,-0.7
 set ylabel 'A@_{c}^{y(qg)}  (%)' offset 1,0
 set xlabel 'A@_{c}^{y}  (%)' offset 0,0.8
