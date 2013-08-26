@@ -9,13 +9,15 @@ import ROOT as r
 import os
 
 class fitresult(object):
-    pairs = dict([(item,(item+'_dn',item+'_up')) for item in ['Q','JER','JES','PU','lumi','DY','ST','as']])
+    pairs = dict([(item,(item+'_dn',item+'_up')) for item in ['Q','JER','JES','PU','lumi','DY','ST','as','WBB']])
     pairs.update(dict([('PD:%02d-%02d'%(i,i+1),('PD_%02d'%i,'PD_%02d'%(i+1))) for i in range(1,53,2)]))
     pairs.update(dict([('muid',('mu2','mu3')),
                        ('mutrig',('mu0','mu1')),
                        ('elid',('el2','el3')),
                        ('eltrig',('el0','el1')),
-                       ('MC stat.',('',''))]))
+                       ('PT', ('PT','PT')),
+                       ('MC stat.',('','')),
+                   ]))
     labels = sum(pairs.values(),())
 
     def __init__(self,partition):
