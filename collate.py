@@ -72,8 +72,9 @@ class collate(object):
         d_Ac = math.sqrt(R.dot(self.sigmas_totl.dot(R.T))[0,0])
         sim_d_Aqq,sim_d_Aqg = np.sqrt(np.diag(self.sigmas_simu))
         sim_d_Ac = math.sqrt(R.dot(self.sigmas_simu.dot(R.T))[0,0])
-        #syst_d_Ac = math.sqrt(R.dot(self.sigmas_syst.dot(R.T))[0,0])
-        #print 100*syst_d_Ac
+        syst_d_Ac = math.sqrt(R.dot((self.sigmas_syst+self.sigmas_pois).dot(R.T))[0,0])
+        stat_d_Ac = math.sqrt(R.dot(self.sigmas_stat).dot(R.T)[0,0])
+        print 100*stat_d_Ac, 100*syst_d_Ac
 
         stat = ellipse(mean=list(self.mean), sigmas2=list(oneSigmaN2LL * self.sigmas_stat))
         syst = ellipse(mean=list(self.mean), sigmas2=list(oneSigmaN2LL * self.sigmas_syst))
@@ -140,4 +141,4 @@ class collate(object):
 
 
 if __name__=='__main__':
-    [collate(p) for p in ['full','hiM','loM','hiY','loY']]
+    [collate(p) for p in ['full','loM','hiM','loY','hiY']]
