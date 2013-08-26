@@ -11,7 +11,7 @@ def unqueue(h, doIt):
 
 class topModel(object):
     @roo.quiet
-    def __init__(self, channelDict, asymmetry=True, w=None):
+    def __init__(self, channelDict, asymmetry=True, w=None, quiet=True):
 
         leptons = ['el', 'mu']
         ttcomps = ('qq', 'ag', 'gg', 'qg')
@@ -23,7 +23,7 @@ class topModel(object):
 
         if not w: w = r.RooWorkspace('Workspace')
 
-        for item in ['asymmetry', 'gen', 'channels', 'channels_qcd',
+        for item in ['asymmetry', 'gen', 'channels', 'channels_qcd','quiet',
                      'ttcomps', 'observables', 'w']: setattr(self, item, eval(item))
 
         for item in ['fractions', 'xs_lumi', 'efficiencies', 'shapes', 'qcd', 'asymmetry',
@@ -208,11 +208,12 @@ class topModel(object):
 
         dataHists = dict([(L,unqueue(chan.samples['data'].datas[0], self.asymmetry)) for L,chan in self.channels.items()])
         datas = [(L, r.RooDataHist('data_' + L, 'N_{obs}^{%s}' % L, obs, data))  for L, data in dataHists.items()]
-        print self.observables[0]
-        print '\n'.join('%s: %.6f (%.6f)'%((L,)+utils.asymmetry(hist.ProjectionX())) for L,hist in dataHists.items())
-        print self.observables[1]
-        print '\n'.join('%s: %.6f (%.6f)'%((L,)+utils.asymmetry(hist.ProjectionY())) for L,hist in dataHists.items())
-        print
+        if not self.quiet:
+            print self.observables[0]
+            print '\n'.join('%s: %.6f (%.6f)'%((L,)+utils.asymmetry(hist.ProjectionX())) for L,hist in dataHists.items())
+            print self.observables[1]
+            print '\n'.join('%s: %.6f (%.6f)'%((L,)+utils.asymmetry(hist.ProjectionY())) for L,hist in dataHists.items())
+            print
 
         [roo.wimport(w, dat) for _, dat in datas]
         args = [r.RooFit.Import(*dat) for dat in datas]
