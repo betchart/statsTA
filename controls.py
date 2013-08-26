@@ -10,10 +10,11 @@ r.TGaxis.SetMaxDigits(3)
 #r.tdrStyle.SetPadRightMargin(0.06)
 from inputs import channel_data
 
-d_xs_wj = 0.75986
-d_xs_tt = 0.166398
-factor_qcd = {'el':3.20075,
-              'mu':1.25533}
+d_xs_wj = 0.758705 #0.75986
+d_xs_tt = 0.165759 #0.166398
+factor_qcd = {'el':3.1996, #3.20075,
+              'mu':1.25478 #1.25533
+}
 
 channels = dict([(('_'.join([lep,par])), 
                   channel_data(lep, par, signal='fitTopQueuedBin5_TridiscriminantWTopQCD')) 
@@ -146,7 +147,7 @@ def make(gname):
     r.tdrStyle.SetPadRightMargin(0.11 if 'mass' in gname else 0.06)
     r.tdrStyle.SetPadLeftMargin(0.14 if 'mass' in gname else 0.15)
     ggname = (gname%{'lep':'lep'}).replace('[','').replace(']','')
-    fname = 'graphics/control/'+ ggname + '.pdf'
+    fname = 'graphics/control/'+ ggname.replace('.','-') + '.pdf'
     c = r.TCanvas()
 
     c.Print(fname+'[')

@@ -4,8 +4,8 @@ partitions = ['full', 'hiM', 'loM', 'hiY', 'loY']
 
 def measurement_pars(measure='asymmetry', partition='full'):
     fields = ('R0_', 'signal', 'profile')
-    base = 2
-    hemicycle = 4
+    base = 3
+    hemicycle = 5
     asymmetry = (base, 'fitTopQueuedBin5_TridiscriminantWTopQCD', ('falphaL', 'falphaT'))
     fraction = (base+hemicycle, 'fitTopTanhRapiditySum_triD', ('d_qq',))
 
@@ -46,8 +46,10 @@ def systematics():
             {'label': 'PU_up', 'dirIncrement': 1, 'sigPre': '001_'},
             {'label': 'PU_dn', 'dirIncrement': 1, 'sigPre': '000_'},
 
-            {'label': 'lumi_up', "d_lumi": +0.05},
-            {'label': 'lumi_dn', "d_lumi": -0.05},
+            {'label': 'PT', 'dirIncrement': 4, 'sigPre': '001_', 'genPre': '001_', 'genDirPre':'R02'},
+
+            {'label': 'lumi_up', "d_lumi": +0.044},
+            {'label': 'lumi_dn', "d_lumi": -0.044},
             
             {'label': 'DY_up', "d_xs_dy": +0.10},
             {'label': 'DY_dn', "d_xs_dy": -0.10},
