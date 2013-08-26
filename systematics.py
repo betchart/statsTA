@@ -31,6 +31,7 @@ def central():
             'genPre': '',
             'sigPre': '',
             'dirIncrement': 0,
+            'd_wbb':0,
             'label': 'central'
             }
 
@@ -47,6 +48,9 @@ def systematics():
             {'label': 'PU_dn', 'dirIncrement': 1, 'sigPre': '000_'},
 
             {'label': 'PT', 'dirIncrement': 4, 'sigPre': '001_', 'genPre': '001_', 'genDirPre':'R02'},
+
+            {'label': 'WBB_up', 'd_wbb':+0.5},
+            {'label': 'WBB_dn', 'd_wbb':-0.5},
 
             {'label': 'lumi_up', "d_lumi": +0.044},
             {'label': 'lumi_dn', "d_lumi": -0.044},

@@ -12,7 +12,7 @@ oneSigmaNLL = 1.14
 
 class fit(object):
     def __init__(self, label, signal, profileVars, R0_,
-                 d_lumi, d_xs_dy, d_xs_st, tag, genPre, sigPre, dirIncrement, genDirPre, 
+                 d_lumi, d_xs_dy, d_xs_st, tag, genPre, sigPre, dirIncrement, genDirPre, d_wbb,
                  quiet = False, hackZeroBins=False, templateID=None, defaults = {},
                  log=None, fixSM=False,altData=None, lumiFactor=1.0):
 
@@ -32,6 +32,10 @@ class fit(object):
                          for lep in ['el', 'mu']
                          for part in ['top', 'QCD']
                          ])
+        if d_wbb: [h.SetBinContent(iX,3, (1+d_wbb)*h.GetBinContent(iX,3))
+                   for chan in channels.values()
+                   for h in chan.samples['wj'].datas
+                   for iX in range(1,1+h.GetNbinsX()) ]
         channels['gen'] = inputs.channel_data('mu', 'top', tag,
                                               '%s; %s'%(genNameX,genNameY),
                                               sigPrefix = sigPre if dirIncrement in [0,4,5] else '',
