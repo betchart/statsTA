@@ -46,6 +46,7 @@ class fitresult(object):
 
     def extract(self):
         self.values = {}
+        pdftot = {'deltas':(0,0),'dA':0}
         for e in self.tree:
             label = max(os.path.commonprefix([e.label,l]) for l in self.labels)
             if label not in self.labels: continue
@@ -53,11 +54,18 @@ class fitresult(object):
                                   'dA':sum(self.deltas(e)),
                                   'd':math.sqrt(np.dot(*(2*[self.deltas(e)])))
                               }
+
         self.order = sorted(self.values, key = lambda k: self.values[k]['d'], reverse=True)
         self.pvalues = dict([(name, math.sqrt(0.5*(self.values[a]['dA']**2 + self.values[b]['dA']**2))) for name,(a,b) in self.pairs.items() if a])
         self.pvalues['MC stat.'] = self.sigma_mcStat
+        self.pvalues['PDF'] = math.sqrt(sum(x**2 for L,x in self.pvalues.items() if 'PD' in L))
+        for key in list(self.pvalues):
+            if 'PD:' in key: del self.pvalues[key]
         self.porder = sorted(self.pvalues, key = lambda k: self.pvalues[k], reverse=True)
         self.pvalues2 = dict([(name, self.sigmaAC((0.5*sum([np.outer(*(2*[self.values[q]['deltas']])) for q in [a,b]],self.sigmas([0,0]))))) for name,(a,b) in self.pairs.items() if a])
+
+        self.pvalues['Total'] = math.sqrt(sum(x**2 for x in self.pvalues.values()))
+        self.porder.append('Total')
 
     def form(self,key):
         top = key in self.order[:5]+self.porder[:5]
@@ -89,15 +97,18 @@ if __name__ == '__main__':
                 ('_up',r'${}^{\uparrow}$'),
                 ('_dn',r'${}_{\downarrow}$'),
                 ('PU',r'pileup'),
-                ('RF',r'RFS'),
                 ('lumi',r'\lumi'),
-                ('ST',r'single'),
+                ('ST',r'$\sigma_{ST}$'),
+                ('DY',r'$\sigma_{DY}$'),
                 ('mutrig',r'$\mu$ trig'),
                 ('muid', r'$\mu$ id'),
                 ('eltrig',r'$e$ trig'),
                 ('elid',r'$e$ id'),
                 ('PD:',r'pdf '),
-                ('as',r'$\alpha_s$')
+                ('as',r'$\alpha_s$'),
+                ('WBB',r'$\mathrm{Wb\bar{b}}$'),
+                ('PT',r'$p^\Pqt_{\mathrm{T}}$'),
+                ('Q',r'$Q^2$ scale')
                  ]
         def rep(key,ps):
             if not ps: return key
