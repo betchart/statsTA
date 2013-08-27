@@ -66,6 +66,16 @@ labels = {'chia':'#chi_{a}',
           'lepP4.pti0':'%(lep)s p_{T} (GeV)',
           'lepP4.absEtai0':'%(lep)s #eta',
           'TridiscriminantWTopQCD':'#Delta',
+          'residualCDF_lepLfitTopRecoIndex':'cdf(residual): MET1',
+          'residualCDF_lepSfitTopRecoIndex':'cdf(residual): MET2',
+          'residualCDF_lepBfitTopRecoIndex':'cdf(residual): leptonic b jet',
+          'residualCDF_lepTfitTopRecoIndex':'cdf(residual): leptonic top mass',
+          'residualCDF_hadTfitTopRecoIndex':'cdf(residual): hadronic top mass',
+          'residualCDF_hadPfitTopRecoIndex':'cdf(residual): light jet 1',
+          'residualCDF_hadQfitTopRecoIndex':'cdf(residual): light jet 2',
+          'residualCDF_hadBfitTopRecoIndex':'cdf(residual): hadronic b jet',
+          'residualCDF_hadWfitTopRecoIndex':'cdf(residual): hadronic W mass',
+          'residualCDF_lepWfitTopRecoIndex':'cdf(residual): leptonic W mass',
 }
 
 def flows(h):
@@ -147,6 +157,7 @@ def make(gname):
     r.tdrStyle.SetPadRightMargin(0.11 if 'mass' in gname else 0.06)
     r.tdrStyle.SetPadLeftMargin(0.14 if 'mass' in gname else 0.15)
     ggname = (gname%{'lep':'lep'}).replace('[','').replace(']','')
+    if ggname not in labels: print 'No label for ', ggname; return
     fname = 'graphics/control/'+ ggname.replace('.','-') + '.pdf'
     c = r.TCanvas()
 
@@ -179,7 +190,7 @@ def make(gname):
             doRatio = all(hists.values())
             cprep(c,doRatio)
             data.UseCurrentStyle()
-            data.GetXaxis().SetTitle(labels[ggname%{'lep':'lep'}]%{'lep':{'el':'electron','mu':'muon'}[lep]})
+            data.GetXaxis().SetTitle(labels[ggname]%{'lep':{'el':'electron','mu':'muon'}[lep]})
             if doRatio:
                 c.cd(2)
                 ratio = getRatio(data,hists)
