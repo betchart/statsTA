@@ -1,7 +1,6 @@
 import math
 from numpy import cumsum, ediff1d
 
-
 class shortest(object):
     '''Functor for shortest interval containing some probability.
 
@@ -17,16 +16,15 @@ class shortest(object):
         self.cum /= self.cum[-1]
         self.slopes = ediff1d(self.cum)[:-1] / ediff1d(self.edges)
 
-    def key(self, frac, iLo, iHi):
+    def key(self, (iLo, iHi)):
         return (round(self.edges[iHi]-self.edges[iLo], self.ndigits),
-                frac / (min(self.slopes[i] for i in [iLo, iHi-1]) or 1e-6))
+                1 / (min(self.slopes[i] for i in [iLo, iHi-1]) or 1e-6))
 
     def __call__(self, frac):
-        if frac <= 0: return 0
         iHis = [next(i+j+1 for i, ci in enumerate(self.cum[j+1:]) if ci-cj > frac)
-                for j, cj in enumerate(self.cum) if cj+frac < 1]
+                for j, cj in enumerate(self.cum) if cj+frac < self.cum[-2]]
 
-        iLo, iHi = min(enumerate(iHis), key=lambda ij: self.key(frac, *ij))
+        iLo, iHi = min(enumerate(iHis), key=self.key)
 
         trim = ((self.cum[iHi] - self.cum[iLo] - frac) /
                 min(self.slopes[i] for i in [iLo, iHi-1]))
@@ -49,7 +47,7 @@ if __name__ == '__main__':
              'normal': lambda x: math.exp(-0.5*x**2),
              'laplace': lambda x: math.exp(-math.sqrt(2)*abs(x))}
 
-    hists = dict([(h, r.TH1D(h, '', 1000, -6, 6)) for h in funcs])
+    hists = dict([(h, r.TH1D(h, '', 300, -6, 6)) for h in funcs])
     [hists[n].SetBinContent(i, f(hists[n].GetBinCenter(i)))
      for n, f in funcs.items()
      for i in range(0, 2+hists[n].GetNbinsX())]
