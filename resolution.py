@@ -40,10 +40,11 @@ def do2(paths,var):
         un = combined(n,paths,var+'_unfit')
         un2 = combined(n,paths,two+var+'_unfit')
         rmsFOMs[n] = dict([(item, (eval(item).GetRMS(),shortest(eval(item)).FOM)) for item in ['fit','un','fit2','un2']])
+        MAX = 0.20 if 'XL' in var else 0.12
         for h in [fit,un,fit2,un2]: 
             h.Scale(1./h.Integral(0,2+h.GetNbinsX()))
             h.Rebin()
-            h.SetMaximum(0.20 if 'XL' in var else 0.12)
+            h.SetMaximum(MAX)
             h.UseCurrentStyle()
             h.SetMarkerSize(0)
             h.SetMarkerStyle(0)
@@ -91,7 +92,7 @@ def do2(paths,var):
         fit.Draw('hist same')
         un.Draw('hist same')
         initialstate = {'qq':"q#bar{q}",'gg':'gg','qg':'qg','ag':'#bar{q}g'}[n]
-        label = r.TLatex(-1.7,0.18,"%s#rightarrow{}^{}t#bar{t}"%initialstate)
+        label = r.TLatex(-1.7,0.18/0.2 * MAX,"%s#rightarrow{}^{}t#bar{t}"%initialstate)
         label.Draw()
         leg = r.TLegend(0.65,0.65,0.95,0.9)
         print rmsFOMs[n]
