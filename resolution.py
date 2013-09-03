@@ -43,7 +43,7 @@ def do2(paths,var):
         for h in [fit,un,fit2,un2]: 
             h.Scale(1./h.Integral(0,2+h.GetNbinsX()))
             h.Rebin()
-            h.SetMaximum(0.20)
+            h.SetMaximum(0.20 if 'XL' in var else 0.12)
             h.UseCurrentStyle()
             h.SetMarkerSize(0)
             h.SetMarkerStyle(0)
