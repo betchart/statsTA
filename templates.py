@@ -16,14 +16,15 @@ def unqueue(h):
 
 threeD = True
 check = False
-channels = dict([(lep, channel_data(lep, 'top', signal='fitTopQueuedBin5_TridiscriminantWTopQCD', threeD=True)) for lep in ['el', 'mu']])
+extra = True
+channels = dict([(lep, channel_data(lep, 'top', signal='fitTopQueuedBin5_TridiscriminantWTopQCD', threeD=threeD, extra=extra)) for lep in ['el', 'mu']])
 linetypes = [1, 2]
 
 comps = ['ttgg','ttag','ttqg','ttqq']
 colors = [r.kBlack, r.kGreen, r.kBlue, r.kRed]
 
 if check:
-    channels_def = dict([(lep, channel_data(lep, 'top', signal='fitTopQueuedBin5_TridiscriminantWTopQCD', threeD=False)) for lep in ['el', 'mu']])
+    channels_def = dict([(lep, channel_data(lep, 'top', signal='fitTopQueuedBin5_TridiscriminantWTopQCD', threeD=threeD, extra=extra)) for lep in ['el', 'mu']])
     for lep,ch in channels.items():
         for comp in comps:
             c = ch.samples[comp].datas

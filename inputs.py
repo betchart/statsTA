@@ -84,13 +84,14 @@ class channel_data(object):
 
     def __init__(self, lepton, partition, tag = 'ph_sn_jn_20',
                  signal="", sigPrefix="", dirPrefix="R04", genDirPre="R01", getTT=False,
-                 prePre = False, hackZeroBins=False, templateID=None, threeD=False):
+                 prePre = False, hackZeroBins=False, templateID=None, threeD=False, extra=True):
         filePattern="data/stats_%s_%s_%s.root"
         tfile = r.TFile.Open(filePattern % (partition, lepton, tag))
         self.templateID = templateID
         self.lepton = lepton
         self.lumi = tfile.Get('lumiHisto/data').GetBinContent(1)
         self.lumi_sigma = 0.05
+        self.extra = extra
 
         def full(pf) :
             return next((ky.GetName() + '/' for ky in tfile.GetListOfKeys()
@@ -110,7 +111,7 @@ class channel_data(object):
                     (sigPrefix if prePre else '') + 
                     '%s; %s/'%(genNameX,genNameY),
                     'meweighted/')
-        
+
         self.samples = {}
         for s in self.__samples__[4 if getTT else 0:None if getTT else -1]:
             self.add(s, tfile, paths, prepaths)
@@ -126,6 +127,19 @@ class channel_data(object):
 
         data = get('/' + s,paths).Clone(self.lepton + '_' + s)
         data.SetDirectory(0)
+        if s in ['ttqq','ttqg','ttag'] and self.extra:
+            extra = get('/e'+s, paths).Clone(self.lepton + '_' + s)
+            norm = data.Integral()
+
+            if self.extra == 'only':
+                extra.Scale( norm / extra.Integral() )
+                extra.SetDirectory(0)
+                data = extra
+            else:
+                data.Scale( data.GetEffectiveEntries() / norm )
+                extra.Scale( extra.GetEffectiveEntries() / extra.Integral() )
+                data.Add(extra)
+                data.Scale( norm / data.Integral() )
         if s not in ['data'] or 'QCD' in tfile.GetName() : self.jiggle(data)
 
         xs = tfile.Get('xsHisto/' + s).GetBinContent(1) if s != 'data' else None
