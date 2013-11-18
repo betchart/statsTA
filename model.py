@@ -334,6 +334,26 @@ class topModel(object):
         return canvas
 
     @roo.quiet
+    def chi2(self,lep):
+        w = self.w
+        mod = w.pdf('model_%s'%lep)
+        dhist = unqueue(self.channels[lep].samples['data'].datas[0], True)
+        N = mod.expectedEvents(r.RooArgSet())
+        exp = mod.generateBinned(w.argSet(','.join(self.observables)), N, True, False)
+        hist = exp.createHistogram(','.join(self.observables))
+        chi2 = 5*[0]
+        for iX in range(5):
+            for iY in range(5):
+                for iZ in range(5):
+                    ibin = hist.GetBin(iX+1,iY+1,iZ+1)
+                    P = hist.GetBinContent(ibin)
+                    Q = dhist.GetBinContent(ibin)
+                    chi2[iZ] += (P-Q)**2 / P
+        del dhist
+        del hist
+        return sum(chi2)
+
+    @roo.quiet
     def visualize2D(self, canvas=None, printName=''):
         w = self.w
         titles = ['X_{L}','X_{T}','#Delta']
