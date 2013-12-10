@@ -24,17 +24,18 @@ class fit(object):
             R0_ = R0_[0]
         else: diffR0_ = None
         prePre = dirIncrement in [0,4,5]
+        extra = False
         channels = dict([((lep,part),
                           inputs.channel_data(lep, part, tag, signal, sigPre,
                                               "R%02d" % (R0_ + dirIncrement),
-                                              genDirPre, prePre=prePre, templateID=templateID,
+                                              genDirPre, prePre=prePre, templateID=templateID, extra=extra,
                                               hackZeroBins=hackZeroBins and 'QCD'==part))
                          for lep in ['el', 'mu']
                          for part in ['top', 'QCD']
                          ])
         channels['gen'] = inputs.channel_data('mu', 'top', tag,
                                               '%s; %s'%(genNameX,genNameY),
-                                              sigPrefix = sigPre if dirIncrement in [0,4,5] else '',
+                                              sigPrefix = sigPre if dirIncrement in [0,4,5] else '', extra=extra,
                                               dirPrefix=genDirPre, genDirPre=genDirPre, 
                                               getTT=True, prePre = prePre)
 
@@ -109,7 +110,7 @@ class fit(object):
             for item in ['d_qq','d_xs_tt','d_xs_wj',
                          'factor_elqcd','factor_muqcd',
                          'f_gg','f_qq','f_qg','f_ag',
-                         'R_ag','slosh','alphaL']:
+                         'R_ag','slosh','alphaL','alphaT']:
                 print>>self.log, '\t', roo.str(w.arg(item))
         self.pll = pll
         w.arg('falphaL').setVal(p0[0])
@@ -191,10 +192,14 @@ class fit(object):
                 iteration += 1
 
         points = []
+        #chi2s = []
         for p in pllPoints:
             points.append(contourIntersect(p))
+            #chi2s.append((self.model.chi2('el'), self.model.chi2('mu')))
             if not points[-1]: return None,None
         reset = pllEval(p0,force=True)
+        #print chi2s
+        #print (self.model.chi2('el'),self.model.chi2('mu'))
         return p0,points
 
 

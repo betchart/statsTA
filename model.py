@@ -50,7 +50,7 @@ class topModel(object):
                                     self.channels.values() +
                                     self.channels_qcd.values())
             roo.factory(w, "falphaL[0.13, -2, 2]")
-            roo.factory(w, "slosh[0.42, 0, 1]")
+            roo.factory(w, "slosh[0.44, 0, 1]")
             e_dqq = '( @0*%f + (1-@0)*abs(@1)/%f) / @2 -1'%(f_qq_max, alphaL_max)
             roo.factory(w, "expr::d_qq('%s',{slosh,falphaL,f_qq_hat})"%e_dqq)
         else:
@@ -63,6 +63,7 @@ class topModel(object):
         roo.factory(w, "expr::f_qg('(1-@0-@1)/(1+@2*@3*@4/(@5*@6))'," +\
                         "{f_qq,f_ag,R_ag,f_gg_hat,f_qq_hat,f_ag_hat,f_qg_hat})")
         roo.factory(w, "expr::f_gg('1-@0-@1-@2',{f_qq,f_ag,f_qg})")
+
 
     def import_xs_lumi(self, w):
         roo.factory(w, "d_lumi[0,-0.2,0.2]")
