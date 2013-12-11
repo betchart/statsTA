@@ -13,6 +13,8 @@ class topModel(object):
     @roo.quiet
     def __init__(self, channelDict, asymmetry=True, w=None, quiet=True):
 
+        self.fixFractions = False
+
         leptons = ['el', 'mu']
         ttcomps = ('qq', 'ag', 'gg', 'qg')
         observables = ['XL','XT','tridiscr'] if asymmetry else ['observable', 'tridiscr']
@@ -40,6 +42,7 @@ class topModel(object):
             w.var(v).setBins(getattr(unqueue(self.channels['el'].samples['data'].datas[0],self.asymmetry),
                                      'GetNbins' + X)())
 
+
     def import_fractions(self, w):
         [roo.wimport_const(w, "f_%s_hat" % comp, self.gen.samples['tt' + comp].frac)
          for comp in self.ttcomps]
@@ -63,6 +66,10 @@ class topModel(object):
         roo.factory(w, "expr::f_qg('(1-@0-@1)/(1+@2*@3*@4/(@5*@6))'," +\
                         "{f_qq,f_ag,R_ag,f_gg_hat,f_qq_hat,f_ag_hat,f_qg_hat})")
         roo.factory(w, "expr::f_gg('1-@0-@1-@2',{f_qq,f_ag,f_qg})")
+
+        if self.fixFractions:
+            w.arg('slosh').setConstant(True)
+            w.arg('R_ag').setConstant(True)
 
 
     def import_xs_lumi(self, w):
