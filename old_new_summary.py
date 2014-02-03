@@ -25,6 +25,9 @@ for comp in ['ttqq','ttqg','ttag']:
 order = ['_'.join([epoch,lep,'']) for lep in ['el','mu'] for epoch in ['orig','extra','total']]
 for comp in ['ttqq','ttqg','ttag']:
     with open(comp+'_points.txt','w') as out:
+        meanel = ells['total_el_'+comp].mean
+        meanmu = ells['total_mu_'+comp].mean
+        print comp, meanel[0], meanel[1], meanmu[0], meanmu[1]
         print>> out, '# ', '\t'.join(order)
         N = 100
         for t in range(N + 1):
