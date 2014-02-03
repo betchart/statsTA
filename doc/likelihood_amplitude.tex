@@ -8,7 +8,7 @@
 \begin{document}
 
 Given parameters of interest $\interest$ and nuisance parameters
-$\nuis$, the probability to observe counts $\{N_i^\mu;N_i^e\}$
+$\nuis$, the probability to observe counts $\{N_{ij}^{\mu};N_{ij}^e\}$
 in the muon and electron channels is
 \[P 
 = P\left(N_i^{\mu};N_i^e | \interest;\nuis\right) =
@@ -27,34 +27,36 @@ observations is
 \begin{equation}
   \lambda_i^\ell = LR^\ell\sum_j\sigma_j\epsilon_j^\ell\rho_{ji}^\ell
 \end{equation}
-where $L$ is the luminosity, $R^\ell$ is data to simulation ratio of
-selection efficiencies by lepton channel, $\sigma_j$ is the cross
-section of the $j^{th}$ process, $\epsilon^\ell_j$ is the lepton
-channel selection efficiency for the $j^{th}$ process, and
-$\rho^\ell_{ji}$ are the $i$ bins of the post-selection probability
-density distribution of the $j^{th}$ process.  The distinct processes
-of interest consist of 4 sources of $t\bar{t}$ production
-($gg,qg,q\bar{q},\bar{q}g$), $W+$jets, multijet, single top, and
-Drell-Yann.  We introduce further parameters
-$\{\delta_{\bar{q}q},R_{ag}, A\}$, and $\{\delta_L;\vec{\delta}_j\}$
-by allowing
+where $L$ is the luminosity, $R^\ell$ is the channel ratio of data to
+selection efficiencies, $\sigma_j$ is the cross section of the
+$j^{th}$ process, $\epsilon^\ell_j$ is the $\ell$ (muon or electron)
+selection efficiency for the $j^{th}$ process, and $\rho^\ell_{ij}$
+are the $i$ bins of the post-selection probability density
+distribution of the $j^{th}$ process from the set including $t\bar{t}$
+($gg,qg,\bar{q}q,\bar{q}g$), $W+$jets, multijet, single top, and
+Drell-Yann.
+
+We introduce the parameter of interest $A$ and the 12 nuisance
+parameters
+$\{\delta_L;R^e;R^\mu;\delta_j;f_k;\epsilon_{mj}^e;\epsilon_{mj}^\mu\}$
+with
 \begin{eqnarray}
   L &=& \hat{L}(1+\delta_L) \\
   \sigma_j &=& \sigma_j^{mc}(1+\delta_j),\qquad j\in \{wj,dy,st\}\\
-  \sigma_{k\to t\bar{t}} &=& \sigma_{t\bar{t}}^{mc}(1+\delta_{t\bar{t}}) f_k, \qquad k\in\{gg,qg,\bar{q}q,\bar{q}g\}\\
-  %f_k &=& f_k^{mc}(1+\delta_k)\\
-%\end{eqnarray}
-%The parameters of interest are constrained by the two equations
-%\begin{equation}
-%  \sum_k \delta_kf_k^{mc} = 0
-%\end{equation}
-%\begin{equation}
-%  D_{gg}D_{q\bar{q}} = D_{qg}D_{\bar{q}g}, \qquad D_k = (1+\delta_k)
-%\end{equation}
-%so they can be written as only two independent parameters,
-%$(\delta_{qq},\delta_{ag})$, which we reparameterize as
-%$(\delta_{qq},R_{ag})$, with
-%\begin{eqnarray}
+  \sigma_{k\to t\bar{t}} &=& \sigma_{t\bar{t}}^{mc}(1+\delta_{t\bar{t}}) f_k, \qquad k\in \{gg,qg,\bar{q}q,\bar{q}g\}\\
+  \rho^\ell_{k\to t\bar{t}} &=& \mathrm{symmetric}(\hat{\rho}^\ell_{k\to t\bar{t}}) + A\cdot\mathrm{antisymmetric}(\hat{\rho}^\ell_{k\to t\bar{t}})
+\end{eqnarray}
+The parameters of interest are constrained by the two equations
+\begin{equation}
+  \sum_k \delta_kf_k^{mc} = 0
+\end{equation}
+\begin{equation}
+  D_{gg}D_{q\bar{q}} = D_{qg}D_{\bar{q}g}, \qquad D_k = (1+\delta_k)
+\end{equation}
+so they can be written as only two independent parameters,
+$(\delta_{qq},\delta_{ag})$, which we reparameterize as
+$(\delta_{qq},R_{ag})$, with
+\begin{eqnarray}
   f_{qq} &=& (1+\delta_{qq})f_{qq}^{mc}\\
   f_{ag} &=& R_{ag}f_{qq}\\
   f_{qg} &=& (1-f_{qq}-f_{ag})/(1+R_{ag}f_{gg}^{mc}f_{qq}^{mc}/f_{ag}^{mc}f_{qg}^{mc})\\
