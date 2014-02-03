@@ -13,7 +13,7 @@ class topModel(object):
     @roo.quiet
     def __init__(self, channelDict, asymmetry=True, w=None, quiet=True):
 
-        self.fixFractions = False
+        self.fixFractions = True
 
         leptons = ['el', 'mu']
         ttcomps = ('qq', 'ag', 'gg', 'qg')
@@ -37,10 +37,6 @@ class topModel(object):
             w.arg('d_xs_tt').setConstant()
             w.arg('d_xs_wj').setVal(0.78)
             w.arg('d_xs_wj').setConstant()
-
-        for v, X in zip(observables, 'XYZ'[:None if self.asymmetry else -1]):
-            w.var(v).setBins(getattr(unqueue(self.channels['el'].samples['data'].datas[0],self.asymmetry),
-                                     'GetNbins' + X)())
 
 
     def import_fractions(self, w):
@@ -105,6 +101,9 @@ class topModel(object):
             [roo.factory(w, "%s[-1,1]" % obs) for obs in self.observables]
             roo.factory(w, "channel[%s]" % ','.join("%s=%d" % (s, i)
                                                     for i, s in enumerate(channels)))
+            for v, X in zip(self.observables, 'XYZ'[:None if self.asymmetry else -1]):
+                w.var(v).setBins(getattr(unqueue(self.channels['el'].samples['data'].datas[0],self.asymmetry),
+                                         'GetNbins' + X)())
 
         [self.import_shape(w, lepton, sample, data)
          for lepton, channel in channels.items()
@@ -176,6 +175,13 @@ class topModel(object):
     def import_model(self, w):
         which = dict((i, '_both') for i in ['dy', 'wj', 'st', 'ttgg', 'ttqq', 'ttqg', 'ttag'])
         if self.asymmetry: which.update({'dy': '_symm', 'ttqq': '', 'ttqg': '', 'ttag': ''})
+
+        [roo.factory(w, "SUM::%s_mj( expect_%sqcd_data * %sqcd_data_both, %s )" %
+                     (lepton, lepton, lepton,
+                      ','.join(['expect_%s_%s * %s_%s%s' %
+                                (lepton + 'qcd', key, lepton + 'qcd', key, value)
+                                for key, value in which.items() if key != 'dy'])))
+         for lepton in self.channels]
 
         [roo.factory(w, "SUM::model_%s( expect_%sqcd_data * %sqcd_data_both, %s )" %
                      (lepton, lepton, lepton,
@@ -287,68 +293,12 @@ class topModel(object):
 
 
     @roo.quiet
-    def visualize1D(self, canvas=None):
-        r.gStyle.SetTitleX(0.2)
-        r.gStyle.SetTitleY(0.98)
-
-        if not canvas:
-            canvas = r.TCanvas()
-            canvas.Divide(5,2,0,0)
-        
-        w = self.w
-        
-        for j,lep in enumerate(['el','mu']):
-            w.arg('observable').SetTitle('Unrolled X_{T}(7) by X_{L}(7)' if self.asymmetry else
-                                         'tanh|t#bar{t}.y|')
-            for i in range(5):
-                canvas.cd(5*j + i + 1)
-                f = w.arg('observable').frame()
-                f.SetTitle('%s + jets, Tridiscriminant Bin %d'%({'el':'e','mu':'#mu'}[lep],i+1))
-                f.SetLineColor(r.kWhite)
-                if not i: f.SetTitleOffset(-1,'Y')
-                w.arg('tridiscr').setVal(-0.8 + i*0.4)
-                tridiscrBinWidth = 0.4
-
-                mod = w.pdf('model_%s'%lep)
-                args = [r.RooFit.Project(r.RooArgSet()),
-                        r.RooFit.Normalization(tridiscrBinWidth, r.RooAbsReal.Relative),
-                        r.RooFit.LineWidth(1),
-                        ]
-                dargs = [f,
-                         r.RooFit.Cut('%f<=tridiscr && tridiscr<%f'%(-1+i*0.4,-0.6+i*0.4)),
-                         r.RooFit.MarkerSize(0.5),
-                         r.RooFit.XErrorSize(0)]
-                w.data('data_%s'%lep).plotOn(*dargs)
-
-                pf = '' if self.asymmetry else '_both'
-                stack = [('_ttqq'+pf,),('_ttqg'+pf,'_ttag'+pf),('_ttgg_both',),('_wj_both',),
-                         ('qcd_*',), ('_dy*','_st_both')]
-                colors = [r.kViolet,r.kBlue-7,r.kBlue+2,r.kGreen+1,r.kRed,r.kGray]
-                for iStack in range(len(stack)):
-                    comps = lep+(','+lep).join(sum(stack[iStack:],()))
-                    mod.plotOn(f,
-                               r.RooFit.Components(comps),
-                               r.RooFit.LineColor(colors[iStack]),
-                               r.RooFit.FillColor(colors[iStack]),
-                               r.RooFit.DrawOption('F'),
-                               *args)
-
-                w.data('data_%s'%lep).plotOn(*dargs)
-                mod.plotOn(f, r.RooFit.LineColor(r.kOrange), *args)
-
-                f.SetMaximum(4500 if self.asymmetry  else 4000)
-                f.Draw()
-
-        return canvas
-
-    @roo.quiet
     def chi2(self,lep):
         w = self.w
         mod = w.pdf('model_%s'%lep)
         dhist = unqueue(self.channels[lep].samples['data'].datas[0], True)
-        N = mod.expectedEvents(r.RooArgSet())
-        exp = mod.generateBinned(w.argSet(','.join(self.observables)), N, True, False)
-        hist = exp.createHistogram(','.join(self.observables))
+        exp = mod.generateBinned(w.argSet(','.join(self.observables)), 0, True, False)
+        hist = exp.createHistogram(','.join(self.observables), 5, 5, 5)
         chi2 = 5*[0]
         for iX in range(5):
             for iY in range(5):
@@ -362,28 +312,84 @@ class topModel(object):
         return sum(chi2)
 
     @roo.quiet
-    def visualize2D(self, canvas=None, printName=''):
+    def visualize2D(self, printName=''):
         w = self.w
         titles = ['X_{L}','X_{T}','#Delta']
         for v,t in zip(self.observables,titles) :
             w.arg(v).SetTitle(t)
 
-        if not canvas:
-            if printName:
-                r.gROOT.ProcessLine(".L tdrstyle.C")
-                r.setTDRStyle()
-                r.TGaxis.SetMaxDigits(4)
-            canvas=r.TCanvas()
-            if not printName:
-                canvas.Divide(3,2)
-            else:
-                canvas.Print(printName+'[')
+        r.gROOT.ProcessLine(".L tdrstyle.C")
+        r.setTDRStyle()
+        r.TGaxis.SetMaxDigits(4)
+        canvas = r.TCanvas()
+        canvas.Print(printName+'[')
 
-        print 'visualizing',
-        sys.stdout.flush()
+        def expected_histogram(pdfname, expect=0):
+            print pdfname,expect
+            mod = w.pdf(pdfname)
+            if not mod:
+                w.Print()
+                exit()
+            args = ','.join(self.observables)
+            exp = mod.generateBinned(w.argSet(args), expect, True, False)
+            hist = exp.createHistogram(args, 5, 5, 5)
+            hist.SetName(pdfname+'genHist')
+            return hist
 
         for j,lep in enumerate(['el','mu']):
+            dhist = unqueue(self.channels[lep].samples['data'].datas[0], True)
+            hist = expected_histogram('model_'+lep)
+
+            print self.channels[lep].samples.keys()
+            hists = dict([(s, expected_histogram(lep+'_'+s+('_both' if s in ['wj','st','ttgg'] else '_symm' if s=='dy' else ''), 
+                                                 w.arg('expect_%s_%s'%(lep,s)).getVal()))
+                     for s in self.channels[lep].samples if s not in ['data']])
+            hists['mj'] = expected_histogram(lep+'_mj', w.arg('expect_%s_mj'%lep).getVal())
+
+            stack = [('ttqq',),('ttqg','ttag'),('ttgg',),('wj',),('mj',), ('dy','st')][::-1]
+            colors = [r.kViolet,r.kBlue-7,r.kBlue+2,r.kGreen+1,r.kRed,r.kGray][::-1]
+            stackers = []
+            for s,c in zip(stack,colors):
+                h = hists[s[0]]
+                for n in s[1:]: h.Add(hists[n])
+                h.SetFillColor(c)
+                h.SetLineColor(c)
+                stackers.append(h)
+
             for i in range(3):
+                def proj(h):
+                    return getattr(h, 'Projection'+'XYZ'[i])(h.GetName()+'xyz'[i], 0, -1, 0 if i==2 else 3, -1 if i==2 else 3)
+                model = proj(hist)
+                data = proj(dhist)
+                comps = [proj(h) for h in stackers]
+                hstack = r.THStack('stack','')
+                for c in comps: hstack.Add(c)
+                model.SetMinimum(0)
+                model.SetLineColor(r.kBlue)
+                data.SetMinimum(0)
+                data.Draw()
+                model.Draw('hist same')
+                hstack.Draw('hist same')
+                data.Draw('same')
+                canvas.Print(printName)
+                sys.stdout.write(' ')
+                if i<2:
+                    _,amodel = utils.symmAnti(model)
+                    _,adata = utils.symmAnti(data)
+                    astackers = [utils.symmAnti(s)[1] for s in stackers]
+                    amax = 1.3* max(adata.GetMaximum(),amodel.GetMaximum())
+                    adata.SetMaximum(amax)
+                    adata.SetMinimum(-amax)
+                    amodel.SetMinimum(-amax)
+                    amodel.SetMaximum(amax)
+                    adata.Draw()
+                    amodel.Draw('hist same')
+                    for a in astackers:
+                        a.Draw('hist same')
+                    canvas.Print(printName)
+                    sys.stdout.write(' ')
+                continue
+
                 canvas.cd(1+j*3+i)
                 f = w.arg(self.observables[i]).frame()
                 f.SetLineColor(r.kWhite)
@@ -415,14 +421,12 @@ class topModel(object):
                 #mod.plotOn(f, r.RooFit.LineColor(r.kOrange), *args)
 
                 f.Draw()
-                if printName:
-                    canvas.Print(printName)
-                    sys.stdout.write(' ')
+                canvas.Print(printName)
+                sys.stdout.write(' ')
         print
-        if printName:
-            canvas.Print(printName+']')
+        canvas.Print(printName+']')
 
-        return canvas
+        return
 
 
 

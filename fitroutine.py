@@ -24,7 +24,7 @@ class fit(object):
             R0_ = R0_[0]
         else: diffR0_ = None
         prePre = dirIncrement in [0,4,5]
-        extra = False
+        extra = True
         channels = dict([((lep,part),
                           inputs.channel_data(lep, part, tag, signal, sigPre,
                                               "R%02d" % (R0_ + dirIncrement),
