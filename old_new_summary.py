@@ -1,6 +1,6 @@
 import ROOT as r
 r.gROOT.SetBatch(1)
-from ellipse import ellipse
+from utils.ellipse import ellipse
 import array
 import math
 import numpy as np

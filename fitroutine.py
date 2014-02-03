@@ -5,7 +5,7 @@ import ROOT as r
 import roo
 import inputs
 import model
-from enclosing_ellipse import enclosing_ellipse
+from utils.enclosing_ellipse import enclosing_ellipse
 from asymmNames import genNameX,genNameY
 
 oneSigmaNLL = 1.14

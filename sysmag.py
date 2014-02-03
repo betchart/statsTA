@@ -2,7 +2,7 @@
 
 import sys
 import math
-from ellipse import ellipse
+from utils.ellipse import ellipse
 import numpy as np
 from functools import partial
 import ROOT as r

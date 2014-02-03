@@ -2,7 +2,7 @@
 
 import sys
 import math
-from ellipse import ellipse
+from utils.ellipse import ellipse
 import numpy as np
 from __autoBook__ import autoBook
 import ROOT as r
