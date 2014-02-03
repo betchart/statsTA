@@ -1,7 +1,7 @@
 import ROOT as r
 import numpy as np
 import math
-from utils.ellipse import ellipse
+from lib.ellipse import ellipse
 
 class fitresult(object):
     def __init__(self,fname, getfirstentry = False):

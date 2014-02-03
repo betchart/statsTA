@@ -2,9 +2,9 @@
 
 import sys
 import math
-from utils.ellipse import ellipse
+from lib.ellipse import ellipse
 import numpy as np
-from utils.__autoBook__ import autoBook
+from lib.__autoBook__ import autoBook
 import ROOT as r
 r.gROOT.SetBatch(1)
 r.gStyle.SetOptFit(1)

@@ -1,5 +1,5 @@
 import ROOT as r
-import utils
+import lib
 import numpy as np
 from asymmNames import genNameX,genNameY
 
@@ -12,7 +12,7 @@ class sample_data(object):
         self.frac = preselectionFraction
         self.datas = self.format(signalDistribution)
 
-        self.alphaMax = utils.alphaMax(*self.datas[1:3])
+        self.alphaMax = lib.alphaMax(*self.datas[1:3])
 
         self.datasX = tuple(d.ProjectionX() if d else None for d in self.datas)
         self.datasY = tuple(d.ProjectionY() if d else None for d in self.datas)
@@ -21,10 +21,10 @@ class sample_data(object):
     @staticmethod
     def format(sd):
         if sd.GetDimension()<3:
-            return ((sd,) + tuple(utils.symmAnti(sd)))
+            return ((sd,) + tuple(lib.symmAnti(sd)))
         sd.SetTitle(";x;y;z")
         yz = sd.Project3D("zy e")
-        yz_symm,yz_anti = utils.symmAnti(yz)
+        yz_symm,yz_anti = lib.symmAnti(yz)
         yz_minusminus = yz.Clone(yz.GetName()+'_minusminus')
         yz_minusplus = yz.Clone(yz.GetName()+'_minusplus')
         z = sd.Project3D("ze")
@@ -32,9 +32,9 @@ class sample_data(object):
             sd.GetZaxis().SetRange(iZ,iZ)
             xy = sd.Project3D("tmp%d_yxe"%iZ)
             x = xy.ProjectionX()
-            M = utils.coupling(xy)
-            M_symm,M_anti = utils.coupling_symmAnti(M)
-            xsymm, xanti = utils.symmAnti(x)
+            M = lib.coupling(xy)
+            M_symm,M_anti = lib.coupling_symmAnti(M)
+            xsymm, xanti = lib.symmAnti(x)
             for iY in range(1,1+M.GetNbinsY()):
                 yz_minusminus.SetBinContent(iY,iZ, sum(xanti.GetBinContent(iX) * M_anti.GetBinContent(iX,iY) for iX in range(1,1+x.GetNbinsX())))
                 yz_minusplus.SetBinContent(iY,iZ, sum(xsymm.GetBinContent(iX) * M_anti.GetBinContent(iX,iY) for iX in range(1,1+x.GetNbinsX())))
@@ -53,11 +53,11 @@ class sample_data(object):
                 d.Add(od,-1)
 
     def asymmStr(self):
-        unqueued = utils.unQueuedBins(self.datas[0],5,[-1,1],[-1,1])
+        unqueued = lib.unQueuedBins(self.datas[0],5,[-1,1],[-1,1])
         unqx = unqueued.ProjectionX()
         unqy = unqueued.ProjectionY()
-        ay = tuple([100*f for f in utils.asymmetry(unqx)])
-        ap = tuple([100*f for f in utils.asymmetry(unqy)])
+        ay = tuple([100*f for f in lib.asymmetry(unqx)])
+        ap = tuple([100*f for f in lib.asymmetry(unqy)])
         del unqueued, unqx, unqy
         return ';  '.join([ ('ay: % .2f(%.2f)'%ay).rjust(8),
                             ('ap: % .2f(%.2f)'%ap).rjust(8)
@@ -120,7 +120,7 @@ class channel_data(object):
 
     def add(self, s, tfile, paths, prepaths):
         def get(s,ps):
-            return next(iter(filter(None, [utils.get(tfile,p+s) for p in ps])), None)
+            return next(iter(filter(None, [lib.get(tfile,p+s) for p in ps])), None)
 
         pre = get( s, prepaths)
         if not pre and not s == 'data': return

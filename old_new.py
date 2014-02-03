@@ -1,9 +1,9 @@
 import sys
 from inputs import channel_data
-import utils
+import lib
 import ROOT as r
 import math
-from utils.__autoBook__ import autoBook
+from lib.__autoBook__ import autoBook
 r.gROOT.SetBatch(1)
 r.gROOT.ProcessLine(".L tdrstyle.C")
 r.setTDRStyle()
@@ -14,7 +14,7 @@ r.tdrStyle.SetEndErrorSize(6)
 #r.tdrStyle.SetPadRightMargin(0.06)
 
 def unqueue(h):
-    return utils.unQueuedBins(h,5,[-1,1],[-1,1])
+    return lib.unQueuedBins(h,5,[-1,1],[-1,1])
 
 threeD = False
 
@@ -34,8 +34,8 @@ for extra in [True,False,'only']:
                 name = '_'.join(['extra' if extra=='only' else 'total' if extra else 'orig' ,lep, comp])
                 if template==None: name += '_actual'
                 tot = unqueue(ch.samples[comp].datas[0].ProjectionX())
-                v = (100*utils.asymmetry(tot.ProjectionX())[0],
-                     100*utils.asymmetry(tot.ProjectionY())[0])
+                v = (100*lib.asymmetry(tot.ProjectionX())[0],
+                     100*lib.asymmetry(tot.ProjectionY())[0])
                 book.fill( v, name, (100,100), (-3,-3), (3,3))
 
 tfile = r.TFile.Open("jiggled_asymmetries.root","RECREATE")

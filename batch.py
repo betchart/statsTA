@@ -1,5 +1,5 @@
 import os
-import utils
+import lib
 import tempfile
 
 class batch(object):
@@ -22,9 +22,9 @@ cd %s
                     print>>tmp, cmd
                     tmp.flush()
                     os.system('./ic_cmsSub.sh %s'%tmp.name)
-            utils.operateOnListUsingQueue(self.nCores, utils.qWorker(sub), enumerate(self.cmds))
+            lib.operateOnListUsingQueue(self.nCores, lib.qWorker(sub), enumerate(self.cmds))
         else:
             self.default()
 
     def default(self):
-        utils.operateOnListUsingQueue(self.nCores, utils.qWorker(os.system), zip(self.cmds))
+        lib.operateOnListUsingQueue(self.nCores, lib.qWorker(os.system), zip(self.cmds))

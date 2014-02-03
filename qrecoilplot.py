@@ -1,10 +1,10 @@
 import ROOT as r
-import utils
+import lib
 
 def flows(h):
     nbins = h.GetNbinsX()
-    utils.combineBinContentAndError(h,1,0)
-    utils.combineBinContentAndError(h,nbins,nbins+1)
+    lib.combineBinContentAndError(h,1,0)
+    lib.combineBinContentAndError(h,nbins,nbins+1)
 
 r.gROOT.SetBatch(1)
 r.gROOT.ProcessLine(".L tdrstyle.C")

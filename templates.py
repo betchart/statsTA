@@ -1,5 +1,5 @@
 from inputs import channel_data
-import utils
+import lib
 import ROOT as r
 import math
 r.gROOT.SetBatch(1)
@@ -12,7 +12,7 @@ r.tdrStyle.SetEndErrorSize(6)
 #r.tdrStyle.SetPadRightMargin(0.06)
 
 def unqueue(h):
-    return utils.unQueuedBins(h,5,[-1,1],[-1,1])
+    return lib.unQueuedBins(h,5,[-1,1],[-1,1])
 
 threeD = True
 check = False

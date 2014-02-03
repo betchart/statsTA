@@ -1,12 +1,12 @@
 import sys
 import roo
-import utils
+import lib
 import math
 import ROOT as r
 from asymmNames import genNameX,genNameY
 
 def unqueue(h, doIt):
-    return utils.unQueuedBins(h,5,[-1,1],[-1,1]) if doIt else h
+    return lib.unQueuedBins(h,5,[-1,1],[-1,1]) if doIt else h
 
 
 class topModel(object):
@@ -165,8 +165,8 @@ class topModel(object):
         assert self.gen.samples['tt'].datas[0].GetYaxis().GetTitle() == genNameY
 
         for n, d in self.gen.samples.items():
-            y,ey = utils.asymmetry(d.datasX[0])
-            p,ep = utils.asymmetry(d.datasY[0])
+            y,ey = lib.asymmetry(d.datasX[0])
+            p,ep = lib.asymmetry(d.datasY[0])
             roo.wimport_const(w, 'Ac_y_' + n, y)
             roo.wimport_const(w, 'Ac_phi_' + n, p)
             roo.wimport_const(w, 'err_Ac_y_' + n, ey)
@@ -224,9 +224,9 @@ class topModel(object):
         datas = [(L, r.RooDataHist('data_' + L, 'N_{obs}^{%s}' % L, obs, data))  for L, data in dataHists.items()]
         if not self.quiet:
             print self.observables[0]
-            print '\n'.join('%s: %.6f (%.6f)'%((L,)+utils.asymmetry(hist.ProjectionX())) for L,hist in dataHists.items())
+            print '\n'.join('%s: %.6f (%.6f)'%((L,)+lib.asymmetry(hist.ProjectionX())) for L,hist in dataHists.items())
             print self.observables[1]
-            print '\n'.join('%s: %.6f (%.6f)'%((L,)+utils.asymmetry(hist.ProjectionY())) for L,hist in dataHists.items())
+            print '\n'.join('%s: %.6f (%.6f)'%((L,)+lib.asymmetry(hist.ProjectionY())) for L,hist in dataHists.items())
             print
 
         [roo.wimport(w, dat) for _, dat in datas]
@@ -286,8 +286,8 @@ class topModel(object):
                              factor.getError() / factor.getVal() if xs=='mj' else 0)
                 tot += val
                 tote2 += (val*relerr)**2
-                print>>logfile, utils.roundString(val/scale,relerr*val/scale).rjust(length / 3), '&',
-            print>>logfile, utils.roundString(tot/scale,math.sqrt(tote2)/scale).rjust(length / 3), '&',
+                print>>logfile, lib.roundString(val/scale,relerr*val/scale).rjust(length / 3), '&',
+            print>>logfile, lib.roundString(tot/scale,math.sqrt(tote2)/scale).rjust(length / 3), '&',
             print>>logfile, self.channels[chan].samples['data'].datas[0].Integral()/scale, r'\\'
         print>>logfile
 
@@ -374,9 +374,9 @@ class topModel(object):
                 canvas.Print(printName)
                 sys.stdout.write(' ')
                 if i<2:
-                    _,amodel = utils.symmAnti(model)
-                    _,adata = utils.symmAnti(data)
-                    astackers = [utils.symmAnti(s)[1] for s in stackers]
+                    _,amodel = lib.symmAnti(model)
+                    _,adata = lib.symmAnti(data)
+                    astackers = [lib.symmAnti(s)[1] for s in stackers]
                     amax = 1.3* max(adata.GetMaximum(),amodel.GetMaximum())
                     adata.SetMaximum(amax)
                     adata.SetMinimum(-amax)

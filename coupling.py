@@ -1,5 +1,5 @@
 import sys
-import utils
+import lib
 import ROOT as r
 r.gStyle.SetOptStat(0)
 r.gStyle.SetOptFit(1)
@@ -21,9 +21,9 @@ for item in ['ttqq','ttgg','ttqg','ttag']:
         h.GetZaxis().SetRange(iC,iC)
         hxy = h.Project3D(('exy%d'%iC))
         hxy.SetTitle('%s %d;gen;reco'%(item,iC))
-        hxy_coup = utils.coupling(hxy)
+        hxy_coup = lib.coupling(hxy)
 
-        symm,anti = utils.coupling_symmAnti(hxy_coup)
+        symm,anti = lib.coupling_symmAnti(hxy_coup)
         anti_devs = r.TH1D('antidevs%s%d'%(item,iC),'', 50, -5, 5)
         anti_rel = anti.Clone('_rel')
 

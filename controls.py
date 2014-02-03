@@ -1,5 +1,5 @@
 import math
-import utils
+import lib
 import ROOT as r
 r.gROOT.SetBatch(True)
 r.gROOT.ProcessLine(".L tdrstyle.C")
@@ -80,8 +80,8 @@ labels = {'chia':'#chi_{a}',
 
 def flows(h):
     bins = h.GetNbinsX()
-    utils.combineBinContentAndError(h,binToContainCombo=1,binToBeKilled=0)
-    utils.combineBinContentAndError(h,binToContainCombo=bins,binToBeKilled=bins+1)
+    lib.combineBinContentAndError(h,binToContainCombo=1,binToBeKilled=0)
+    lib.combineBinContentAndError(h,binToContainCombo=bins,binToBeKilled=bins+1)
 
 def hists(key,name,rbin=1):
     hs = {}
@@ -106,7 +106,7 @@ def getRatio(data,hists):
     den = data.Clone()
     den.Reset()
     for h in filter(None,hists.values()) : den.Add(h)
-    ratio = utils.ratioHistogram(data,den,0.08)
+    ratio = lib.ratioHistogram(data,den,0.08)
     ratio.SetTitle(';'+data.GetXaxis().GetTitle()+';'+'Ratio')
     ratio.SetMarkerSize(0)
     ratio.SetMinimum(0.7)
