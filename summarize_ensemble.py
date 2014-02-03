@@ -4,7 +4,7 @@ import sys
 import math
 from utils.ellipse import ellipse
 import numpy as np
-from __autoBook__ import autoBook
+from utils.__autoBook__ import autoBook
 import ROOT as r
 r.gROOT.SetBatch(1)
 r.gStyle.SetOptFit(1)

@@ -3,7 +3,7 @@ from inputs import channel_data
 import utils
 import ROOT as r
 import math
-from __autoBook__ import autoBook
+from utils.__autoBook__ import autoBook
 r.gROOT.SetBatch(1)
 r.gROOT.ProcessLine(".L tdrstyle.C")
 r.setTDRStyle()
