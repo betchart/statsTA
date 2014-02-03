@@ -1,7 +1,7 @@
 import utils
 import ROOT as r
 r.gROOT.SetBatch(True)
-from shortest import shortest
+from utils.shortest import shortest
 
 r.gROOT.ProcessLine(".L tdrstyle.C")
 r.setTDRStyle()
