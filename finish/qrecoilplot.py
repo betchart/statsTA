@@ -7,7 +7,7 @@ def flows(h):
     lib.combineBinContentAndError(h,nbins,nbins+1)
 
 r.gROOT.SetBatch(1)
-r.gROOT.ProcessLine(".L tdrstyle.C")
+r.gROOT.ProcessLine(".L lib/tdrstyle.C")
 r.setTDRStyle()
 r.gStyle.SetOptFit(0)
 r.tdrStyle.SetPadRightMargin(0.06)

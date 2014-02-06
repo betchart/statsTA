@@ -3,7 +3,7 @@ import ROOT as r
 r.gROOT.SetBatch(True)
 from lib.shortest import shortest
 
-r.gROOT.ProcessLine(".L tdrstyle.C")
+r.gROOT.ProcessLine(".L lib/tdrstyle.C")
 r.setTDRStyle()
 r.tdrStyle.SetErrorX(0.5);
 

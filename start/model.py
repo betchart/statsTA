@@ -318,7 +318,7 @@ class topModel(object):
         for v,t in zip(self.observables,titles) :
             w.arg(v).SetTitle(t)
 
-        r.gROOT.ProcessLine(".L tdrstyle.C")
+        r.gROOT.ProcessLine(".L lib/tdrstyle.C")
         r.setTDRStyle()
         r.TGaxis.SetMaxDigits(4)
         canvas = r.TCanvas()

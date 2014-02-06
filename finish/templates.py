@@ -3,7 +3,7 @@ import lib
 import ROOT as r
 import math
 r.gROOT.SetBatch(1)
-r.gROOT.ProcessLine(".L tdrstyle.C")
+r.gROOT.ProcessLine(".L lib/tdrstyle.C")
 r.setTDRStyle()
 r.tdrStyle.SetErrorX(r.TStyle().GetErrorX())
 r.tdrStyle.SetPadTopMargin(0.065)

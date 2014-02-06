@@ -1,6 +1,6 @@
 import ROOT as r
 r.gROOT.SetBatch(1)
-r.gROOT.ProcessLine(".L tdrstyle.C")
+r.gROOT.ProcessLine(".L lib/tdrstyle.C")
 r.setTDRStyle()
 r.gStyle.SetOptFit(0)
 
