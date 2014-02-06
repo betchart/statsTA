@@ -1,6 +1,6 @@
 import sys
-import roo
 import lib
+from lib import roo
 import math
 import ROOT as r
 from asymmNames import genNameX,genNameY

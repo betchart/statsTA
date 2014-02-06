@@ -2,7 +2,7 @@ import math
 import array
 import numpy as np
 import ROOT as r
-import roo
+from lib import roo
 import inputs
 import model
 from lib.enclosing_ellipse import enclosing_ellipse

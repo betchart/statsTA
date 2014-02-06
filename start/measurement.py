@@ -1,5 +1,5 @@
 import ROOT as r
-import roo
+from lib import roo
 import systematics
 from ensembles import ensemble_specs
 from fitroutine import fit
