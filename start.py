@@ -8,7 +8,7 @@ from start.measurement import measurement
 from start.options import opts
 from start.inputs import channel_data
 import os
-import batch
+from lib import batch
 
 def chunk(L,n):
     return [L[i:i+n] for i in range(0,len(L), n)] if L else []

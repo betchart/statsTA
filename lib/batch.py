@@ -1,5 +1,5 @@
 import os
-import lib
+import __init__ as lib
 import tempfile
 
 class batch(object):
