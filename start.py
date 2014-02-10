@@ -68,4 +68,6 @@ if __name__ == '__main__':
                            'ensSlice':ensSlice,
                            'templateID':tID})
                 print mp
+                if '_CONDOR_SCRATCH_DIR' in os.environ:
+                    mp['outDir'] = os.environ['_CONDOR_SCRATCH_DIR'] + '/output/'
                 measurement(**mp)

@@ -3,11 +3,12 @@ from lib import roo
 import systematics
 from ensembles import ensemble_specs
 from fitroutine import fit
-
+import os
 
 class measurement(object):
     def __init__(self, label, signal, profile, R0_, hackZeroBins=False,
                  doVis=False, evalSystematics=[], ensembles=None, ensSlice=(None,None), outDir='output/', templateID=None):
+        os.system('mkdir -p %s' % outDir)
         self.outNameBase = (outDir + 
                             '_'.join(label.split(',')) + 
                             ('_t%03d'%templateID if templateID!=None else ''))

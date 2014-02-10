@@ -5,3 +5,5 @@ graphics/
 data/
 output
 *.root
+data
+condor/*
