@@ -56,6 +56,7 @@ if __name__ == '__main__':
             if templates: stack.extend(["./start.py --partition %s --templates %d:%d"%((part,)+t) for t in tmpchunks])
             if enschunks: stack.extend(["./start.py --partition %s --ensembles %s --ensSlice %d:%d"%((part, e)+s) for s in enschunks for e in ensembles])
             if not any([syschunks,tmpchunks,enschunks]): stack.append("./start.py --partition %s"%part)
+        print '\n'.join(stack)
         batch.batch(stack, site=options.site)
     else:
         for part in partitions:

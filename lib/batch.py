@@ -47,7 +47,6 @@ class batch(object):
                     cond.flush()
 
                     subCmd = "; ".join(["lib/fnal_cmsSub.sh %s" % cond.name])
-                    print subCmd
                     os.system(subCmd)
 
-        sub(0,self.cmds[0])
+        lib.operateOnListUsingQueue(self.nCores, lib.qWorker(sub), enumerate(self.cmds))
