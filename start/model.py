@@ -13,7 +13,7 @@ class topModel(object):
     @roo.quiet
     def __init__(self, channelDict, asymmetry=True, w=None, quiet=True):
 
-        self.fixFractions = True
+        self.fixFractions = False
 
         leptons = ['el', 'mu']
         ttcomps = ('qq', 'ag', 'gg', 'qg')
