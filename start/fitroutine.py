@@ -184,6 +184,7 @@ class fit(object):
                 if pllEval(p) < targetPLL and (not mlo or pllEval(mlo) < pllEval(p)): mlo = p
                 if pllEval(p) > targetPLL and (not mhi or pllEval(p) < pllEval(mhi)): mhi = p
                 if iteration>5 and mlo and mhi: return bsearch(mlo,mhi)
+                if iteration>20 and not mhi: return point(0)
                 guess = p + (pllEval(p),)
                 iteration += 1
 
