@@ -7,3 +7,5 @@ output
 *.root
 data
 condor/*
+.job.ad
+.machine.ad
