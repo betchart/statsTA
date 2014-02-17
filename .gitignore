@@ -9,3 +9,4 @@ data
 condor/*
 .job.ad
 .machine.ad
+condor_exec.exe
