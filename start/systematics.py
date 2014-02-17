@@ -49,17 +49,17 @@ def systematics():
 
             {'label': 'PT', 'dirIncrement': 4, 'sigPre': '001_', 'genPre': '001_', 'genDirPre':'R02'},
 
-            {'label': 'WBB_up', 'd_wbb':+0.5},
-            {'label': 'WBB_dn', 'd_wbb':-0.5},
+            {'label': 'WBB_up', 'd_wbb':+0.2},
+            {'label': 'WBB_dn', 'd_wbb':-0.2},
 
             {'label': 'lumi_up', "d_lumi": +0.044},
             {'label': 'lumi_dn', "d_lumi": -0.044},
             
-            {'label': 'DY_up', "d_xs_dy": +0.10},
-            {'label': 'DY_dn', "d_xs_dy": -0.10},
+            {'label': 'DY_up', "d_xs_dy": +0.20},
+            {'label': 'DY_dn', "d_xs_dy": -0.20},
             
-            {'label': 'ST_up', "d_xs_st": +0.10},
-            {'label': 'ST_dn', "d_xs_st": -0.10},
+            {'label': 'ST_up', "d_xs_st": +0.20},
+            {'label': 'ST_dn', "d_xs_st": -0.20},
 
             {'label': 'Q_dn', 'genPre': '053_', 'sigPre': '053_'},
             {'label': 'Q_up', 'genPre': '054_', 'sigPre': '054_'},

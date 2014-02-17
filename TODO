@@ -1,10 +1,9 @@
+* QCD shape systematic: perhaps divide the sideband into two regions (chwalek) (in progress)
+
 * produce results plots with fitted symmetric and antisymmetric components (in progress: still need axis labels)
 
 * fit XT (XL) asymmetry independently from inclusive ttbar diff. xs.
 * fnal batch
-
-* use wbb sample for wbb systematic
-* QCD shape systematic: perhaps divide the sideband into two regions (chwalek) (in progress)
 
 * calibrate to MC@NLO / MADGRAPH / BSM
 

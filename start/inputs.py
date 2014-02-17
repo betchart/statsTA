@@ -84,7 +84,7 @@ class channel_data(object):
 
     def __init__(self, lepton, partition, tag = 'ph_sn_jn_20',
                  signal="", sigPrefix="", dirPrefix="R04", genDirPre="R01", getTT=False,
-                 prePre = False, hackZeroBins=False, templateID=None, threeD=False, extra=True):
+                 prePre = False, hackZeroBins=False, templateID=None, threeD=False, extra=True, d_wbb=0):
         filePattern="data/stats_%s_%s_%s.root"
         tfile = r.TFile.Open(filePattern % (partition, lepton, tag))
         self.templateID = templateID
@@ -113,8 +113,15 @@ class channel_data(object):
                     'meweighted/')
 
         self.samples = {}
-        for s in self.__samples__[4 if getTT else 0:None if getTT else -1]:
+        for s in self.__samples__[(4 if getTT else 0):(None if getTT else -1)]:
             self.add(s, tfile, paths, prepaths)
+        if d_wbb:
+            self.add( 'Wbb', tfile, paths, prepaths)
+            for group in ['datas','datasX','datasY']:
+                for d,od in zip(getattr(self.samples['wj'],group),
+                                getattr(self.samples['Wbb'],group)):
+                    d.Add(od,d_wbb)
+            del self.samples['Wbb']
         tfile.Close()
         if hackZeroBins: self.hackZeroBins()
 

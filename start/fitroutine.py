@@ -29,6 +29,7 @@ class fit(object):
                           inputs.channel_data(lep, part, tag, signal, sigPre,
                                               "R%02d" % (R0_ + dirIncrement),
                                               genDirPre, prePre=prePre, templateID=templateID, extra=extra,
+                                              d_wbb = d_wbb,
                                               hackZeroBins=hackZeroBins and 'QCD'==part))
                          for lep in ['el', 'mu']
                          for part in ['top', 'QCD']
@@ -46,11 +47,6 @@ class fit(object):
                 chan.subtract(inputs.channel_data(lep,part,tag,signal,sigPre,
                                                   "R%02d" % (diffR0_ + dirIncrement),
                                                   genDirPre, prePre = prePre ))
-
-        if d_wbb: [[h.SetBinContent(iX,3, (1+d_wbb)*h.GetBinContent(iX,3))
-                    for h in chan.samples['wj'].datas
-                    for iX in range(1,1+h.GetNbinsX())]
-                   for name,chan in channels.items() if name!='gen']
 
         print "###", label
         print>>self.log, "###", label
