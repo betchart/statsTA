@@ -13,6 +13,7 @@ parser.add_option("--templates", dest="templates", default=None, metavar='lo:hi'
 parser.add_option("--visualize", dest='visualize', default=False, action='store_true', help='project the fits')
 parser.add_option("--batch", dest='batch', default=False, action='store_true', help='run on the batch queue')
 parser.add_option("--site", dest='site', default=None, metavar='ic', help='batch site')
+parser.add_option("--chunk", dest='chunk', default=10, metavar='N', type="int", help='number of jobs in a batch chunk')
 
 def opts() :
     options,args = parser.parse_args()

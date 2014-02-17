@@ -46,12 +46,11 @@ if __name__ == '__main__':
     templates = ((0,0) if not options.templates else tuple(int(i) for i in options.templates.split(':')) if ':' in options.templates else (int(options.templates),1+int(options.templates)))
     
     if options.batch:
-        chunksize = 10
         stack = []
         for part in partitions:
-            syschunks = chunk(systs, chunksize)
-            enschunks = chunktuple(ensSlice, chunksize)
-            tmpchunks = chunktuple(templates, chunksize)
+            syschunks = chunk(systs, options.chunk)
+            enschunks = chunktuple(ensSlice, options.chunk)
+            tmpchunks = chunktuple(templates, options.chunk)
             if syschunks: stack.extend(["./start.py --partition %s --systematics %s"%(part, ','.join(s)) for s in syschunks])
             if templates: stack.extend(["./start.py --partition %s --templates %d:%d"%((part,)+t) for t in tmpchunks])
             if enschunks: stack.extend(["./start.py --partition %s --ensembles %s --ensSlice %d:%d"%((part, e)+s) for s in enschunks for e in ensembles])
