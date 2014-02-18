@@ -143,6 +143,7 @@ The five greatest sources of systematic uncertainty in each selection are in bol
     print r'\hline'
     print r'\caption[](continued)'
     print r'\endlastfoot'
+    print '\t'*3 , '\t&\t'.join(('',) + zip(*partitions)[1])
     print '\n'.join(
         formkey(key).ljust(28) +' & '+ ' & '.join(fr.form(key) for fr in results) + r'  \\' + (vspace if i%5==4 else '')
         for i,key in enumerate(results[0].porder if summarize else results[0].order))

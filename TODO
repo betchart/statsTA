@@ -1,6 +1,12 @@
 * QCD shape systematic: perhaps divide the sideband into two regions (chwalek) (in progress)
 
+* lumi_dep
+
+* ensemble tests for subselections
+
 * produce results plots with fitted symmetric and antisymmetric components (in progress: still need axis labels)
+-- axis labels
+-- individual antisymmetric components
 
 * fit XT (XL) asymmetry independently from inclusive ttbar diff. xs.
 * fnal batch
