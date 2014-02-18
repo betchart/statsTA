@@ -1,3 +1,5 @@
+#!/usr/bin/env python
+
 import ROOT as r
 r.gROOT.SetBatch(1)
 r.gROOT.ProcessLine(".L lib/tdrstyle.C")
