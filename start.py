@@ -42,18 +42,18 @@ if __name__ == '__main__':
                  allEnsembles if options.ensembles=='all' else
                  options.ensembles.split(','))
 
-    ensSlice = ((None,None) if not options.ensSlice else tuple(int(i) for i in options.ensSlice.split(':')) if ':' in options.ensSlice else (int(options.ensSlice),1+int(options.ensSlice)))
+    ensSlice = ((None,None) if not options.ensSlice else tuple(int(i) for i in options.ensSlice.split(':')) if ':' in options.ensSlice else eval("[%s]"%options.ensSlice) if ',' in options.ensSlice else (int(options.ensSlice),1+int(options.ensSlice)))
     templates = ((0,0) if not options.templates else tuple(int(i) for i in options.templates.split(':')) if ':' in options.templates else (int(options.templates),1+int(options.templates)))
     
     if options.batch:
         stack = []
         for part in partitions:
             syschunks = chunk(systs, options.chunk)
-            enschunks = chunktuple(ensSlice, options.chunk)
+            enschunks = chunk(ensSlice, options.chunk) if type(ensSlice)==list else chunktuple(ensSlice, options.chunk)
             tmpchunks = chunktuple(templates, options.chunk)
             if syschunks: stack.extend(["./start.py --partition %s --systematics %s"%(part, ','.join(s)) for s in syschunks])
             if templates: stack.extend(["./start.py --partition %s --templates %d:%d"%((part,)+t) for t in tmpchunks])
-            if enschunks: stack.extend(["./start.py --partition %s --ensembles %s --ensSlice %d:%d"%((part, e)+s) for s in enschunks for e in ensembles])
+            if enschunks: stack.extend(["./start.py --partition %s --ensembles %s --ensSlice "%(part, e) + (','.join(str(s_) for s_ in s) if type(s)==list else "%d:%d"%s) for s in enschunks for e in ensembles])
             if not any([syschunks,tmpchunks,enschunks]): stack.append("./start.py --partition %s"%part)
         print '\n'.join(stack)
         batch.batch(stack, site=options.site)
