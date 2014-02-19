@@ -17,17 +17,21 @@ if __name__ == '__main__':
     
     infile  = r.TFile.Open(sys.argv[1])
     tree = infile.Get('fitresult')
-    outname = sys.argv[1].replace('asymmetry_full','ensemble').replace('.root', '')
+    outname = sys.argv[1].replace('asymmetry_','ensemble').replace('.root', '')
+    if outname in sys.argv[1]:
+        print "Please rename input file."
+        exit()
 
     tfile = r.TFile.Open(outname+'.root', 'RECREATE')
     book = autoBook(tfile)
     names = ['delta_Aqq','delta_Aqg','error_Aqq','error_Aqg','pullqq','pullqg']
-    fixedLimits = [(-1,1),(-1,1),(0.05,0.45),(0.04,0.14),(-5,5),(-5,5)]
+    fixedLimits = [(-1.5,1.5),(-1.5,1.5),(0.05,1.05),(0.05,1.05),(-5,5),(-5,5)]
     meanNLL = sum(e.NLL for e in tree) / tree.GetEntries()
     limits = fixedLimits
     wNLL = 40000
 
     within=0
+    tot = 0
     for e in tree:
         truth = e.gen_fitX,e.gen_fitY,1.
         mean = e.fitX,e.fitY
@@ -35,6 +39,7 @@ if __name__ == '__main__':
                    [e.fitXY,e.fitYY]]
         el = ellipse(mean=mean,sigmas2=sigmas2)
         if np.dot(truth, el.matrix).dot(truth) < 0: within+=1
+        tot+=1
         nbins = 30
         book.fill(meanNLL, 'meanNLL', nbins, -6.2e6,-5.8e6)
         book.fill(e.NLL-meanNLL, 'dNLL', nbins, -wNLL,wNLL)
@@ -46,7 +51,7 @@ if __name__ == '__main__':
             book.fill(tuple(values[2:4]), 'errors2D', (nbins,nbins), (limits[2][0],limits[3][0]), (limits[2][1],limits[3][1]))
         except:
             pass
-    print within
+    print "%d / %d  :  %.3f" % (within, tot, within / float(tot))
 
     c = r.TCanvas()
     c.Divide(2,3)
