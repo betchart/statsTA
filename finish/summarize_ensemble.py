@@ -22,6 +22,12 @@ if __name__ == '__main__':
         print "Please rename input file."
         exit()
 
+    mark = len(sys.argv) > 2
+    if mark:
+        mfile = r.TFile.Open(sys.argv[2])
+        mtree = infile.Get('fitresult')
+        mtree.GetEntry(0)
+
     tfile = r.TFile.Open(outname+'.root', 'RECREATE')
     book = autoBook(tfile)
     names = ['delta_Aqq','delta_Aqg','error_Aqq','error_Aqg','pullqq','pullqg']
@@ -55,10 +61,17 @@ if __name__ == '__main__':
 
     c = r.TCanvas()
     c.Divide(2,3)
+    lines = []
     for i,k in enumerate(names):
         c.cd(i+1)
         book[k].Fit('gaus','Q')
         book[k].Draw()
+        if mark and 1 < i < 4:
+            x = 100 * (mtree.sigmaX if i==2 else mtree.sigmaY)
+            hi = book[k].GetMaximum()
+            lines.append(r.TLine(x,0,x,hi))
+            lines[-1].SetLineColor(r.kGray)
+            lines[-1].Draw()
 
     c.Print(outname+'.pdf')
     tfile.Write()
