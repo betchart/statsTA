@@ -84,7 +84,7 @@ class channel_data(object):
 
     def __init__(self, lepton, partition, tag = 'ph_sn_jn_20',
                  signal="", sigPrefix="", dirPrefix="R04", genDirPre="R01", getTT=False,
-                 prePre = False, hackZeroBins=False, templateID=None, threeD=False, extra=True, d_wbb=0):
+                 prePre = False, hackZeroBins=False, templateID=None, threeD=False, extra=True, d_wbb=0, sampleList=[]):
         filePattern="data/stats_%s_%s_%s.root"
         tfile = r.TFile.Open(filePattern % (partition, lepton, tag))
         self.templateID = templateID
@@ -113,8 +113,8 @@ class channel_data(object):
                     'meweighted/')
 
         self.samples = {}
-        for s in self.__samples__[(4 if getTT else 0):(None if getTT else -1)]:
-            self.add(s, tfile, paths, prepaths)
+        for s in (sampleList or self.__samples__[(4 if getTT else 0):(None if getTT else -1)]):
+            self.add(s, tfile, paths, prepaths, sname=('ttalt' if sampleList else ''))
         if d_wbb:
             self.add( 'Wbb', tfile, paths, prepaths)
             for group in ['datas','datasX','datasY']:
@@ -125,7 +125,7 @@ class channel_data(object):
         tfile.Close()
         if hackZeroBins: self.hackZeroBins()
 
-    def add(self, s, tfile, paths, prepaths):
+    def add(self, s, tfile, paths, prepaths, sname=''):
         def get(s,ps):
             return next(iter(filter(None, [lib.get(tfile,p+s) for p in ps])), None)
 
@@ -158,7 +158,7 @@ class channel_data(object):
              'preselectionFraction': (1.0 if s[:2] != 'tt' else
                                       pre.Integral() / get( 'tt', prepaths ).Integral())
              }
-        self.samples[s] = sample_data(data, xs, delta, **named)
+        self.samples[sname or s] = sample_data(data, xs, delta, **named)
 
     def jiggle(self,hist):
         if self.templateID == None: return

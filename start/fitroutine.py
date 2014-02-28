@@ -226,6 +226,11 @@ class fit(object):
                  ['expect_%s_%s'%(lep,s) for lep in ['el','mu'] for s in ['tt','wj','mj','st','dy']] +
                  ['d_lumi','lumi_factor','R_ag','slosh','alphaL','alphaT','falphaL','falphaT','factor_elqcd','factor_muqcd'] )
 
+    @staticmethod
+    def altmodelNonItems():
+        return ( [item%xx for item in ['Ac_y_tt%s','Ac_phi_tt%s','f_%s_hat','f_%s'] for xx in ['qq','qg','ag','gg']] +
+                 ['R_ag','slosh','alphaL','alphaT','falphaL','falphaT'] )
+
     def ttree(self, truth={}):
         # Note : ROOT and array.array use opposite conventions for upper/lowercase (un)signed
         #         name     array  ROOT  ROOT_typedef

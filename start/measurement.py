@@ -1,13 +1,19 @@
 import ROOT as r
 from lib import roo
+import lib
 import systematics
 from ensembles import ensemble_specs
+from ensembles import calibration_specs
 from fitroutine import fit
 import os
+import inputs
 
 class measurement(object):
     def __init__(self, label, signal, profile, R0_, hackZeroBins=False,
-                 doVis=False, evalSystematics=[], ensembles=None, ensSlice=(None,None), outDir='output/', templateID=None):
+                 doVis=False, evalSystematics=[],
+                 ensembles=None, ensSlice=(None,None),
+                 calibrations=None, calSlice=(None,None),
+                 outDir='output/', templateID=None):
         os.system('mkdir -p %s' % outDir)
         self.outNameBase = (outDir + 
                             '_'.join(label.split(',')) + 
@@ -41,6 +47,14 @@ class measurement(object):
                 if ensPars['label'] not in ensembles: continue
                 ensPars.update({'ensSlice':ensSlice})
                 self.ensembles(pars, **ensPars)
+
+        if calibrations:
+            pars = systematics.central()
+            pars.update({'signal':signal, 'profileVars':profile, 'R0_':R0_, 'log':log, 'hackZeroBins':hackZeroBins})
+            for calPars in calibration_specs():
+                if calPars['which'] not in calibrations: continue
+                calPars.update({'calSlice':calSlice})
+                self.calibrations(pars, **calPars)
 
         for sys in systematics.systematics():
             if sys['label'] not in evalSystematics: continue
@@ -88,6 +102,61 @@ class measurement(object):
         for i in range(Nens)[slice(*ensSlice)]:
             alt = mcstudy.genData(i)
             pars['label'] = '%s_ens%03d'%(label,i)
+            with open(self.outNameBase + pars['label'] + '.log', 'w') as log:
+                pars['log']=log
+                f = fit(altData=alt, **pars)
+            f.ttreeWrite(self.outNameBase + pars['label'] + '.root', truth)
+
+    @roo.quiet
+    def calibrations(self, pars, which='mn', calSlice=(None,None), N=1000, label='', **kwargs):
+
+        sampleList = [c['sample'] for c in calibration_specs() if c['which']==which]
+        prePre = pars['dirIncrement'] in [0,4,5]
+
+        args = {
+            'signal':pars['signal'],
+            'sigPrefix':pars['sigPre'],
+            'dirPrefix':"R%02d" % (pars['R0_'] + pars['dirIncrement']),
+            'genDirPre':pars['genDirPre'],
+            'prePre':prePre,
+            'templateID':None,
+            'hackZeroBins':pars['hackZeroBins'] and 'QCD'==part,
+            'sampleList': sampleList
+            }
+        alt_channels = dict( [ ((lep,part), inputs.channel_data(lep, part, **args))
+                               for lep in ['el','mu'] for part in ['top','QCD']] )
+
+        # get Ac_phi_ttalt and Ac_y_ttalt
+        filePattern = 'data/stats_top_mu_%s.root'
+        tag = 'ph_sn_jn_20'
+        tfile = r.TFile.Open(filePattern%tag)
+        h = lib.get(tfile,'genTopTanhDeltaAbsY_genTopDPtDPhi/'+ sampleList[0])
+        Ac_y_ttalt = lib.asymmetry(h.ProjectionX())[0]
+        Ac_phi_ttalt = lib.asymmetry(h.ProjectionY())[0]
+        tfile.Close()
+
+        model = self.central.model
+        model.import_alt_model(alt_channels)
+        wGen = model.w
+
+        # bring xs_ttalt to the most consistant value possible
+        wGen.arg('d_xs_ttalt').setVal((wGen.arg('expect_mu_tt').getVal() + wGen.arg('expect_el_tt').getVal()) /
+                                      (wGen.arg('expect_mu_ttalt').getVal() + wGen.arg('expect_el_ttalt').getVal()) - 1)
+        # not clear how to do the same for factor_*_qcd (equivalent bg representations)
+
+        truth = dict([(s,eval(s)) for s in ['Ac_y_ttalt','Ac_phi_ttalt']])
+        altItems = ['expect_%s_ttalt'%s for s in ['el','mu','elqcd','muqcd']]
+        for item in (set(fit.modelItems()+altItems)-set(fit.altmodelNonItems())): truth[item] = wGen.arg(item).getVal()
+
+        mcstudy = r.RooMCStudy(wGen.pdf('altmodel'),
+                               wGen.argSet(','.join(model.observables+['channel'])),
+                               r.RooFit.Binned(True),
+                               r.RooFit.Extended(True)
+                           )
+        mcstudy.generate(N,0,True)
+        for i in range(N)[slice(*calSlice)]:
+            alt = mcstudy.genData(i)
+            pars['label'] = '%s_cal%s%03d'%(label,which,i)
             with open(self.outNameBase + pars['label'] + '.log', 'w') as log:
                 pars['log']=log
                 f = fit(altData=alt, **pars)
