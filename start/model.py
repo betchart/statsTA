@@ -166,25 +166,29 @@ class topModel(object):
             roo.wimport_const(w, 'err_Ac_y_' + n, ey)
             roo.wimport_const(w, 'err_Ac_phi_' + n, ep)
 
-    def import_model(self, w, which=[], name=""):
-        if not which:
-            which = dict((i, '_both') for i in ['dy', 'wj', 'st', 'ttgg', 'ttqq', 'ttqg', 'ttag'])
-            if self.asymmetry: which.update({'dy': '_symm', 'ttqq': '', 'ttqg': '', 'ttag': ''})
+    def import_model(self, w, whichs={}, name=""):
+        for part in ['','qcd']:
+            if part not in whichs:
+                whichs[part] = dict((i, '_both')
+                                    for i in ['wj', 'st', 'ttgg', 'ttqq', 'ttqg', 'ttag'])
+                if self.asymmetry:
+                    whichs[part].update({'ttqq': '', 'ttqg': '', 'ttag': ''})
+        whichs[''].update({'dy': '_symm'})
 
         [roo.factory(w, "SUM::%s_mj( expect_%sqcd_data * %sqcd_data_both, %s )" %
                      (name+lepton, lepton, lepton,
                       ','.join(['expect_%s_%s * %s_%s%s' %
                                 (lepton + 'qcd', key, lepton + 'qcd', key, value)
-                                for key, value in which.items() if key != 'dy'])))
+                                for key, value in whichs['qcd'].items()])))
          for lepton in self.channels]
 
         [roo.factory(w, "SUM::model_%s( expect_%sqcd_data * %sqcd_data_both, %s )" %
                      (name+lepton, lepton, lepton,
                       ','.join(['expect_%s_%s * %s_%s%s' %
                                 (lepton + part, key, lepton + part, key, value)
+                                for part, which in whichs.items()
                                 for key, value in which.items()
-                                for part in ['', 'qcd']
-                                if not (key == 'dy' and 'qcd' in part)])))
+                                ])))
          for lepton in self.channels]
 
         roo.factory(w, "SIMUL::%smodel(channel, %s)" %
@@ -197,7 +201,7 @@ class topModel(object):
         sample = "ttalt"
         leptons = ['el', 'mu']
         channels = dict((L, channelDict[(L,'top')]) for L in leptons)
-        channels_qcd = dict((L + 'qcd', channelDict[(L, 'QCD')]) for L in leptons)
+
         #xs
         xs = channels['el'].samples[sample].xs
         roo.wimport_const(w, 'xs_%s_hat' % sample, xs)
@@ -206,13 +210,13 @@ class topModel(object):
 
         # eff
         [roo.wimport_const(w, 'eff_%s_%s' % (lepton, sample), channel.samples[sample].eff)
-         for lepton, channel in channels.items() + channels_qcd.items()]
+         for lepton, channel in channels.items() ]
 
         [self.import_shape(w, lepton, sample, data)
-         for lepton, channel in channels.items() + channels_qcd.items()
+         for lepton, channel in channels.items()
          for sample, data in channel.samples.items()]
 
-        self.import_model(w, which=dict((i, '_both') for i in ['dy', 'wj', 'st', 'ttalt']),
+        self.import_model(w, whichs={'':dict((i, '_both') for i in ['dy', 'wj', 'st', 'ttalt'])},
                           name="alt")
 
     def import_expressions(self, w):

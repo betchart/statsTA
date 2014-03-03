@@ -145,7 +145,7 @@ class measurement(object):
         # not clear how to do the same for factor_*_qcd (equivalent bg representations)
 
         truth = dict([(s,eval(s)) for s in ['Ac_y_ttalt','Ac_phi_ttalt']])
-        altItems = ['expect_%s_ttalt'%s for s in ['el','mu','elqcd','muqcd']]
+        altItems = ['expect_%s_ttalt'%s for s in ['el','mu']]
         for item in (set(fit.modelItems()+altItems)-set(fit.altmodelNonItems())): truth[item] = wGen.arg(item).getVal()
 
         mcstudy = r.RooMCStudy(wGen.pdf('altmodel'),
