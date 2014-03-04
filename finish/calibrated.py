@@ -26,11 +26,11 @@ class calibrated(object):
             Ac_y = self.Ac_y_tt(e)
             Ac_y_gen = e.gen_Ac_y_ttalt
             Ac_y_sig = self.sigmas_Ac_y_tt(e)
-            self.book.fill( Ac_y, 'Ac_y', 100, -0.05, 0.05)
+            self.book.fill( Ac_y - Ac_y_gen, 'delta_Ac_y', 100, -0.05, 0.05)
             self.book.fill( Ac_y_sig, 'Ac_y_sig', 100, 0, 0.006)
             self.book.fill( (Ac_y - Ac_y_gen) / Ac_y_sig, 'Ac_y_pull', 100, -5, 5)
         c = r.TCanvas()
-        self.book['Ac_y'].Draw()
+        self.book['delta_Ac_y'].Draw()
         c.Update()
         raw_input()
         self.book['Ac_y_sig'].Draw()
