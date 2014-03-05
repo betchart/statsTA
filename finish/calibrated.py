@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 
 import ROOT as r
+r.gROOT.SetBatch(1)
 import numpy as np
 import math
 from lib.ellipse import ellipse
@@ -29,16 +30,9 @@ class calibrated(object):
             self.book.fill( Ac_y - Ac_y_gen, 'delta_Ac_y', 100, -0.05, 0.05)
             self.book.fill( Ac_y_sig, 'Ac_y_sig', 100, 0, 0.006)
             self.book.fill( (Ac_y - Ac_y_gen) / Ac_y_sig, 'Ac_y_pull', 100, -5, 5)
-        c = r.TCanvas()
-        self.book['delta_Ac_y'].Draw()
-        c.Update()
-        raw_input()
-        self.book['Ac_y_sig'].Draw()
-        c.Update()
-        raw_input()
-        self.book['Ac_y_pull'].Draw()
-        c.Update()
-        raw_input()
+        print Ac_y_gen
+
+        self.Draw()
 
     def Ac_y_tt(self, e):
         return sum([e.Ac_y_ttgg*e.f_gg,
@@ -56,6 +50,16 @@ class calibrated(object):
         R = np.array([[1,1],[-1,1]]) # rotate pi/4, except also scale by sqrt(2)
         sigmas = np.array([[e.fitXX,e.fitXY],[e.fitXY,e.fitYY]]) / oneSigmaN2LL
         return math.sqrt(R.dot(sigmas).dot(R.T)[0,0])
+
+    def Draw(self):
+        outName = self.book.title.rstrip('.root') + '.pdf'
+        c = r.TCanvas()
+        c.Print(outName + '[')
+        for hname, h in self.book.items():
+            h.Draw()
+            c.Print(outName)
+        c.Print(outName + ']')
+        print "Output in", outName
 
 
 if __name__=='__main__':
