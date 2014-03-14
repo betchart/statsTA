@@ -42,7 +42,8 @@ class topModel(object):
             alphaL_max = 0.99 * min(chan.samples['ttqq'].alphaMax for chan in
                                     self.channels.values() +
                                     self.channels_qcd.values())
-            roo.factory(w, "falphaL[0.13, -0.6, 0.6]")
+            falphaL_max = f_qq_max * alphaL_max
+            roo.factory(w, "falphaL[0.13, -%f, %f]"%(falphaL_max,falphaL_max))
             roo.factory(w, "slosh[0.44, 0, 1]")
             e_dqq = '( @0*%f + (1-@0)*abs(@1)/%f) / @2 -1'%(f_qq_max, alphaL_max)
             roo.factory(w, "expr::d_qq('%s',{slosh,falphaL,f_qq_hat})"%e_dqq)
