@@ -35,7 +35,7 @@ if __name__ == '__main__':
     names = ['delta_Aqq','delta_Aqg','delta_A',
              'error_Aqq','error_Aqg','error_A',
              'pullqq',    'pullqg',  'pull']
-    fixedLimits = [(-1.5,1.5),(-1.5,1.5),(-5,5),
+    fixedLimits = [(-1.5,1.5),(-1.5,1.5),(-1.5,1.5),
                    (0.05,1.05),(0.05,1.05),(0.05,1.05),
                    (-5,5),(-5,5),(-5,5)]
     meanNLL = sum(e.NLL for e in tree) / tree.GetEntries()
@@ -60,7 +60,7 @@ if __name__ == '__main__':
             sigmas = np.array([[e.fitXX,e.fitXY],[e.fitXY,e.fitYY]]) / oneSigmaN2LL
             sigma = math.sqrt(R.dot(sigmas).dot(R.T)[0,0])
 
-            values = 100*np.array([e.fitX-e.gen_fitX, e.fitY-e.gen_fitY, e.fitX+e.fitY+e.correction - e.gen_fitX - e.gen_fitY - e.gen_correction,
+            values = 100*np.array([e.fitX-e.gen_fitX, e.fitY-e.gen_fitY, e.fitX+e.fitY+e.correction - e.gen_fitX - e.gen_fitY - e.gen_f_gg_hat*e.gen_Ac_y_ttgg,
                                    e.sigmaX, e.sigmaY, sigma ])
             values = tuple(values) + (values[0]/values[3], values[1]/values[4], values[2]/values[5])
             for n,v,lim in zip(names,values,limits):
