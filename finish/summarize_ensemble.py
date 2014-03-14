@@ -9,6 +9,8 @@ import ROOT as r
 r.gROOT.SetBatch(1)
 r.gStyle.SetOptFit(1)
 
+oneSigmaN2LL = 1.14 * 2
+
 if __name__ == '__main__':
     scale = 100
     if len(sys.argv) < 2:
@@ -30,8 +32,12 @@ if __name__ == '__main__':
 
     tfile = r.TFile.Open(outname+'.root', 'RECREATE')
     book = autoBook(tfile)
-    names = ['delta_Aqq','delta_Aqg','error_Aqq','error_Aqg','pullqq','pullqg']
-    fixedLimits = [(-1.5,1.5),(-1.5,1.5),(0.05,1.05),(0.05,1.05),(-5,5),(-5,5)]
+    names = ['delta_Aqq','delta_Aqg','delta_A',
+             'error_Aqq','error_Aqg','error_A',
+             'pullqq',    'pullqg',  'pull']
+    fixedLimits = [(-1.5,1.5),(-1.5,1.5),(-1.5,1.5),
+                   (0.05,1.05),(0.05,1.05),(0.05,1.05),
+                   (-5,5),(-5,5),(-5,5)]
     meanNLL = sum(e.NLL for e in tree) / tree.GetEntries()
     limits = fixedLimits
     wNLL = 40000
@@ -50,8 +56,13 @@ if __name__ == '__main__':
         book.fill(meanNLL, 'meanNLL', nbins, -6.2e6,-5.8e6)
         book.fill(e.NLL-meanNLL, 'dNLL', nbins, -wNLL,wNLL)
         try:
-            values = 100*np.array([e.fitX-e.gen_fitX, e.fitY-e.gen_fitY, e.sigmaX, e.sigmaY])
-            values = tuple(values) + (values[0]/values[2], values[1]/values[3])
+            R = np.array([[1,1],[-1,1]]) # rotate pi/4, except also scale by sqrt(2)
+            sigmas = np.array([[e.fitXX,e.fitXY],[e.fitXY,e.fitYY]]) / oneSigmaN2LL
+            sigma = math.sqrt(R.dot(sigmas).dot(R.T)[0,0])
+
+            values = 100*np.array([e.fitX-e.gen_fitX, e.fitY-e.gen_fitY, e.fitX+e.fitY+e.correction - e.gen_fitX - e.gen_fitY - e.gen_f_gg_hat*e.gen_Ac_y_ttgg,
+                                   e.sigmaX, e.sigmaY, sigma ])
+            values = tuple(values) + (values[0]/values[3], values[1]/values[4], values[2]/values[5])
             for n,v,lim in zip(names,values,limits):
                 book.fill(v,n,nbins,*lim)
             book.fill(tuple(values[2:4]), 'errors2D', (nbins,nbins), (limits[2][0],limits[3][0]), (limits[2][1],limits[3][1]))
@@ -60,7 +71,7 @@ if __name__ == '__main__':
     print "%d / %d  :  %.3f" % (within, tot, within / float(tot))
 
     c = r.TCanvas()
-    c.Divide(2,3)
+    c.Divide(3,3)
     lines = []
     for i,k in enumerate(names):
         c.cd(i+1)
