@@ -16,3 +16,8 @@ def ensemble_specs():
     specs = [dict(base) for u in ups]
     for s,u in zip(specs,ups): s.update(u)
     return specs
+
+
+def calibration_specs():
+    return [{'which':'mg', 'sample':'calib_mg.pu.sf'},
+            {'which':'mn', 'sample':'calib_mn.pu.sf'}]

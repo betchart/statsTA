@@ -32,12 +32,6 @@ class topModel(object):
                      'model', 'expressions']: getattr(self, 'import_' + item)(w)
 
         for item in ['d_lumi', 'd_xs_dy', 'd_xs_st']: w.arg(item).setConstant()
-        if False:
-            w.arg('d_xs_tt').setVal(0.16)
-            w.arg('d_xs_tt').setConstant()
-            w.arg('d_xs_wj').setVal(0.78)
-            w.arg('d_xs_wj').setConstant()
-
 
     def import_fractions(self, w):
         [roo.wimport_const(w, "f_%s_hat" % comp, self.gen.samples['tt' + comp].frac)
@@ -77,11 +71,11 @@ class topModel(object):
             if 'qcd' in L: roo.factory(w, "expr::lumi_%s('(1+@0)*@1', {d_lumi, lumi_%s_hat})" % (L, L))
             else:          roo.factory(w, "expr::lumi_%s('(1+@0)*@1*@2', {d_lumi, lumi_%s_hat, lumi_factor})" % (L, L))
 
-        xs_constraints = dict([(samp[:2], (data.xs, data.xs_sigma))
+        xs_constraints = dict([(samp[:2], data.xs)
                                for samp, data in self.channels['el'].samples.items()
                                if data.xs > 0])
 
-        for sample, (xs, delta) in xs_constraints.items():
+        for sample, xs in xs_constraints.items():
             roo.wimport_const(w, 'xs_%s_hat' % sample, xs)
             roo.factory(w, "d_xs_%s[0,-0.5,1.5]" % sample)
             roo.factory(w, "expr::xs_%s('(1+@0)*@1',{d_xs_%s, xs_%s_hat})" % (3 * (sample,)))
@@ -172,29 +166,58 @@ class topModel(object):
             roo.wimport_const(w, 'err_Ac_y_' + n, ey)
             roo.wimport_const(w, 'err_Ac_phi_' + n, ep)
 
-    def import_model(self, w):
-        which = dict((i, '_both') for i in ['dy', 'wj', 'st', 'ttgg', 'ttqq', 'ttqg', 'ttag'])
-        if self.asymmetry: which.update({'dy': '_symm', 'ttqq': '', 'ttqg': '', 'ttag': ''})
+    def import_model(self, w, whichs={}, name=""):
+        for part in ['','qcd']:
+            if part not in whichs:
+                whichs[part] = dict((i, '_both')
+                                    for i in ['wj', 'st', 'ttgg', 'ttqq', 'ttqg', 'ttag'])
+                if self.asymmetry:
+                    whichs[part].update({'ttqq': '', 'ttqg': '', 'ttag': ''})
+        whichs[''].update({'dy': '_symm'})
 
         [roo.factory(w, "SUM::%s_mj( expect_%sqcd_data * %sqcd_data_both, %s )" %
-                     (lepton, lepton, lepton,
+                     (name+lepton, lepton, lepton,
                       ','.join(['expect_%s_%s * %s_%s%s' %
                                 (lepton + 'qcd', key, lepton + 'qcd', key, value)
-                                for key, value in which.items() if key != 'dy'])))
+                                for key, value in whichs['qcd'].items()])))
          for lepton in self.channels]
 
         [roo.factory(w, "SUM::model_%s( expect_%sqcd_data * %sqcd_data_both, %s )" %
-                     (lepton, lepton, lepton,
+                     (name+lepton, lepton, lepton,
                       ','.join(['expect_%s_%s * %s_%s%s' %
                                 (lepton + part, key, lepton + part, key, value)
+                                for part, which in whichs.items()
                                 for key, value in which.items()
-                                for part in ['', 'qcd']
-                                if not (key == 'dy' and 'qcd' in part)])))
+                                ])))
          for lepton in self.channels]
 
-        roo.factory(w, "SIMUL::model(channel, %s)" %
-                    ', '.join("%(chan)s=model_%(chan)s" %
-                              {'chan': lepton} for lepton in self.channels))
+        roo.factory(w, "SIMUL::%smodel(channel, %s)" %
+                    (name, ', '.join("%s=model_%s" %
+                                     (lepton, name + lepton) for lepton in self.channels)))
+
+    def import_alt_model(self, channelDict):
+        w = self.w
+
+        sample = "ttalt"
+        leptons = ['el', 'mu']
+        channels = dict((L, channelDict[(L,'top')]) for L in leptons)
+
+        #xs
+        xs = channels['el'].samples[sample].xs
+        roo.wimport_const(w, 'xs_%s_hat' % sample, xs)
+        roo.factory(w, "d_xs_%s[0,-0.5,1.5]" % sample)
+        roo.factory(w, "expr::xs_%s('(1+@0)*@1',{d_xs_%s, xs_%s_hat})" % (3 * (sample,)))
+
+        # eff
+        [roo.wimport_const(w, 'eff_%s_%s' % (lepton, sample), channel.samples[sample].eff)
+         for lepton, channel in channels.items() ]
+
+        [self.import_shape(w, lepton, sample, data)
+         for lepton, channel in channels.items()
+         for sample, data in channel.samples.items()]
+
+        self.import_model(w, whichs={'':dict((i, '_both') for i in ['dy', 'wj', 'st', 'ttalt'])},
+                          name="alt")
 
     def import_expressions(self, w):
         [roo.factory(w, "sum::expect_%s_tt(%s)" %
