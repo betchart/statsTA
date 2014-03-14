@@ -39,7 +39,7 @@ class ellipse(object):
     def getParametric(matrix):
         E,R = np.linalg.eig(matrix)
         for p in itertools.permutations(range(3),3):
-            d = np.diag(np.sqrt(np.abs(E[p,:]))).dot(R[:,p].T)
+            d = np.diag(np.sqrt(np.abs(E[list(p)]))).dot(R[:,p].T)
             if np.allclose(matrix, d.T.dot(np.diag([1,1,-1]).dot(d))):
                 return np.linalg.inv(d) 
 
